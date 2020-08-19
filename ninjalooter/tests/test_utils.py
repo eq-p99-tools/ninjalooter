@@ -1,10 +1,37 @@
 from unittest import mock
 
+from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
 
 
 class TestUtils(base.NLTestBase):
+    def test_start_auction_dkp(self):
+        pending = utils.config.PENDING_AUCTIONS
+        active = utils.config.ACTIVE_AUCTIONS
+        pending.clear()
+        active.clear()
+        pending.append('COPPER DISC')
+
+        utils.start_auction_dkp('COPPER DISC')
+
+        self.assertListEqual([], pending)
+        self.assertIn('COPPER DISC', active)
+        self.assertIsInstance(active['COPPER DISC'], models.DKPAuction)
+
+    def test_start_auction_random(self):
+        pending = utils.config.PENDING_AUCTIONS
+        active = utils.config.ACTIVE_AUCTIONS
+        pending.clear()
+        active.clear()
+        pending.append('COPPER DISC')
+
+        utils.start_auction_random('COPPER DISC')
+
+        self.assertListEqual([], pending)
+        self.assertIn('COPPER DISC', active)
+        self.assertIsInstance(active['COPPER DISC'], models.RandomAuction)
+
     def test_generate_pop_roll(self):
         utils.config.PLAYER_AFFILIATIONS = base.SAMPLE_PLAYER_AFFILIATIONS
 

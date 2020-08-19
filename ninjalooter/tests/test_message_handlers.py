@@ -59,7 +59,7 @@ class TestMessageHandlers(base.NLTestBase):
         line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
                 "'Copper Disc'")
         match = config.MATCH_OOC.match(line)
-        items = list(message_handlers.handle_ooc(match))
+        items = message_handlers.handle_ooc(match)
         self.assertEqual(0, len(items))
         self.assertEqual(0, len(config.PENDING_AUCTIONS))
 
@@ -172,4 +172,4 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match)
         self.assertTrue(result)
-        self.assertIn('Jim', disc_auction.highest())
+        self.assertIn(('Jim', 10), disc_auction.highest())

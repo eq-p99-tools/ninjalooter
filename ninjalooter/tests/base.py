@@ -53,6 +53,26 @@ SAMPLE_WHO_LOG = """
 [Sun Aug 16 22:46:32 2020] There are 24 players in Plane of Sky.
 """
 
+SAMPLE_OOC_DROP = """
+[Mon Aug 17 07:15:36 2020] Dob begins to walk faster.
+[Mon Aug 17 07:15:39 2020] Peter says out of character, 'Belt of Iniquity'
+[Mon Aug 17 07:15:42 2020] Mary says, 'Hail, Paul'
+[Mon Aug 17 07:15:58 2020] Paul says, 'lfg'
+[Mon Aug 17 07:16:05 2020] Tim says out of character, 'looted Miniature Sword'
+"""
+
+SAMPLE_AUC_BID = """
+[Sun Aug 16 17:41:25 2020] You auction, 'Belt of Iniquity VCR (VEN CAS RECON) BID IN SHOUT 10 DKP MIN'
+[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 10'
+[Mon Aug 17 07:15:39 2020] Paul auctions, 'Belt of Iniquity 15'
+[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 11'
+[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 16'
+[Mon Aug 17 07:15:39 2020] Ron auctions, 'Belt of Iniquity 20'
+[Mon Aug 17 07:15:39 2020] Pad auctions, 'Copper Disc 1'
+"""
+
+SAMPLE_FULL_TEST = SAMPLE_WHO_LOG + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
+
 
 class NLTestBase(unittest.TestCase):
     pass

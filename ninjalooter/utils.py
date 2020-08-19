@@ -6,9 +6,28 @@ import re
 from ahocorapy import keywordtree
 
 from ninjalooter import config
+from ninjalooter import logging
+from ninjalooter import models
+
+# This is the app logger, not related to EQ logs
+LOG = logging.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
+
+
+def start_auction_dkp(item):
+    auc = models.DKPAuction(item)
+    config.PENDING_AUCTIONS.remove(item)
+    config.ACTIVE_AUCTIONS[item] = auc
+    LOG.info("Started DKP bid for item: %s", item)
+
+
+def start_auction_random(item):
+    auc = models.RandomAuction(item)
+    config.PENDING_AUCTIONS.remove(item)
+    config.ACTIVE_AUCTIONS[item] = auc
+    LOG.info("Started random roll for item: %s", item)
 
 
 def generate_pop_roll():
