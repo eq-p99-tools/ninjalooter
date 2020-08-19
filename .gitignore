@@ -1,0 +1,14 @@
+.idea
+venv/
+debug.py
+.ipynb_checkpoints
+.pytest_cache
+__pycache__/
+*.egg-info
+*.log
+.tox
+.python-version
+.eggs
+.coverage
+htmlcov/
+ninjalooter.ini
