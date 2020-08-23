@@ -12,7 +12,7 @@ class TestMessageHandlers(base.NLTestBase):
         utils.setup_aho()
 
     @mock.patch('wx.PostEvent')
-    def test_handle_new_who(self, mock_post_event):
+    def test_handle_start_who(self, mock_post_event):
         # Empty List, full /who
         config.PLAYER_AFFILIATIONS = {}
         for line in base.SAMPLE_WHO_LOG.splitlines():
@@ -32,7 +32,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.HISTORICAL_AFFILIATIONS['Fred'] = 'Kingdom'
 
         # Trigger New Who
-        message_handlers.handle_new_who(None, 'window')
+        message_handlers.handle_start_who(None, 'window')
         mock_post_event.assert_called_once_with(
             'window', models.ClearWhoEvent())
         mock_post_event.reset_mock()
@@ -184,7 +184,7 @@ class TestMessageHandlers(base.NLTestBase):
         }
         item_name = 'COPPER DISC'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
-        disc_auction = models.DKPAuction(itemdrop)
+        disc_auction = models.DKPAuction(itemdrop, 'VCR')
         config.ACTIVE_AUCTIONS = {
             item_name: disc_auction
         }

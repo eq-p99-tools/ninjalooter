@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['ninjalooter.py'],
+a = Analysis(['ninjalooter\\cmd\\run.py'],
              pathex=['D:\\rm-you.github.com\\ninjalooter'],
              binaries=[],
              datas=[],
@@ -17,8 +17,7 @@ a = Analysis(['ninjalooter.py'],
 )
 from glob import glob
 a.datas += [(filename, filename, '.') for filename in glob('data/*')]
-pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -30,5 +29,4 @@ exe = EXE(pyz,
           upx=False,
           runtime_tmpdir=None,
           console=True,
-          icon='data/ninja_attack.ico'
-          )
+          icon='data/ninja_attack.ico')

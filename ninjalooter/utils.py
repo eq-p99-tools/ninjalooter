@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import pathlib
@@ -18,51 +19,76 @@ RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 
 
-def start_auction_dkp(item: models.ItemDrop) -> models.DKPAuction:
-    if item.name in config.ACTIVE_AUCTIONS:
+def ignore_pending_item(item: models.ItemDrop) -> None:
+    config.IGNORED_AUCTIONS.append(item)
+    config.PENDING_AUCTIONS.remove(item)
+
+
+def start_auction_dkp(item: models.ItemDrop,
+                      alliance: str) -> models.DKPAuction:
+    names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
+    if item.name in names:
         LOG.warning("Item %s already pending bid, not starting another.")
         return None
-    auc = models.DKPAuction(item)
+    auc = models.DKPAuction(item, alliance)
     config.PENDING_AUCTIONS.remove(item)
-    config.ACTIVE_AUCTIONS[item.name] = auc
-    # auc.add(1, "Tom")
+    config.ACTIVE_AUCTIONS[item.uuid] = auc
     LOG.info("Started DKP bid for item: %s", item)
     return auc
 
 
 def start_auction_random(item: models.ItemDrop) -> models.RandomAuction:
-    if item.name in config.ACTIVE_AUCTIONS:
+    names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
+    if item.name in names:
         LOG.warning("Item %s already pending roll, not starting another.")
         return None
     auc = models.RandomAuction(item)
     config.PENDING_AUCTIONS.remove(item)
-    config.ACTIVE_AUCTIONS[item.name] = auc
-    # auc.add(1, "Tom")
-    # auc.add(1, "Bill")
+    config.ACTIVE_AUCTIONS[item.uuid] = auc
     LOG.info("Started random roll for item: %s", item)
     return auc
 
 
-def generate_pop_roll() -> tuple:
+def get_pop_numbers(source=None, extras=None) -> dict:
+    if source is None:
+        source = config.PLAYER_AFFILIATIONS
+    extras = extras or dict()
     pops = {alliance: 0 for alliance in config.ALLIANCES}
-    for _, guild in config.PLAYER_AFFILIATIONS.items():
+    pops.update(extras)
+    for _, guild in source.items():
         alliance = config.ALLIANCE_MAP.get(guild)
         if alliance:
             pops[alliance] += 1
+    return pops
+
+
+def generate_pop_roll(source=None, extras=None) -> tuple:
+    pops = get_pop_numbers(source, extras)
     roll_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
-    start = 1
+    start = 0
+    end = 0
     for alliance, pop in pops.items():
-        next_start = start + pop
-        alliance_text = "{}-{} {}".format(start, next_start - 1, alliance)
+        if pop < 1:
+            continue
+        end = start + pop - 1
+        alliance_text = "{}-{} {}".format(start, end, alliance)
         if not roll_text:
             roll_text = alliance_text
         else:
             roll_text = " // ".join((roll_text, alliance_text))
-        start = next_start
-    rand_text = "/random 1 {}".format(start - 1)
+        start = end + 1
+    if roll_text:
+        roll_text = "/shout " + roll_text
+    else:
+        frame = inspect.currentframe()
+        roll_text = '/tell Toald break in `{func}:{line}`'.format(
+            func=frame.f_code.co_name,
+            line=frame.f_lineno - 1
+        )
+    rand_text = "/random {}".format(end)
     LOG.info("Generated pop roll with %d players: %s",
              start, roll_text)
-    return "/shout " + roll_text, rand_text
+    return roll_text, rand_text
 
 
 def get_character_name_from_logfile(logfile: str) -> str:

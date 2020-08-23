@@ -11,21 +11,14 @@ from ninjalooter import utils
 LOG = logging.getLogger(__name__)
 
 LOG_MATCHERS = {
-    config.MATCH_NEW_WHO: message_handlers.handle_new_who,
+    config.MATCH_START_WHO: message_handlers.handle_start_who,
     config.MATCH_WHO: message_handlers.handle_who,
+    config.MATCH_END_WHO: message_handlers.handle_end_who,
     config.MATCH_OOC: message_handlers.handle_ooc,
     config.MATCH_AUC: message_handlers.handle_auc,
-    config.MATCH_RAND: message_handlers.handle_rand,
+    config.MATCH_RAND1: message_handlers.handle_rand1,
+    config.MATCH_RAND2: message_handlers.handle_rand2,
 }
-
-
-def match_line(line, window) -> bool:
-    for matcher in LOG_MATCHERS:
-        match = matcher.match(line)
-        if match:
-            return LOG_MATCHERS[matcher](match, window)
-    # Nothing matched, not a useful line
-    return False
 
 
 def parse_logfile(logfile: str, window: object, run: threading.Event):
@@ -36,12 +29,22 @@ def parse_logfile(logfile: str, window: object, run: threading.Event):
         LOG.info("Logfile loaded: %s", logfile)
         while run.is_set():
             lines = lfp.readlines()
+            last_rand_player = None
             for line in lines:
                 line = line.strip()
-                result = match_line(line, window)
+                if last_rand_player:
+                    line = line + last_rand_player
+                    last_rand_player = None
+                result = None
+                for matcher in LOG_MATCHERS:
+                    match = matcher.match(line)
+                    if match:
+                        match_func = LOG_MATCHERS[matcher]
+                        result = match_func(match, window)
+                        if matcher == config.MATCH_RAND1:
+                            last_rand_player = result
                 if result:
                     LOG.info("Handled line: %s", line)
-            # run.clear()  # TODO: right now, end loop quickly for testing
             time.sleep(0.1)
 
 
@@ -54,6 +57,7 @@ class ParseThread(threading.Thread):
 
     def run(self):
         logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
+        config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
         parse_logfile(logfile, self.window, self.loop_run)
 

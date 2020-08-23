@@ -2,3 +2,4 @@ ahocorapy
 wxPython
 ObjectListView
 pyperclip
+python-dateutil

@@ -1,8 +1,10 @@
 # pylint: disable=no-member
 
+import uuid
 import wx
 
 from ninjalooter import config
+from ninjalooter import extra_data
 from ninjalooter import logging
 
 # This is the app logger, not related to EQ logs
@@ -22,21 +24,66 @@ class Player:  # pylint: disable=too-few-public-methods
         self.guild = guild
 
 
+class WhoLog:
+    time = None
+    log = None
+
+    def __init__(self, time, log):
+        super().__init__()
+        self.time = time
+        self.log = log
+
+    def populations(self):
+        pops = {alliance: 0 for alliance in config.ALLIANCES}
+        for _, guild in self.log.items():
+            alliance = config.ALLIANCE_MAP.get(guild)
+            if alliance:
+                pops[alliance] += 1
+        pop_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
+        for alliance, pop in pops.items():
+            alliance_text = "{}: {}".format(alliance, pop)
+            if not pop_text:
+                pop_text = alliance_text
+            else:
+                pop_text = " // ".join((pop_text, alliance_text))
+        return pop_text
+
+
+class PopulationPreview:
+    alliance = None
+    population = None
+
+    def __init__(self, alliance, population):
+        super().__init__()
+        self.alliance = alliance
+        self.population = population
+
+
 class ItemDrop:
     name = None
     reporter = None
     timestamp = None
+    uuid = None
 
     def __init__(self, name, reporter, timestamp):
         self.name = name
         self.reporter = reporter
         self.timestamp = timestamp
+        self.uuid = uuid.uuid4()
 
     def classes(self) -> str:
-        return "TODO"
+        extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
+        if not extra_item_data:
+            return ""
+        classes = extra_item_data.get('classes', [])
+        return ', '.join(classes)
 
     def droppable(self) -> str:
-        return "TODO"
+        extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
+        if not extra_item_data:
+            return ""
+        nodrop = extra_item_data.get('nodrop', False)
+        return "NO" if nodrop else "Yes"
 
     def __str__(self):
         return "{name} ({reporter} @ {time})".format(
@@ -94,13 +141,19 @@ class Auction:
     def droppable(self) -> str:
         return self.item.droppable()
 
+    def get_target_min(self) -> str:
+        return getattr(self, 'number', getattr(self, 'min_dkp', None))
+
 
 class DKPAuction(Auction):
     bids = None
+    min_dkp = None
+    alliance = None
 
-    def __init__(self, item: ItemDrop):
+    def __init__(self, item: ItemDrop, alliance: str):
         super().__init__(item)
         self.bids = dict()
+        self.alliance = alliance
 
     def add(self, number: int, player: str) -> bool:
         if not number:
@@ -128,8 +181,9 @@ class DKPAuction(Auction):
         return ((bidder, bid),)  # noqa
 
     def bid_text(self) -> str:
-        return "{name} {alliance} BID IN SHOUT, MIN {min} DKP".format(
-            name=self.item.name, alliance="???", min=5)  # TODO: alliance/min
+        return "{name} `{alliance}` BID IN SHOUT, MIN {min} DKP".format(
+            name=self.item.name, alliance=self.alliance,
+            min=self.get_target_min())
 
     def win_text(self) -> str:
         return "Grats {player} {number} DKP {item}!".format(
@@ -193,6 +247,7 @@ EVT_DROP = wx.NewId()
 EVT_BID = wx.NewId()
 EVT_WHO = wx.NewId()
 EVT_CLEAR_WHO = wx.NewId()
+EVT_WHO_HISTORY = wx.NewId()
 
 
 class DropEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
@@ -238,6 +293,15 @@ class ClearWhoEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_CLEAR_WHO)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+class WhoHistoryEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_WHO_HISTORY)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__)

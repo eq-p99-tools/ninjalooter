@@ -9,7 +9,7 @@ class TestModels(base.NLTestBase):
         self.assertRaises(NotImplementedError, auc.highest)
 
     def test_DKPAuction_model(self):
-        auc = models.DKPAuction('COPPER DISC')
+        auc = models.DKPAuction('COPPER DISC', 'VCR')
         self.assertIsNone(auc.highest())
 
         # First bid, valid

@@ -15,11 +15,11 @@ class TestUtils(base.NLTestBase):
         copper_disc = models.ItemDrop('Copper Disc', 'Jim', 'timestamp')
         pending.append(copper_disc)
 
-        utils.start_auction_dkp(copper_disc)
+        utils.start_auction_dkp(copper_disc, 'VCR')
 
         self.assertListEqual([], pending)
-        self.assertIn('Copper Disc', active)
-        self.assertIsInstance(active['Copper Disc'], models.DKPAuction)
+        self.assertIn(copper_disc.uuid, active)
+        self.assertIsInstance(active[copper_disc.uuid], models.DKPAuction)
 
     def test_start_auction_random(self):
         pending = utils.config.PENDING_AUCTIONS
@@ -33,16 +33,16 @@ class TestUtils(base.NLTestBase):
         utils.start_auction_random(copper_disc)
 
         self.assertListEqual([], pending)
-        self.assertIn('Copper Disc', active)
-        self.assertIsInstance(active['Copper Disc'], models.RandomAuction)
+        self.assertIn(copper_disc.uuid, active)
+        self.assertIsInstance(active[copper_disc.uuid], models.RandomAuction)
 
     def test_generate_pop_roll(self):
         utils.config.PLAYER_AFFILIATIONS = base.SAMPLE_PLAYER_AFFILIATIONS
 
         pop_roll_text, pop_rand_text = utils.generate_pop_roll()
 
-        expected = '/shout 1-4 BL // 5-9 Kingdom // 10-15 VCR'
-        self.assertEqual('/random 1 15', pop_rand_text)
+        expected = '/shout 0-3 BL // 4-8 Kingdom // 9-14 VCR'
+        self.assertEqual('/random 14', pop_rand_text)
         self.assertEqual(expected, pop_roll_text)
 
     def test_get_character_name_from_logfile(self):

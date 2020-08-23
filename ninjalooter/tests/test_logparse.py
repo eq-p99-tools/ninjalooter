@@ -1,7 +1,6 @@
 from unittest import mock
 
 from ninjalooter import logparse
-from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
 
@@ -15,16 +14,6 @@ class TestLogparse(base.NLTestBase):
     def setUp(self) -> None:
         super(TestLogparse, self).setUp()
         utils.setup_aho()
-
-    @mock.patch('wx.PostEvent')
-    def test_match_line(self, mock_wx_post_event):
-        match = logparse.match_line(SAMPLE_OOC, "window")
-        items = tuple(match)
-        self.assertEqual(2, len(items))
-        self.assertIn('Shiny Pauldrons'.upper(), items)
-        self.assertIn('Belt of Iniquity'.upper(), items)
-        mock_wx_post_event.assert_called_once_with(
-            "window", models.DropEvent())
 
     @mock.patch('builtins.open', new_callable=mock.mock_open,
                 read_data=base.SAMPLE_FULL_TEST)
