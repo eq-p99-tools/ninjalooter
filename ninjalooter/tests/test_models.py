@@ -83,3 +83,11 @@ class TestModels(base.NLTestBase):
         self.assertDictEqual(
             {'Dan': 12, 'Mary': 12, 'Paul': 8, 'Peter': 10},
             auc.rolls)
+
+    def test_get_next_number(self):
+        models.config.NUMBERS = [10, 20, 30]
+        models.config.LAST_NUMBER = 0
+        self.assertEqual(10, models.get_next_number())
+        self.assertEqual(20, models.get_next_number())
+        self.assertEqual(30, models.get_next_number())
+        self.assertEqual(10, models.get_next_number())

@@ -11,34 +11,38 @@ class TestUtils(base.NLTestBase):
         active = utils.config.ACTIVE_AUCTIONS
         pending.clear()
         active.clear()
-        pending.append('COPPER DISC')
 
-        utils.start_auction_dkp('COPPER DISC')
+        copper_disc = models.ItemDrop('Copper Disc', 'Jim', 'timestamp')
+        pending.append(copper_disc)
+
+        utils.start_auction_dkp(copper_disc)
 
         self.assertListEqual([], pending)
-        self.assertIn('COPPER DISC', active)
-        self.assertIsInstance(active['COPPER DISC'], models.DKPAuction)
+        self.assertIn('Copper Disc', active)
+        self.assertIsInstance(active['Copper Disc'], models.DKPAuction)
 
     def test_start_auction_random(self):
         pending = utils.config.PENDING_AUCTIONS
         active = utils.config.ACTIVE_AUCTIONS
         pending.clear()
         active.clear()
-        pending.append('COPPER DISC')
 
-        utils.start_auction_random('COPPER DISC')
+        copper_disc = models.ItemDrop('Copper Disc', 'Jim', 'timestamp')
+        pending.append(copper_disc)
+
+        utils.start_auction_random(copper_disc)
 
         self.assertListEqual([], pending)
-        self.assertIn('COPPER DISC', active)
-        self.assertIsInstance(active['COPPER DISC'], models.RandomAuction)
+        self.assertIn('Copper Disc', active)
+        self.assertIsInstance(active['Copper Disc'], models.RandomAuction)
 
     def test_generate_pop_roll(self):
         utils.config.PLAYER_AFFILIATIONS = base.SAMPLE_PLAYER_AFFILIATIONS
 
-        pop_roll_text, total = utils.generate_pop_roll()
+        pop_roll_text, pop_rand_text = utils.generate_pop_roll()
 
-        expected = '1-4 BL // 5-9 Kingdom // 10-15 VCR'
-        self.assertEqual(16, total)
+        expected = '/shout 1-4 BL // 5-9 Kingdom // 10-15 VCR'
+        self.assertEqual('/random 1 15', pop_rand_text)
         self.assertEqual(expected, pop_roll_text)
 
     def test_get_character_name_from_logfile(self):
@@ -49,10 +53,9 @@ class TestUtils(base.NLTestBase):
             r"C:\EverQuest\Logs\eqlog_UNKNOWN.txt")
         self.assertEqual("NO MATCH", result)
 
-    @mock.patch('builtins.open', new_callable=mock.mock_open, read_data='1')
     @mock.patch('os.stat')
     @mock.patch('os.walk')
-    def test_load_latest_logfile(self, mock_walk, mock_stat, mock_open):
+    def test_get_latest_logfile(self, mock_walk, mock_stat):
         # Three files: one recent, one irrelevant, one old
         mock_walk.return_value = [
             ('C:\\somedir', [],
@@ -63,15 +66,13 @@ class TestUtils(base.NLTestBase):
         file_stat2 = mock.Mock()
         file_stat2.st_mtime = 1
         mock_stat.side_effect = (file_stat1, file_stat2)
-        logfile, name = utils.load_latest_logfile("C:\\somedir")
+        logfile, name = utils.get_latest_logfile("C:\\somedir")
         self.assertEqual("Bob", name)
-        mock_open.assert_called_once_with(
-            "C:\\somedir\\eqlog_Bob_P1999Green.txt", 'r')
 
         # One file: only irrelevant
         mock_walk.return_value = [
             ('C:\\somedir', [], ['dbg.log'])]
-        logfile, name = utils.load_latest_logfile("C:\\somedir")
+        logfile, name = utils.get_latest_logfile("C:\\somedir")
         self.assertIsNone(name)
         self.assertIsNone(logfile)
 
@@ -84,11 +85,3 @@ class TestUtils(base.NLTestBase):
         utils.setup_aho()
         self.assertTrue(utils.config.TREE._finalized)
         self.assertGreater(utils.config.TREE._counter, 100000)
-
-    def test_get_next_number(self):
-        utils.config.NUMBERS = [10, 20, 30]
-        utils.config.LAST_NUMBER = 0
-        self.assertEqual(10, utils.get_next_number())
-        self.assertEqual(20, utils.get_next_number())
-        self.assertEqual(30, utils.get_next_number())
-        self.assertEqual(10, utils.get_next_number())

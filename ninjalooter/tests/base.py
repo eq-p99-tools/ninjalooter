@@ -38,7 +38,7 @@ SAMPLE_WHO_LOG = """
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] Hob (Gnome) <Kingdom> LFG
 [Sun Aug 16 22:46:32 2020] [50 Rogue] Mob (Dark Elf) <Kingdom> LFG
 [Sun Aug 16 22:46:32 2020] [49 Enchanter] Dob (Dark Elf) <Kingdom>
-[Sun Aug 16 22:46:32 2020] [50 Monk] Peter (Human) <Venerate>
+[Sun Aug 16 22:46:32 2020] [ANONYMOUS] Peter (Human)
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] Paul (Gnome) <Kingdom>
 [Sun Aug 16 22:46:32 2020] [50 Bard] Mary (Half Elf) <Black Lotus>
 [Sun Aug 16 22:46:32 2020] [50 Magician] Rad (Gnome) <Venerate>
@@ -62,7 +62,7 @@ SAMPLE_OOC_DROP = """
 """
 
 SAMPLE_AUC_BID = """
-[Sun Aug 16 17:41:25 2020] You auction, 'Belt of Iniquity VCR (VEN CAS RECON) BID IN SHOUT 10 DKP MIN'
+[Sun Aug 16 17:41:25 2020] You auction, 'Belt of Iniquity 10 DKP MIN'
 [Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 10'
 [Mon Aug 17 07:15:39 2020] Paul auctions, 'Belt of Iniquity 15'
 [Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 11'

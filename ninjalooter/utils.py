@@ -2,8 +2,10 @@ import json
 import os
 import pathlib
 import re
+import webbrowser
 
 from ahocorapy import keywordtree
+import pyperclip
 
 from ninjalooter import config
 from ninjalooter import logging
@@ -16,21 +18,32 @@ RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 
 
-def start_auction_dkp(item):
+def start_auction_dkp(item: models.ItemDrop) -> models.DKPAuction:
+    if item.name in config.ACTIVE_AUCTIONS:
+        LOG.warning("Item %s already pending bid, not starting another.")
+        return None
     auc = models.DKPAuction(item)
     config.PENDING_AUCTIONS.remove(item)
-    config.ACTIVE_AUCTIONS[item] = auc
+    config.ACTIVE_AUCTIONS[item.name] = auc
+    # auc.add(1, "Tom")
     LOG.info("Started DKP bid for item: %s", item)
+    return auc
 
 
-def start_auction_random(item):
+def start_auction_random(item: models.ItemDrop) -> models.RandomAuction:
+    if item.name in config.ACTIVE_AUCTIONS:
+        LOG.warning("Item %s already pending roll, not starting another.")
+        return None
     auc = models.RandomAuction(item)
     config.PENDING_AUCTIONS.remove(item)
-    config.ACTIVE_AUCTIONS[item] = auc
+    config.ACTIVE_AUCTIONS[item.name] = auc
+    # auc.add(1, "Tom")
+    # auc.add(1, "Bill")
     LOG.info("Started random roll for item: %s", item)
+    return auc
 
 
-def generate_pop_roll():
+def generate_pop_roll() -> tuple:
     pops = {alliance: 0 for alliance in config.ALLIANCES}
     for _, guild in config.PLAYER_AFFILIATIONS.items():
         alliance = config.ALLIANCE_MAP.get(guild)
@@ -46,10 +59,13 @@ def generate_pop_roll():
         else:
             roll_text = " // ".join((roll_text, alliance_text))
         start = next_start
-    return roll_text, start
+    rand_text = "/random 1 {}".format(start - 1)
+    LOG.info("Generated pop roll with %d players: %s",
+             start, roll_text)
+    return "/shout " + roll_text, rand_text
 
 
-def get_character_name_from_logfile(logfile):
+def get_character_name_from_logfile(logfile: str) -> str:
     log_name = os.path.split(logfile)[-1]
     char_match = RE_EQ_LOGFILE.search(log_name)
     if char_match:
@@ -59,11 +75,10 @@ def get_character_name_from_logfile(logfile):
     return char_name
 
 
-def load_latest_logfile(logdir):
+def get_latest_logfile(logdir: str) -> tuple:
     latest_file = None
     latest_file_time = 0
     char_name = None
-    logfile = None
     for root, _, files in os.walk(logdir):
         for basename in files:
             if not basename.startswith("eqlog"):
@@ -74,10 +89,8 @@ def load_latest_logfile(logdir):
                 latest_file_time = status.st_mtime
                 latest_file = filename
     if latest_file:
-        logfile = open(latest_file, 'r')
-        logfile.seek(0, os.SEEK_END)
         char_name = get_character_name_from_logfile(latest_file)
-    return logfile, char_name
+    return latest_file, char_name
 
 
 def load_item_data():
@@ -93,7 +106,22 @@ def setup_aho():
     config.TREE.finalize()
 
 
-def get_next_number():
-    number = config.NUMBERS[config.LAST_NUMBER % len(config.NUMBERS)]
-    config.LAST_NUMBER += 1
-    return number
+def open_wiki_url(item: models.ItemDrop) -> None:
+    url = config.BASE_WIKI_URL + config.ITEMS[item.name.upper()]
+    webbrowser.open(url)
+
+
+def to_clipboard(text: str) -> None:
+    pyperclip.copy(text)
+
+
+def add_sample_data():
+    copper_disc = models.ItemDrop(
+        'Copper Disc', 'Bob', 'Mon Aug 17 07:15:39 2020')
+    platinum_disc1 = models.ItemDrop(
+        'Platinum Disc', 'Jim', 'Mon Aug 17 07:16:05 2020')
+    platinum_disc2 = models.ItemDrop(
+        'Platinum Disc', 'Bill', 'Mon Aug 17 07:16:05 2020')
+    config.PENDING_AUCTIONS.append(copper_disc)
+    config.PENDING_AUCTIONS.append(platinum_disc1)
+    config.PENDING_AUCTIONS.append(platinum_disc2)

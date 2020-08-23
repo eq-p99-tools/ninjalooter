@@ -45,6 +45,7 @@ disable=
   broad-except,
   fixme,
   global-statement,
+  missing-class-docstring,
 #  too-many-locals,
 #  too-many-branches,
 #  too-many-nested-blocks,

@@ -1,31 +1,52 @@
+# pylint: disable=no-member
+
+import re
+
+import wx
+
 from ninjalooter import config
 from ninjalooter import logging
+from ninjalooter import models
 
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
 
 
-def handle_who(match):
+# pylint: disable=unused-argument
+def handle_new_who(match: re.Match, window: wx.Frame) -> bool:
+    config.PLAYER_AFFILIATIONS.clear()
+    wx.PostEvent(window, models.ClearWhoEvent())
+    return True
+
+
+def handle_who(match: re.Match, window: wx.Frame) -> bool:
     if not match:
         # No match was made, probably junk
         return False
     name = match.group("name")
     guild = match.group("guild")
-    pclass = match.group("class")
-    if name not in config.PLAYER_AFFILIATIONS:
-        config.PLAYER_AFFILIATIONS[name] = guild
-        LOG.info("Added player %s as guild %s", name, guild)
+    pclass = match.group("class") or ""
+    level = (match.group("level") or "??").strip()
+    if name not in config.HISTORICAL_AFFILIATIONS:
+        LOG.info("Adding player history for %s as guild %s",
+                 name, guild)
+        config.HISTORICAL_AFFILIATIONS[name] = guild
     elif guild is not None or (guild is None and pclass != "ANONYMOUS"):
-        LOG.info("Updating player %s from %s to %s",
-                 name, config.PLAYER_AFFILIATIONS[name], guild)
-        config.PLAYER_AFFILIATIONS[name] = guild
+        LOG.info("Updating player history for %s from %s to %s",
+                 name, config.HISTORICAL_AFFILIATIONS[name], guild)
+        config.HISTORICAL_AFFILIATIONS[name] = guild
+    LOG.info("Adding player record for %s as guild %s",
+             name, config.HISTORICAL_AFFILIATIONS[name])
+    config.PLAYER_AFFILIATIONS[name] = config.HISTORICAL_AFFILIATIONS[name]
+    wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
     return True
 
 
-def handle_ooc(match):
+def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
     if not match:
         # No match was made, probably junk
         return tuple()
+    timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
     guild = config.PLAYER_AFFILIATIONS.get(name)
@@ -38,12 +59,16 @@ def handle_ooc(match):
     found_items = config.TREE.search_all(text)
     item_names = tuple(item[0] for item in found_items)
     for item in item_names:
-        config.PENDING_AUCTIONS.append(item)
-        LOG.info("Added item to PENDING AUCTIONS: %s", item)
+        drop = models.ItemDrop(item, name, timestamp)
+        config.PENDING_AUCTIONS.append(drop)
+        LOG.info("Added item to PENDING AUCTIONS: %s", drop)
+    if not item_names:
+        return tuple()
+    wx.PostEvent(window, models.DropEvent())
     return item_names
 
 
-def handle_auc(match) -> bool:
+def handle_auc(match: re.Match, window: wx.Frame) -> bool:
     if not match:
         # No match was made, probably junk
         return False
@@ -75,4 +100,10 @@ def handle_auc(match) -> bool:
         # Item is not currently up for bid
         LOG.info("%s attempted to bid for %s but it isn't active", name, item)
         return False
-    return config.ACTIVE_AUCTIONS[item].add(bid, name)
+    result = config.ACTIVE_AUCTIONS[item].add(bid, name)
+    wx.PostEvent(window, models.BidEvent(config.ACTIVE_AUCTIONS[item]))
+    return result
+
+
+def handle_rand(match: re.Match, window: wx.Frame) -> bool:
+    return False

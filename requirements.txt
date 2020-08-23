@@ -1,2 +1,4 @@
 ahocorapy
 wxPython
+ObjectListView
+pyperclip
