@@ -18,6 +18,7 @@ LOG_MATCHERS = {
     config.MATCH_AUC: message_handlers.handle_auc,
     config.MATCH_RAND1: message_handlers.handle_rand1,
     config.MATCH_RAND2: message_handlers.handle_rand2,
+    config.MATCH_KILL: message_handlers.handle_kill,
 }
 
 

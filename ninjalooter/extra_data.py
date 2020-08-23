@@ -1,3 +1,32 @@
+TIMER_MOBS = {
+    'a thunder spirit': 1,
+    'a thunder spirit princess': 1,
+    'an azarack': 2,
+    'a gorgalask': 3,
+    'a crystalline cloud': 3,
+    'a gust of wind': 3,
+    'a shimmering meteor': 3,
+    'an avenging gazer': 3,
+    'heart harpie': 3,
+    'a watchful guard': 3,
+    'a spirited harpie': 3,
+    'Gorgalosk': 3,
+    'a soul carrier': 4,
+    'an essence harvester': 4,
+    'Keeper of Souls': 4,
+    'a spiroc vanquisher': 5,
+    'Bzzazzt': 6,
+    'a heartsbane drake': 7,
+    'a fatestealer drake': 7,
+    'a windrider drake': 7,
+    'a greater sphinx': 7,
+    'undine spirit': 7,
+    'Eye of Veeshan': 8,
+    'Overseer of Air': 4,
+    'the Hand of Veeshan': 8,
+    'Noble Dojorn': 1.5,
+}
+
 EXTRA_ITEM_DATA = {
     # Plane of Sky Items
     'Ochre Tessera': {

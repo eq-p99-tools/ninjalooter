@@ -7,6 +7,7 @@ import dateutil.parser
 import wx
 
 from ninjalooter import config
+from ninjalooter import extra_data
 from ninjalooter import logging
 from ninjalooter import models
 
@@ -141,4 +142,15 @@ def handle_rand2(match: re.Match, window: wx.Frame) -> bool:
             return True
     LOG.info("%s rolled %d-%d but that doesn't apply to an active auction.",
              name, rand_from, rand_to)
+    return False
+
+
+def handle_kill(match: re.Match, window: wx.Frame) -> bool:
+    time = match.group('time')
+    victim = match.group('victim')
+    if victim in extra_data.TIMER_MOBS:
+        kt_obj = models.KillTimer(time, victim)
+        config.KILL_TIMERS.append(kt_obj)
+        wx.PostEvent(window, models.KillEvent())
+        return True
     return False

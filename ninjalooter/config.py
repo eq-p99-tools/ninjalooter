@@ -32,6 +32,7 @@ HISTORICAL_AUCTIONS = dict()
 PLAYER_AFFILIATIONS = dict()
 HISTORICAL_AFFILIATIONS = dict()
 WHO_LOG = list()
+KILL_TIMERS = list()
 ALLIANCE_MAP = dict()
 for alliance, guilds in ALLIANCES.items():
     for guild in guilds:
@@ -68,3 +69,6 @@ MATCH_RAND2 = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" \*\*It could have been any number from (?P<from>\d+) to (?P<to>\d+), "
     r"but this time it turned up a (?P<result>\d+)\.(?P<name>\w+)")
+MATCH_KILL = re.compile(
+    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
+    r" (?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")

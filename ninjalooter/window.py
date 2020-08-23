@@ -5,6 +5,7 @@ import wx
 import ObjectListView
 
 from ninjalooter import config
+from ninjalooter import extra_data
 from ninjalooter import logging
 from ninjalooter import logparse
 from ninjalooter import models
@@ -33,6 +34,7 @@ class MainWindow(wx.Frame):
         self.Connect(-1, -1, models.EVT_WHO, self.OnWho)
         self.Connect(-1, -1, models.EVT_CLEAR_WHO, self.OnClearWho)
         self.Connect(-1, -1, models.EVT_WHO_HISTORY, self.OnWhoHistory)
+        self.Connect(-1, -1, models.EVT_KILL, self.OnKill)
         # Notebook used to create a tabbed main interface
         notebook = wx.Notebook(self, style=wx.LEFT)
 
@@ -57,7 +59,6 @@ class MainWindow(wx.Frame):
             pending_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
-        utils.add_sample_data()  # TODO: remove sample data
         pending_list = ObjectListView.ObjectListView(
             bidding_frame, wx.ID_ANY, size=wx.Size(600, 154),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
@@ -273,7 +274,7 @@ class MainWindow(wx.Frame):
         # Autogenerate adjustments for each Alliance
         adj_alliance_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
         adj_alliance_header = wx.StaticText(
-            population_frame, label="Adjustments")
+            population_frame, label="Adjustments:")
         adj_alliance_header.SetFont(adj_alliance_font)
         population_buttons_box.Add(adj_alliance_header,
                                    flag=wx.BOTTOM, border=10)
@@ -372,8 +373,41 @@ class MainWindow(wx.Frame):
         notebook.AddPage(attendance_frame,
                          'Attendance Logs [WORK IN PROGRESS]')
 
-        # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
-        # self.SetSizer(notebook)
+        ###########################
+        # Kill Timers Frame (Tab 4)
+        ###########################
+        killtimers_frame = wx.Window(notebook)
+        killtimers_main_box = wx.BoxSizer(wx.VERTICAL)
+
+        # List
+        killtimers_list = ObjectListView.GroupListView(
+            killtimers_frame, wx.ID_ANY, style=wx.LC_REPORT,
+            size=wx.Size(600, 630))
+        killtimers_main_box.Add(killtimers_list, flag=wx.EXPAND | wx.ALL)
+        self.killtimers_list = killtimers_list
+
+        def killtimerGroupKey(kill):
+            group_key = extra_data.TIMER_MOBS.get(kill.name, "Other")
+            return group_key
+
+        killtimers_list.SetColumns([
+            ObjectListView.ColumnDefn(
+                "Time", "left", 180, "time",
+                groupKeyGetter=killtimerGroupKey,
+                groupKeyConverter='Island %s', fixedWidth=180),
+            ObjectListView.ColumnDefn(
+                "Mob", "left", 400, "name",
+                groupKeyGetter=killtimerGroupKey,
+                groupKeyConverter='Island %s', fixedWidth=400),
+        ])
+        killtimers_list.SetObjects(config.KILL_TIMERS)
+        killtimers_list.SetEmptyListMsg(
+            "No tracked mob deaths witnessed.")
+
+        # Finalize Tab
+        killtimers_frame.SetSizer(killtimers_main_box)
+        notebook.AddPage(killtimers_frame, 'Time of Death Tracking')
+
         self.Show(True)
 
         self.parser_thread = logparse.ParseThread(self)
@@ -570,6 +604,9 @@ class MainWindow(wx.Frame):
 
     def OnWhoHistory(self, e: models.WhoHistoryEvent):
         self.attendance_list.SetObjects(config.WHO_LOG)
+
+    def OnKill(self, e: models.KillEvent):
+        self.killtimers_list.SetObjects(config.KILL_TIMERS)
 
     def ShowHistoryDetail(self, e: wx.EVT_LEFT_DCLICK):
         return self.ShowItemDetail(self.history_list)

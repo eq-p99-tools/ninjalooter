@@ -59,6 +59,16 @@ class PopulationPreview:
         self.population = population
 
 
+class KillTimer:
+    time = None
+    name = None
+
+    def __init__(self, time, name):
+        super().__init__()
+        self.time = time
+        self.name = name
+
+
 class ItemDrop:
     name = None
     reporter = None
@@ -248,6 +258,7 @@ EVT_BID = wx.NewId()
 EVT_WHO = wx.NewId()
 EVT_CLEAR_WHO = wx.NewId()
 EVT_WHO_HISTORY = wx.NewId()
+EVT_KILL = wx.NewId()
 
 
 class DropEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
@@ -302,6 +313,15 @@ class WhoHistoryEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_WHO_HISTORY)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+class KillEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_KILL)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__)
