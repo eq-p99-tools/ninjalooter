@@ -1,6 +1,6 @@
 import wx
 
-from ninjalooter import window
+from ninjalooter.ui import window
 
 
 def run():

@@ -105,15 +105,18 @@ def get_latest_logfile(logdir: str) -> tuple:
     latest_file = None
     latest_file_time = 0
     char_name = None
-    for root, _, files in os.walk(logdir):
-        for basename in files:
-            if not basename.startswith("eqlog"):
-                continue
-            filename = os.path.join(root, basename)
-            status = os.stat(filename)
-            if status.st_mtime > latest_file_time:
-                latest_file_time = status.st_mtime
-                latest_file = filename
+    if logdir.endswith('.txt'):
+        latest_file = logdir
+    else:
+        for root, _, files in os.walk(logdir):
+            for basename in files:
+                if not basename.startswith("eqlog"):
+                    continue
+                filename = os.path.join(root, basename)
+                status = os.stat(filename)
+                if status.st_mtime > latest_file_time:
+                    latest_file_time = status.st_mtime
+                    latest_file = filename
     if latest_file:
         char_name = get_character_name_from_logfile(latest_file)
     return latest_file, char_name

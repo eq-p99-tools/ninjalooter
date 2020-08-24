@@ -122,11 +122,11 @@ class TestMessageHandlers(base.NLTestBase):
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Copper Disc'")
         jim_disc_1 = models.ItemDrop(
-            'COPPER DISC', 'Jim', 'Sun Aug 16 22:47:31 2020')
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
         match = config.MATCH_OOC.match(line)
         items = list(message_handlers.handle_ooc(match, 'window'))
         self.assertEqual(1, len(items))
-        self.assertIn('COPPER DISC', items)
+        self.assertIn('Copper Disc', items)
         self.assertEqual(1, len(config.PENDING_AUCTIONS))
         self.assertListEqual(
             [jim_disc_1],
@@ -139,14 +139,14 @@ class TestMessageHandlers(base.NLTestBase):
         line = ("[Sun Aug 16 22:47:41 2020] James says out of character, "
                 "'Copper Disc and Platinum Disc woot'")
         james_disc_1 = models.ItemDrop(
-            'COPPER DISC', 'James', 'Sun Aug 16 22:47:41 2020')
+            'Copper Disc', 'James', 'Sun Aug 16 22:47:41 2020')
         james_disc_2 = models.ItemDrop(
-            'PLATINUM DISC', 'James', 'Sun Aug 16 22:47:41 2020')
+            'Platinum Disc', 'James', 'Sun Aug 16 22:47:41 2020')
         match = config.MATCH_OOC.match(line)
         items = list(message_handlers.handle_ooc(match, 'window'))
         self.assertEqual(2, len(items))
-        self.assertIn('COPPER DISC', items)
-        self.assertIn('PLATINUM DISC', items)
+        self.assertIn('Copper Disc', items)
+        self.assertIn('Platinum Disc', items)
         self.assertListEqual(
             [jim_disc_1, james_disc_1, james_disc_2],
             config.PENDING_AUCTIONS)
@@ -182,7 +182,7 @@ class TestMessageHandlers(base.NLTestBase):
             'Tim': 'Kingdom',
             'Dan': 'Dial a Daniel',
         }
-        item_name = 'COPPER DISC'
+        item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         disc_auction = models.DKPAuction(itemdrop, 'VCR')
         config.ACTIVE_AUCTIONS = {

@@ -24,7 +24,7 @@ SAMPLE_PLAYER_AFFILIATIONS = {
 }
 
 SAMPLE_WHO_LOG = """
-[Sun Aug 16 22:46:32 2020] Players Looking For Groups:
+[Sun Aug 16 22:46:32 2020] Players on EverQuest:
 [Sun Aug 16 22:46:32 2020] ---------------------------
 [Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
 [Sun Aug 16 22:46:32 2020] [50 Druid] Tom (Wood Elf) <Seal Team> LFG
@@ -42,12 +42,12 @@ SAMPLE_WHO_LOG = """
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] Paul (Gnome) <Kingdom>
 [Sun Aug 16 22:46:32 2020] [50 Bard] Mary (Half Elf) <Black Lotus>
 [Sun Aug 16 22:46:32 2020] [50 Magician] Rad (Gnome) <Venerate>
-[Sun Aug 16 22:46:32 2020] [50 Wizard] Dad (Erudite) <Venerate>
+[Sun Aug 16 22:46:32 2020] [50 Shadow Knight] Dad (Erudite) <Venerate>
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] Had (Dark Elf) <Venerate> LFG
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] Mad (Gnome) <Kingdom>
 [Sun Aug 16 22:46:32 2020] [ANONYMOUS] Bad  <Venerate> LFG
 [Sun Aug 16 22:46:32 2020] [50 Shadow Knight] Tad (Troll) <Venerate> LFG
-[Sun Aug 16 22:46:32 2020] [50 Wizard] Gad (High Elf) <Venerate> LFG
+[Sun Aug 16 22:46:32 2020] [50 Wizard] Loltest (High Elf) <Venerate> LFG
 [Sun Aug 16 22:46:32 2020] [50 Druid] Wad (Dark Elf) <Black Lotus> LFG
 [Sun Aug 16 22:46:32 2020] [50 Wizard] Pad (Dark Elf) <Castle> LFG
 [Sun Aug 16 22:46:32 2020] There are 24 players in Plane of Sky.
@@ -58,15 +58,15 @@ SAMPLE_OOC_DROP = """
 [Mon Aug 17 07:15:39 2020] Peter says out of character, 'Belt of Iniquity'
 [Mon Aug 17 07:15:42 2020] Mary says, 'Hail, Paul'
 [Mon Aug 17 07:15:58 2020] Paul says, 'lfg'
-[Mon Aug 17 07:16:05 2020] Tim says out of character, 'looted Miniature Sword'
+[Mon Aug 17 07:16:05 2020] Tim shouts, 'looted Miniature Sword'
 """
 
 SAMPLE_AUC_BID = """
 [Sun Aug 16 17:41:25 2020] You auction, 'Belt of Iniquity 10 DKP MIN'
-[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 10'
+[Mon Aug 17 07:15:39 2020] Tad auctions, 'Belt of Iniquity 10'
 [Mon Aug 17 07:15:39 2020] Paul auctions, 'Belt of Iniquity 15'
-[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 11'
-[Mon Aug 17 07:15:39 2020] Peter auctions, 'Belt of Iniquity 16'
+[Mon Aug 17 07:15:39 2020] Dad auctions, 'Belt of Iniquity 11'
+[Mon Aug 17 07:15:39 2020] Tad auctions, 'Belt of Iniquity 16'
 [Mon Aug 17 07:15:39 2020] Ron auctions, 'Belt of Iniquity 20'
 [Mon Aug 17 07:15:39 2020] Pad auctions, 'Copper Disc 1'
 """

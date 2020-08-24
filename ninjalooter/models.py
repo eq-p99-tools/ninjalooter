@@ -95,6 +95,12 @@ class ItemDrop:
         nodrop = extra_item_data.get('nodrop', False)
         return "NO" if nodrop else "Yes"
 
+    def min_dkp(self) -> int:
+        extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
+        if not extra_item_data:
+            return 1
+        return extra_item_data.get('min_dkp', 1)
+
     def __str__(self):
         return "{name} ({reporter} @ {time})".format(
             name=self.name, reporter=self.reporter, time=self.timestamp)
@@ -152,7 +158,7 @@ class Auction:
         return self.item.droppable()
 
     def get_target_min(self) -> str:
-        return getattr(self, 'number', getattr(self, 'min_dkp', None))
+        return getattr(self, 'number', getattr(self, 'min_dkp', 1))
 
 
 class DKPAuction(Auction):
@@ -164,6 +170,7 @@ class DKPAuction(Auction):
         super().__init__(item)
         self.bids = dict()
         self.alliance = alliance
+        self.min_dkp = self.item.min_dkp()
 
     def add(self, number: int, player: str) -> bool:
         if not number:
@@ -191,12 +198,12 @@ class DKPAuction(Auction):
         return ((bidder, bid),)  # noqa
 
     def bid_text(self) -> str:
-        return "{name} `{alliance}` BID IN SHOUT, MIN {min} DKP".format(
-            name=self.item.name, alliance=self.alliance,
+        return "/shout `{item}` {alliance} BID IN SHOUT, MIN {min} DKP".format(
+            item=self.item.name, alliance=self.alliance,
             min=self.get_target_min())
 
     def win_text(self) -> str:
-        return "Grats {player} {number} DKP {item}!".format(
+        return "/shout Grats {player} on `{item}` ({number} DKP)!".format(
             player=self.highest_players(), number=self.highest_number(),
             item=self.item.name)
 
@@ -244,12 +251,12 @@ class RandomAuction(Auction):
         return rollers
 
     def bid_text(self) -> str:
-        return "{name} {alliance} ROLL {number} NOW".format(
-            name=self.item.name, alliance="???", number=self.number)
+        return "/shout `{item}` ROLL {number} NOW".format(
+            item=self.item.name, number=self.number)
         # TODO: alliance
 
     def win_text(self) -> str:
-        return "Grats {player} on {item}!".format(
+        return "/shout Grats {player} on `{item}`!".format(
             player=self.highest_players(), item=self.item.name)
 
 
