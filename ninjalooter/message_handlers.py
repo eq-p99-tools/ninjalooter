@@ -10,6 +10,7 @@ from ninjalooter import config
 from ninjalooter import extra_data
 from ninjalooter import logging
 from ninjalooter import models
+from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
@@ -71,8 +72,10 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
     # Handle text to return a list of items linked
     found_items = config.TREE.search_all(text)
     found_items = list(found_items)
-    item_names = tuple(text[item[1]:len(item[0])+item[1]]
-                       for item in found_items)
+    match_ranges = []
+    for item in found_items:
+        match_ranges.append((item[1], len(item[0]) + item[1]))
+    item_names = utils.compose_ranges(match_ranges, text)
     for item in item_names:
         drop = models.ItemDrop(item, name, timestamp)
         config.PENDING_AUCTIONS.append(drop)

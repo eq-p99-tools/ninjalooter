@@ -1,9 +1,11 @@
 # pylint: disable=no-member,invalid-name,unused-argument
 
+import ObjectListView
 import wx
 
 from ninjalooter import logging
 from ninjalooter import logparse
+from ninjalooter import overrides
 from ninjalooter.ui import attendance_frame
 from ninjalooter.ui import bidding_frame
 from ninjalooter.ui import killtimes_frame
@@ -11,6 +13,9 @@ from ninjalooter.ui import population_frame
 
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
+# Monkeypatch ObjectListView to fix a character encoding bug (PR upstream?)
+# pylint: disable=protected-access
+ObjectListView.ObjectListView._HandleTypingEvent = overrides._HandleTypingEvent
 
 
 class MainWindow(wx.Frame):

@@ -13,7 +13,6 @@ TIMER_MOBS = {
     'Gorgalosk': 3,
     'a soul carrier': 4,
     'an essence harvester': 4,
-    'Keeper of Souls': 4,
     'a spiroc vanquisher': 5,
     'Bzzazzt': 6,
     'a heartsbane drake': 7,
@@ -22,8 +21,6 @@ TIMER_MOBS = {
     'a greater sphinx': 7,
     'undine spirit': 7,
     'Eye of Veeshan': 8,
-    'Overseer of Air': 4,
-    'the Hand of Veeshan': 8,
     'Noble Dojorn': 1.5,
 }
 

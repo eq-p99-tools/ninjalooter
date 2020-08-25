@@ -137,18 +137,21 @@ class TestMessageHandlers(base.NLTestBase):
 
         # Two items linked by a federation guild member, plus chat
         line = ("[Sun Aug 16 22:47:41 2020] James says out of character, "
-                "'Copper Disc and Platinum Disc woot'")
+                "'Copper Disc and Platinum Disc and Golden Amber Earring woo'")
         james_disc_1 = models.ItemDrop(
             'Copper Disc', 'James', 'Sun Aug 16 22:47:41 2020')
         james_disc_2 = models.ItemDrop(
             'Platinum Disc', 'James', 'Sun Aug 16 22:47:41 2020')
+        james_earring = models.ItemDrop(
+            'Golden Amber Earring', 'James', 'Sun Aug 16 22:47:41 2020')
         match = config.MATCH_OOC.match(line)
         items = list(message_handlers.handle_ooc(match, 'window'))
-        self.assertEqual(2, len(items))
-        self.assertIn('Copper Disc', items)
-        self.assertIn('Platinum Disc', items)
+        self.assertEqual(3, len(items))
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2],
+            ['Copper Disc', 'Platinum Disc', 'Golden Amber Earring'],
+            items)
+        self.assertListEqual(
+            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
@@ -161,7 +164,7 @@ class TestMessageHandlers(base.NLTestBase):
         items = list(message_handlers.handle_ooc(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2],
+            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
@@ -171,7 +174,7 @@ class TestMessageHandlers(base.NLTestBase):
         items = list(message_handlers.handle_ooc(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2],
+            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 

@@ -56,9 +56,13 @@ MATCH_WHO = re.compile(
 MATCH_END_WHO = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] "
     r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w ]+)\.")
-MATCH_OOC = re.compile(
+MATCH_OOC_ONLY = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) says? out of character, '(?P<text>.*)'")
+MATCH_OOC_OR_SAY = re.compile(
+    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
+    r" (?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
+MATCH_OOC = MATCH_OOC_OR_SAY  # Use either for now until we clarify
 MATCH_AUC = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")

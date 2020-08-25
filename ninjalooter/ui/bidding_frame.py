@@ -195,10 +195,14 @@ class BiddingFrame(wx.Window):
 
     def IgnorePending(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()
+        selected_index = self.pending_list.GetFirstSelected()
         if not selected_object:
             return
         utils.ignore_pending_item(selected_object)
         self.pending_list.SetObjects(config.PENDING_AUCTIONS)
+        item_count = self.pending_list.GetItemCount()
+        if item_count > 0:
+            self.pending_list.Select(min(selected_index, item_count - 1))
 
     def DialogDuplicate(self):
         dlg = wx.MessageDialog(

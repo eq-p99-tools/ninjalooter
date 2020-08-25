@@ -136,7 +136,7 @@ class PopulationFrame(wx.Window):
         population_buttons_box.Add(population_button_randtext,
                                    flag=wx.LEFT | wx.TOP, border=5)
 
-        population_button_half.Bind(wx.EVT_BUTTON, self.RecalcPopPreview)
+        population_button_half.Bind(wx.EVT_BUTTON, self.HalvePopPreview)
         population_button_reset.Bind(wx.EVT_BUTTON, self.ResetPopPreview)
         population_button_poptext.Bind(wx.EVT_BUTTON, self.CopyPopText)
         population_button_randtext.Bind(wx.EVT_BUTTON, self.CopyPopRandom)
@@ -171,14 +171,16 @@ class PopulationFrame(wx.Window):
         self.population_preview_list.SetObjects(self.pop_preview)
         if selected_index >= 0:
             self.population_preview_list.Select(selected_index)
+        self.CopyPopText(e)
 
-    def RecalcPopPreview(self, e: wx.Event):
+    def HalvePopPreview(self, e: wx.Event):
         selected_object = self.population_preview_list.GetSelectedObject()
         if not selected_object:
             return
         sel_pop = int(selected_object.population)
         selected_object.population = str(math.ceil(sel_pop / 2))
         self.population_preview_list.RefreshObject(selected_object)
+        self.CopyPopText(e)
 
     def CopyPopText(self, e: wx.Event):  # pylint: disable=no-self-use
         pop_dict = {pop.alliance: int(pop.population)
@@ -187,5 +189,7 @@ class PopulationFrame(wx.Window):
         utils.to_clipboard(poproll)
 
     def CopyPopRandom(self, e: wx.Event):  # pylint: disable=no-self-use
-        _, rolltext = utils.generate_pop_roll(extras=self._get_spinner_pops())
+        pop_dict = {pop.alliance: int(pop.population)
+                    for pop in self.pop_preview}
+        _, rolltext = utils.generate_pop_roll(source={}, extras=pop_dict)
         utils.to_clipboard(rolltext)

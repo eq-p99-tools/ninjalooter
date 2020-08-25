@@ -144,6 +144,37 @@ def to_clipboard(text: str) -> None:
     pyperclip.copy(text)
 
 
+# Thanks rici from StackOverflow for saving me time!
+# Based on https://stackoverflow.com/a/30472781
+def compose_ranges(ranges: list, text: str):
+    starts, ends = [], []
+    for start, end in ranges:
+        starts.append(start)
+        ends.append(end)
+    starts.sort()
+    ends.sort()
+    i, j, active = 0, 0, 0
+    combined = []
+    while True:
+        if i < len(ranges) and starts[i] < ends[j]:
+            if active == 0:
+                combined.append({'start': starts[i]})
+            active += 1
+            i += 1
+        elif j < len(ranges):
+            active -= 1
+            if active == 0:
+                combined[len(combined) - 1]['end'] = ends[j]
+            j += 1
+        else:
+            break
+    combined_texts = []
+    for item_range in combined:
+        combined_texts.append(
+            text[item_range['start']:item_range['end']])
+    return combined_texts
+
+
 def add_sample_data():
     copper_disc = models.ItemDrop(
         'Copper Disc', 'Bob', 'Mon Aug 17 07:15:39 2020')
