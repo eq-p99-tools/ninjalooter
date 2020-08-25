@@ -41,8 +41,8 @@ class TestUtils(base.NLTestBase):
 
         pop_roll_text, pop_rand_text = utils.generate_pop_roll()
 
-        expected = '/shout 0-3 BL // 4-8 Kingdom // 9-14 VCR'
-        self.assertEqual('/random 14', pop_rand_text)
+        expected = '/shout 1-4 BL // 5-9 Kingdom // 10-15 VCR'
+        self.assertEqual('/random 1 15', pop_rand_text)
         self.assertEqual(expected, pop_roll_text)
 
     def test_get_character_name_from_logfile(self):

@@ -4,12 +4,16 @@ from ninjalooter.tests import base
 
 class TestModels(base.NLTestBase):
     def test_Auction_base_model(self):
-        auc = models.Auction('COPPER DISC')
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.Auction(itemdrop)
         self.assertRaises(NotImplementedError, auc.add, 1, 'Jim')
         self.assertRaises(NotImplementedError, auc.highest)
 
     def test_DKPAuction_model(self):
-        auc = models.DKPAuction('COPPER DISC', 'VCR')
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.DKPAuction(itemdrop, 'VCR')
         self.assertIsNone(auc.highest())
 
         # First bid, valid
@@ -41,7 +45,9 @@ class TestModels(base.NLTestBase):
         self.assertFalse(result)
 
     def test_RandomAuction_model(self):
-        auc = models.RandomAuction('COPPER DISC')
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.RandomAuction(itemdrop)
         self.assertIsNone(auc.highest())
 
         # First roll, valid

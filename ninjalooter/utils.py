@@ -65,8 +65,8 @@ def get_pop_numbers(source=None, extras=None) -> dict:
 def generate_pop_roll(source=None, extras=None) -> tuple:
     pops = get_pop_numbers(source, extras)
     roll_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
-    start = 0
-    end = 0
+    start = 1
+    end = 1
     for alliance, pop in pops.items():
         if pop < 1:
             continue
@@ -85,7 +85,7 @@ def generate_pop_roll(source=None, extras=None) -> tuple:
             func=frame.f_code.co_name,
             line=frame.f_lineno - 1
         )
-    rand_text = "/random {}".format(end)
+    rand_text = "/random 1 {}".format(end)
     LOG.info("Generated pop roll with %d players: %s",
              start, roll_text)
     return roll_text, rand_text
