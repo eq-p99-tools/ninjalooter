@@ -1,6 +1,9 @@
 # pylint: disable=no-member
 
-import uuid
+from __future__ import annotations
+import uuid as uuid_lib
+
+import dateutil.parser
 import wx
 
 from ninjalooter import config
@@ -11,7 +14,24 @@ from ninjalooter import logging
 LOG = logging.getLogger(__name__)
 
 
-class Player:  # pylint: disable=too-few-public-methods
+class DictEquals:
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.__dict__ == other.__dict__
+
+    def to_json(self):
+        return {
+            'json_type': self.__class__.__name__,
+            **self.__dict__
+        }
+
+    @classmethod
+    def from_json(cls, **kwargs) -> DictEquals:
+        return cls(**kwargs)
+
+
+class Player(DictEquals):
     name = None
     pclass = None
     level = None
@@ -24,7 +44,7 @@ class Player:  # pylint: disable=too-few-public-methods
         self.guild = guild
 
 
-class WhoLog:
+class WhoLog(DictEquals):
     time = None
     log = None
 
@@ -48,8 +68,13 @@ class WhoLog:
                 pop_text = " // ".join((pop_text, alliance_text))
         return pop_text
 
+    @classmethod
+    def from_json(cls, **kwargs) -> DictEquals:
+        kwargs['time'] = dateutil.parser.parse(kwargs['time'])
+        return cls(**kwargs)
 
-class PopulationPreview:
+
+class PopulationPreview(DictEquals):
     alliance = None
     population = None
 
@@ -59,7 +84,7 @@ class PopulationPreview:
         self.population = population
 
 
-class KillTimer:
+class KillTimer(DictEquals):
     time = None
     name = None
 
@@ -69,17 +94,17 @@ class KillTimer:
         self.name = name
 
 
-class ItemDrop:
+class ItemDrop(DictEquals):
     name = None
     reporter = None
     timestamp = None
     uuid = None
 
-    def __init__(self, name, reporter, timestamp):
+    def __init__(self, name, reporter, timestamp, uuid=None):
         self.name = name
         self.reporter = reporter
         self.timestamp = timestamp
-        self.uuid = uuid.uuid4()
+        self.uuid = uuid or str(uuid_lib.uuid4())
 
     def classes(self) -> str:
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
@@ -112,12 +137,13 @@ class ItemDrop:
                 (other.name, other.reporter, other.timestamp))
 
 
-class Auction:
+class Auction(DictEquals):
     item = None
-    complete = False
+    complete = None
 
-    def __init__(self, item: ItemDrop):
+    def __init__(self, item: ItemDrop, complete=False):
         self.item = item
+        self.complete = complete
 
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()
@@ -166,11 +192,15 @@ class DKPAuction(Auction):
     min_dkp = None
     alliance = None
 
-    def __init__(self, item: ItemDrop, alliance: str):
-        super().__init__(item)
-        self.bids = dict()
+    def __init__(self, item: ItemDrop, alliance: str, bids=None,
+                 min_dkp=None, **kwargs):
+        super().__init__(item, **kwargs)
         self.alliance = alliance
-        self.min_dkp = self.item.min_dkp()
+        if bids:
+            self.bids = {int(bid): name for bid, name in bids.items()}
+        else:
+            self.bids = dict()
+        self.min_dkp = min_dkp or self.item.min_dkp()
 
     def add(self, number: int, player: str) -> bool:
         if not number:
@@ -215,15 +245,13 @@ def get_next_number():
 
 
 class RandomAuction(Auction):
-    item = None
     rolls = None
     number = None
 
-    def __init__(self, item: ItemDrop):
-        super().__init__(item)
-        self.item = item
-        self.rolls = dict()
-        self.number = get_next_number()
+    def __init__(self, item: ItemDrop, rolls=None, number=None, **kwargs):
+        super().__init__(item, **kwargs)
+        self.rolls = rolls or dict()
+        self.number = number or get_next_number()
 
     def add(self, number: int, player: str) -> bool:
         if not number:
@@ -266,6 +294,7 @@ EVT_WHO = wx.NewId()
 EVT_CLEAR_WHO = wx.NewId()
 EVT_WHO_HISTORY = wx.NewId()
 EVT_KILL = wx.NewId()
+EVT_APP_CLEAR = wx.NewId()
 
 
 class DropEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
@@ -329,6 +358,15 @@ class KillEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_KILL)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+class AppClearEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_APP_CLEAR)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__)

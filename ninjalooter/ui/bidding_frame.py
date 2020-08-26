@@ -203,6 +203,7 @@ class BiddingFrame(wx.Window):
         item_count = self.pending_list.GetItemCount()
         if item_count > 0:
             self.pending_list.Select(min(selected_index, item_count - 1))
+        utils.store_state()
 
     def DialogDuplicate(self):
         dlg = wx.MessageDialog(
@@ -222,6 +223,7 @@ class BiddingFrame(wx.Window):
         self.active_list.SetObjects(
             list(config.ACTIVE_AUCTIONS.values()))
         self.pending_list.SelectObject(selected_object.item)
+        utils.store_state()
 
     def PickAuctionDKP(self, e: wx.Event):
         class MyPopupMenu(wx.Menu):
@@ -249,6 +251,7 @@ class BiddingFrame(wx.Window):
         self.active_list.SetObjects(
             list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
+        utils.store_state()
 
     def StartAuctionRandom(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()
@@ -262,6 +265,7 @@ class BiddingFrame(wx.Window):
         self.active_list.SetObjects(
             list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
+        utils.store_state()
 
     def CompleteAuction(self, e: wx.Event):
         selected_object = self.active_list.GetSelectedObject()
@@ -275,6 +279,7 @@ class BiddingFrame(wx.Window):
         self.history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
         self.history_list.SelectObject(selected_object)
+        utils.store_state()
 
     def UndoComplete(self, e: wx.Event):
         selected_object = self.history_list.GetSelectedObject()
@@ -288,6 +293,7 @@ class BiddingFrame(wx.Window):
         self.history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
         self.active_list.SelectObject(selected_object)
+        utils.store_state()
 
     def CopyBidText(self, e: wx.Event):
         selected_object = self.active_list.GetSelectedObject()

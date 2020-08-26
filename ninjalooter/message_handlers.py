@@ -30,6 +30,7 @@ def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
         parsed_time, copy.copy(config.PLAYER_AFFILIATIONS))
     config.WHO_LOG.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
+    utils.store_state()
     return True
 
 
@@ -70,7 +71,7 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
         return tuple()
 
     # Handle text to return a list of items linked
-    found_items = config.TREE.search_all(text)
+    found_items = config.TRIE.search_all(text)
     found_items = list(found_items)
     match_ranges = []
     for item in found_items:
@@ -83,6 +84,7 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
     if not item_names:
         return tuple()
     wx.PostEvent(window, models.DropEvent())
+    utils.store_state()
     return item_names
 
 
@@ -97,7 +99,7 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
     text = match.group("text")
     bid = int(match.group("bid"))
 
-    found_items = tuple(config.TREE.search_all(text))
+    found_items = tuple(config.TRIE.search_all(text))
     if not found_items:
         # No item found in auction
         LOG.info("%s might have attempted to bid but no item name found: %s",
@@ -120,6 +122,7 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
         if item == auc_item.name().upper():
             result = auc_item.add(bid, name)
             wx.PostEvent(window, models.BidEvent(auc_item))
+            utils.store_state()
             return result
     LOG.info("%s attempted to bid for %s but it isn't active", name, item)
     return False
@@ -144,6 +147,7 @@ def handle_rand2(match: re.Match, window: wx.Frame) -> bool:
                 return False
             item_obj.add(rand_result, name)
             wx.PostEvent(window, models.BidEvent(item_obj))
+            utils.store_state()
             return True
     LOG.info("%s rolled %d-%d but that doesn't apply to an active auction.",
              name, rand_from, rand_to)
@@ -157,5 +161,6 @@ def handle_kill(match: re.Match, window: wx.Frame) -> bool:
         kt_obj = models.KillTimer(time, victim)
         config.KILL_TIMERS.append(kt_obj)
         wx.PostEvent(window, models.KillEvent())
+        utils.store_state()
         return True
     return False

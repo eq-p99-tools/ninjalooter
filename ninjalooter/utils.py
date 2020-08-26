@@ -1,3 +1,4 @@
+import datetime
 import inspect
 import json
 import os
@@ -128,11 +129,11 @@ def load_item_data():
 
 
 def setup_aho():
-    config.TREE = keywordtree.KeywordTree(case_insensitive=True)
+    config.TRIE = keywordtree.KeywordTree(case_insensitive=True)
     config.ITEMS = load_item_data()
     for item in config.ITEMS:
-        config.TREE.add(item)
-    config.TREE.finalize()
+        config.TRIE.add(item)
+    config.TRIE.finalize()
 
 
 def open_wiki_url(item: models.ItemDrop) -> None:
@@ -175,6 +176,39 @@ def compose_ranges(ranges: list, text: str):
     return combined_texts
 
 
+def load_state():
+    try:
+        with open(config.SAVE_STATE_FILE, 'r') as ssfp:
+            json_state = json.load(ssfp, cls=JSONDecoder)
+        for key, value in json_state.items():
+            setattr(config, key, value)
+        LOG.info("Loaded state.")
+    except Exception:
+        LOG.exception("Failed to load state.")
+
+
+def store_state():
+    json_state = {
+        "PENDING_AUCTIONS": config.PENDING_AUCTIONS,
+        "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
+        "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
+        "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
+        "WX_PLAYER_AFFILIATIONS": config.WX_PLAYER_AFFILIATIONS,
+        "HISTORICAL_AFFILIATIONS": config.HISTORICAL_AFFILIATIONS,
+        "WHO_LOG": config.WHO_LOG,
+        "KILL_TIMERS": config.KILL_TIMERS,
+    }
+    with open(config.SAVE_STATE_FILE, 'w') as ssfp:
+        json.dump(json_state, ssfp, cls=JSONEncoder)
+
+
+def export_to_excel(filename):
+    if not (filename.endswith(".xls") or filename.endswith(".xlsx")):
+        filename = filename + ".xls"
+    LOG.warning("Export to filename %s: NOT IMPLEMENTED",
+                filename)
+
+
 def add_sample_data():
     copper_disc = models.ItemDrop(
         'Copper Disc', 'Bob', 'Mon Aug 17 07:15:39 2020')
@@ -185,3 +219,35 @@ def add_sample_data():
     config.PENDING_AUCTIONS.append(copper_disc)
     config.PENDING_AUCTIONS.append(platinum_disc1)
     config.PENDING_AUCTIONS.append(platinum_disc2)
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):  # pylint: disable=arguments-differ
+        try:
+            return obj.to_json()
+        except AttributeError:
+            if isinstance(obj, datetime.datetime):
+                return obj.isoformat()
+            return json.JSONEncoder.default(self, obj)
+
+
+# Mutated from https://github.com/AlexisGomes/JsonEncoder/
+class JSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(
+            self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):  # pylint: disable=method-hidden
+        if isinstance(obj, dict):
+            if 'json_type' in obj:
+                json_type = obj.pop('json_type')
+                model_type = getattr(models, json_type)
+                if model_type and issubclass(model_type, models.DictEquals):
+                    return model_type.from_json(**obj)
+
+        # handling the resolution of nested objects
+        if isinstance(obj, dict):
+            for key in list(obj):
+                obj[key] = self.object_hook(obj[key])
+
+        return obj

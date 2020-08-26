@@ -17,7 +17,8 @@ class PopulationFrame(wx.Window):
                                    self.OnWho)
         parent.GetParent().Connect(-1, -1, models.EVT_CLEAR_WHO,
                                    self.OnClearWho)
-        self.player_affiliations = list()
+        self.player_affiliations = config.WX_PLAYER_AFFILIATIONS or list()
+        config.WX_PLAYER_AFFILIATIONS = self.player_affiliations
         self.pop_adjustments = dict()
         self.pop_preview = list()
 
@@ -140,6 +141,7 @@ class PopulationFrame(wx.Window):
         population_button_reset.Bind(wx.EVT_BUTTON, self.ResetPopPreview)
         population_button_poptext.Bind(wx.EVT_BUTTON, self.CopyPopText)
         population_button_randtext.Bind(wx.EVT_BUTTON, self.CopyPopRandom)
+        self.ResetPopPreview(None)
 
         # Finalize Tab
         self.SetSizer(population_main_box)

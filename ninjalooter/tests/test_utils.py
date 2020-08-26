@@ -83,5 +83,5 @@ class TestUtils(base.NLTestBase):
 
     def test_setup_aho(self):
         utils.setup_aho()
-        self.assertTrue(utils.config.TREE._finalized)
-        self.assertGreater(utils.config.TREE._counter, 100000)
+        self.assertTrue(utils.config.TRIE._finalized)
+        self.assertGreater(utils.config.TRIE._counter, 100000)

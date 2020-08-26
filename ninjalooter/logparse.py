@@ -23,7 +23,7 @@ LOG_MATCHERS = {
 
 
 def parse_logfile(logfile: str, window: object, run: threading.Event):
-    if config.TREE is None:
+    if config.TRIE is None:
         utils.setup_aho()
     with open(logfile, 'r') as lfp:
         lfp.seek(0, os.SEEK_END)

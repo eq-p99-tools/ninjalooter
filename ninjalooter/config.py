@@ -24,7 +24,7 @@ ALLIANCES = {
     'VCR': ('Venerate', 'Castle', 'Reconstructed'),
 }
 
-# Calculated variables
+# Data store variables
 PENDING_AUCTIONS = list()
 IGNORED_AUCTIONS = list()
 ACTIVE_AUCTIONS = dict()
@@ -33,17 +33,21 @@ PLAYER_AFFILIATIONS = dict()
 HISTORICAL_AFFILIATIONS = dict()
 WHO_LOG = list()
 KILL_TIMERS = list()
+
+# Calculated variables
+WX_PLAYER_AFFILIATIONS = None
 ALLIANCE_MAP = dict()
 for alliance, guilds in ALLIANCES.items():
     for guild in guilds:
         ALLIANCE_MAP[guild] = alliance
-TREE = None
+TRIE = None
 ITEMS = dict()
 LAST_NUMBER = 0
 PLAYER_NAME = None
 
 # Constants
 BASE_WIKI_URL = 'http://wiki.project1999.com'
+SAVE_STATE_FILE = 'state.json'
 
 # Regexes
 MATCH_START_WHO = re.compile(
@@ -76,3 +80,8 @@ MATCH_RAND2 = re.compile(
 MATCH_KILL = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
+
+
+def write():
+    with open(CONFIG_FILENAME, 'w') as file_pointer:
+        CONF.write(file_pointer)
