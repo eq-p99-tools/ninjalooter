@@ -29,7 +29,7 @@ class MenuBar(wx.MenuBar):
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
         export_bitmap = wx.Bitmap(os.path.join("data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
-        export_mi.Enable(False)
+        # export_mi.Enable(False)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExport, export_mi)
 
@@ -37,7 +37,7 @@ class MenuBar(wx.MenuBar):
         clear_bitmap = wx.Bitmap(os.path.join("data", "icons", "clear.png"))
         clear_mi.SetBitmap(clear_bitmap)
         clear_mi.Enable(False)
-        file_menu.AppendItem(clear_mi)
+        file_menu.Append(clear_mi)
         self.Bind(wx.EVT_MENU, self.OnClear, clear_mi)
 
         exit_mi = wx.MenuItem(file_menu, wx.ID_EXIT, '&Quit\tCtrl+W')
@@ -70,13 +70,31 @@ class MenuBar(wx.MenuBar):
         LOG.info("Exporting to Excel format.")
         saveFileDialog = wx.FileDialog(
             self.parent, "Export to Excel", "", "",
-            "Excel files (*.xls, *.xlsx)|*.xlsx?", wx.FD_SAVE)
+            "Excel Spreadsheet (*.xlsx)|*.xlsx", wx.FD_SAVE)
 
         result = saveFileDialog.ShowModal()
         filename = saveFileDialog.GetPath()
+        if not filename.endswith(".xlsx"):
+            filename = filename + ".xlsx"
         saveFileDialog.Destroy()
         if result == wx.ID_OK:
-            utils.export_to_excel(filename)
+            result = utils.export_to_excel(filename)
+            if not result:
+                dlg = wx.MessageDialog(
+                    self,
+                    "Failed to export data. The most common cause of this\n"
+                    "error is attempting to export to a file that is still "
+                    "open\nin Excel.",
+                    "Failed to Export", wx.OK | wx.ICON_ERROR)
+                dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                dlg = wx.MessageDialog(
+                    self,
+                    "Successfully exported data to:\n%s" % filename,
+                    "Export Complete", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
 
     def OnClear(self, e: wx.Event):
         wx.PostEvent(self.parent, models.AppClearEvent())

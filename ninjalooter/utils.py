@@ -1,3 +1,5 @@
+# pylint: disable=too-many-locals,too-many-branches
+
 import datetime
 import inspect
 import json
@@ -7,7 +9,10 @@ import re
 import webbrowser
 
 from ahocorapy import keywordtree
+import dateutil.parser
 import pyperclip
+import xlsxwriter
+import xlsxwriter.exceptions
 
 from ninjalooter import config
 from ninjalooter import logging
@@ -56,7 +61,7 @@ def get_pop_numbers(source=None, extras=None) -> dict:
     extras = extras or dict()
     pops = {alliance: 0 for alliance in config.ALLIANCES}
     pops.update(extras)
-    for _, guild in source.items():
+    for guild in source.values():
         alliance = config.ALLIANCE_MAP.get(guild)
         if alliance:
             pops[alliance] += 1
@@ -65,6 +70,9 @@ def get_pop_numbers(source=None, extras=None) -> dict:
 
 def generate_pop_roll(source=None, extras=None) -> tuple:
     pops = get_pop_numbers(source, extras)
+    if set(pops.values()) == {0}:
+        LOG.info("No population data exists, can't generate text.")
+        return "", ""
     roll_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
     start = 1
     end = 1
@@ -88,7 +96,7 @@ def generate_pop_roll(source=None, extras=None) -> tuple:
         )
     rand_text = "/random 1 {}".format(end)
     LOG.info("Generated pop roll with %d players: %s",
-             start, roll_text)
+             start - 1, roll_text)
     return roll_text, rand_text
 
 
@@ -183,8 +191,12 @@ def load_state():
         for key, value in json_state.items():
             setattr(config, key, value)
         LOG.info("Loaded state.")
+    except FileNotFoundError:
+        LOG.info("Failed to load state, no state file found.")
+    except json.JSONDecodeError:
+        LOG.exception("Failed to load state, couldn't parse JSON.")
     except Exception:
-        LOG.exception("Failed to load state.")
+        LOG.exception("Failed to load state, unknown exception.")
 
 
 def store_state():
@@ -193,6 +205,7 @@ def store_state():
         "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
         "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
         "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
+        "PLAYER_AFFILIATIONS": config.PLAYER_AFFILIATIONS,
         "WX_PLAYER_AFFILIATIONS": config.WX_PLAYER_AFFILIATIONS,
         "HISTORICAL_AFFILIATIONS": config.HISTORICAL_AFFILIATIONS,
         "WHO_LOG": config.WHO_LOG,
@@ -203,10 +216,85 @@ def store_state():
 
 
 def export_to_excel(filename):
-    if not (filename.endswith(".xls") or filename.endswith(".xlsx")):
-        filename = filename + ".xls"
     LOG.warning("Export to filename %s: NOT IMPLEMENTED",
                 filename)
+
+    # Completed Auctions
+    excel_data = {
+        'Completed Auctions': [],
+        'Kill Times': [],
+    }
+
+    # Prepare Completed Auctions
+    for auc in config.HISTORICAL_AUCTIONS.values():
+        dkp_auc = isinstance(auc, models.DKPAuction)
+        auc_data = {
+            'time': dateutil.parser.parse(auc.item.timestamp),
+            'item': auc.name(),
+            'winner': auc.highest_players(),
+            'type': 'DKP' if dkp_auc else 'Random',
+            'bid': auc.highest_number() if dkp_auc else 'N/A',
+        }
+        excel_data['Completed Auctions'].append(auc_data)
+
+    # Prepare KilL Times
+    for killtime in config.KILL_TIMERS:
+        killtime_data = {
+            'time': dateutil.parser.parse(killtime.time),
+            'mob': killtime.name,
+            'island': killtime.island(),
+        }
+        excel_data['Kill Times'].append(killtime_data)
+
+    # Set up the workbook
+    workbook = xlsxwriter.Workbook(
+        filename, {'default_date_format': 'm/d/yyyy h:mm:ss AM/PM'})
+    bold = workbook.add_format({'bold': True})
+
+    # Write "Basic Data" into the workbook
+    for page, data in excel_data.items():
+        if data:
+            worksheet = workbook.add_worksheet(page)
+            worksheet.write_row(0, 0, data[0].keys(), bold)
+            worksheet.set_column(0, 1, 22)
+            row_num = 1
+            for row in data:
+                worksheet.write_row(row_num, 0, row.values())
+                row_num += 1
+            worksheet.autofilter(0, 0, len(data[0]), len(data[0].keys()) - 1)
+
+    # Write Attendance Logs
+    for entry in config.WHO_LOG:
+        if entry.log:
+            time_str = entry.time.strftime('%Y.%m.%d %I.%M.%S %p')
+            worksheet_name = time_str
+            worksheet_name_append = 0
+            attendance_sheet = None
+            while attendance_sheet is None:
+                try:
+                    if worksheet_name_append > 0:
+                        worksheet_name = "{0} ({1})".format(
+                            time_str, worksheet_name_append)
+                    attendance_sheet = workbook.add_worksheet(worksheet_name)
+                except xlsxwriter.exceptions.DuplicateWorksheetName:
+                    worksheet_name_append += 1
+                except Exception:
+                    return False
+
+            attendance_sheet.write_row(0, 0, ('name', 'guild'), bold)
+            attendance_sheet.set_column(0, 1, 18)
+            row_num = 1
+            for name, guild in entry.log.items():
+                attendance_sheet.write_row(row_num, 0, (name, guild))
+                row_num += 1
+            attendance_sheet.autofilter(0, 0, row_num - 1, 1)
+
+    # Save the workbook
+    try:
+        workbook.close()
+        return True
+    except xlsxwriter.exceptions.FileCreateError:
+        return False
 
 
 def add_sample_data():

@@ -212,6 +212,7 @@ class BiddingFrame(wx.Window):
             "Please complete the existing auction before starting another.",
             "Duplicate Auction", wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
+        dlg.Destroy()
 
     def UndoStart(self, e: wx.Event):
         selected_object = self.active_list.GetSelectedObject()

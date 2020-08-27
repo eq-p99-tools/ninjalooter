@@ -71,6 +71,12 @@ SAMPLE_AUC_BID = """
 [Mon Aug 17 07:15:39 2020] Pad auctions, 'Copper Disc 1'
 """
 
+SAMPLE_KILL_TIMES = """
+[Sun Aug 16 17:41:25 2020] an azarack has been slain by Peter!
+[Sun Aug 16 17:42:44 2020] a shimmering meteor has been slain by Paul!
+[Sun Aug 16 17:42:44 2020] a soul carrier has been slain by Mary!
+"""
+
 SAMPLE_FULL_TEST = SAMPLE_WHO_LOG + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
 
 

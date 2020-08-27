@@ -3,3 +3,4 @@ wxPython
 ObjectListView
 pyperclip
 python-dateutil
+XlsxWriter

@@ -16,3 +16,14 @@ Bidding
 Population Rolls
 ----------------
 ![Population Roll Tab](ninjalooter_pop_tab.png)
+
+Time of Death Tracking
+----------------------
+![Time of Death Tracking](ninjalooter_tod_tracking_tab.png)
+
+Building
+========
+
+Install `pyinstaller`
+
+Run: `pyinstaller --onefile ninjalooter_py.spec`

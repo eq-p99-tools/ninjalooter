@@ -16,3 +16,4 @@ build/
 dist/
 state.json
 *.zip
+*.xlsx

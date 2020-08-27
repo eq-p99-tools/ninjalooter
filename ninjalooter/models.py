@@ -55,7 +55,7 @@ class WhoLog(DictEquals):
 
     def populations(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
-        for _, guild in self.log.items():
+        for guild in self.log.values():
             alliance = config.ALLIANCE_MAP.get(guild)
             if alliance:
                 pops[alliance] += 1
@@ -92,6 +92,9 @@ class KillTimer(DictEquals):
         super().__init__()
         self.time = time
         self.name = name
+
+    def island(self):
+        return extra_data.TIMER_MOBS.get(self.name, "Other")
 
 
 class ItemDrop(DictEquals):
@@ -131,6 +134,15 @@ class ItemDrop(DictEquals):
             name=self.name, reporter=self.reporter, time=self.timestamp)
 
     def __eq__(self, other):
+        """Don't include UUID in comparison.
+
+        This has the side effect of causing synthetic test data to behave
+        oddly if it is repeated *exactly* -- starting auctions will always
+        pop the first instance of the item, which may have a different uuid
+        than expected. This should never be possible in real usage, and it
+        makes testing a lot easier, so I will leave this even though it does
+        smell a bit like a bug.
+        """
         if not isinstance(other, self.__class__):
             return False
         return ((self.name, self.reporter, self.timestamp) ==
@@ -284,8 +296,9 @@ class RandomAuction(Auction):
         # TODO: alliance
 
     def win_text(self) -> str:
-        return "/shout Grats {player} on `{item}`!".format(
-            player=self.highest_players(), item=self.item.name)
+        return ("/shout Grats {player} on `{item}` with {roll}/{target}!"
+                .format(player=self.highest_players(), item=self.item.name,
+                        roll=self.highest_number(), target=self.number))
 
 
 EVT_DROP = wx.NewId()

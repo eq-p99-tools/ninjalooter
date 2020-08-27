@@ -3,7 +3,6 @@ import ObjectListView
 import wx
 
 from ninjalooter import config
-from ninjalooter import extra_data
 from ninjalooter import models
 
 
@@ -25,7 +24,7 @@ class KillTimesFrame(wx.Window):
         self.killtimers_list = killtimers_list
 
         def killtimerGroupKey(kill):
-            group_key = extra_data.TIMER_MOBS.get(kill.name, "Other")
+            group_key = kill.island()
             return group_key
 
         killtimers_list.SetColumns([
