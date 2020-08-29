@@ -30,16 +30,15 @@ class MenuBar(wx.MenuBar):
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
         export_bitmap = wx.Bitmap(os.path.join("data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
-        # export_mi.Enable(False)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExport, export_mi)
 
         clear_mi = wx.MenuItem(file_menu, wx.ID_NEW, '&Clear Data')
         clear_bitmap = wx.Bitmap(os.path.join("data", "icons", "clear.png"))
         clear_mi.SetBitmap(clear_bitmap)
-        clear_mi.Enable(False)
+        # clear_mi.Enable(False)
         file_menu.Append(clear_mi)
-        self.Bind(wx.EVT_MENU, self.OnClear, clear_mi)
+        self.Bind(wx.EVT_MENU, self.OnClearApp, clear_mi)
 
         exit_mi = wx.MenuItem(file_menu, wx.ID_EXIT, '&Quit\tCtrl+W')
         exit_bitmap = wx.Bitmap(os.path.join("data", "icons", "exit.png"))
@@ -100,5 +99,5 @@ class MenuBar(wx.MenuBar):
                 dlg.ShowModal()
                 dlg.Destroy()
 
-    def OnClear(self, e: wx.Event):
+    def OnClearApp(self, e: wx.Event):
         wx.PostEvent(self.parent, models.AppClearEvent())

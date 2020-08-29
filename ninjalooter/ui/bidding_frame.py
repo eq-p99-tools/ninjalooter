@@ -13,6 +13,8 @@ class BiddingFrame(wx.Window):
         super().__init__(parent, *args, **kwargs)
         parent.GetParent().Connect(-1, -1, models.EVT_DROP, self.OnDrop)
         parent.GetParent().Connect(-1, -1, models.EVT_BID, self.OnBid)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
+                                   self.OnClearApp)
         #######################
         # Bidding Frame (Tab 1)
         #######################
@@ -345,6 +347,16 @@ class BiddingFrame(wx.Window):
 
     def OnBid(self, e: models.BidEvent):
         self.active_list.RefreshObject(e.item)
+
+    def OnClearApp(self, e: models.AppClearEvent):
+        config.PENDING_AUCTIONS.clear()
+        config.ACTIVE_AUCTIONS.clear()
+        config.HISTORICAL_AUCTIONS.clear()
+        config.IGNORED_AUCTIONS.clear()
+        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
+        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
+        e.Skip()
 
     def ShowItemDetail(self, listbox: ObjectListView.ObjectListView):
         selected_object = listbox.GetSelectedObject()

@@ -19,6 +19,8 @@ class PopulationFrame(wx.Window):
                                    self.OnClearWho)
         parent.GetParent().Connect(-1, -1, models.EVT_WHO_END,
                                    self.ResetPopPreview)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
+                                   self.OnClearApp)
         self.player_affiliations = config.WX_PLAYER_AFFILIATIONS or list()
         config.WX_PLAYER_AFFILIATIONS = self.player_affiliations
         self.pop_adjustments = dict()
@@ -155,9 +157,21 @@ class PopulationFrame(wx.Window):
             for alliance, spinner in self.pop_adjustments.items()
         }
 
+    def _reset_spinner_pops(self):
+        for spinner in self.pop_adjustments.values():
+            spinner.SetValue(0)
+
     def OnClearWho(self, e: models.ClearWhoEvent):
         self.player_affiliations.clear()
         self.population_list.SetObjects(self.player_affiliations)
+
+    def OnClearApp(self, e: models.AppClearEvent):
+        self.player_affiliations.clear()
+        config.PLAYER_AFFILIATIONS.clear()
+        self.population_list.SetObjects(self.player_affiliations)
+        self._reset_spinner_pops()
+        self.ResetPopPreview(e)
+        e.Skip()
 
     def OnWho(self, e: models.WhoEvent):
         player = models.Player(e.name, e.pclass, e.level, e.guild)

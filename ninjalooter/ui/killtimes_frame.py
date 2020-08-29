@@ -10,6 +10,8 @@ class KillTimesFrame(wx.Window):
     def __init__(self, parent: wx.Notebook, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         parent.GetParent().Connect(-1, -1, models.EVT_KILL, self.OnKill)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
+                                   self.OnClearApp)
 
         ###########################
         # Kill Timers Frame (Tab 4)
@@ -19,7 +21,7 @@ class KillTimesFrame(wx.Window):
         # List
         killtimers_list = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(600, 630))
+            size=wx.Size(600, 1080))
         killtimers_main_box.Add(killtimers_list, flag=wx.EXPAND | wx.ALL)
         self.killtimers_list = killtimers_list
 
@@ -47,3 +49,8 @@ class KillTimesFrame(wx.Window):
 
     def OnKill(self, e: models.KillEvent):
         self.killtimers_list.SetObjects(config.KILL_TIMERS)
+
+    def OnClearApp(self, e: models.AppClearEvent):
+        config.KILL_TIMERS.clear()
+        self.killtimers_list.SetObjects(config.KILL_TIMERS)
+        e.Skip()

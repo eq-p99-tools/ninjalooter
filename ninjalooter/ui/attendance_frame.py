@@ -11,6 +11,8 @@ class AttendanceFrame(wx.Window):
         super().__init__(parent, *args, **kwargs)
         parent.GetParent().Connect(-1, -1, models.EVT_WHO_HISTORY,
                                    self.OnWhoHistory)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
+                                   self.OnClearApp)
 
         ##############################
         # Attendance Log Frame (Tab 3)
@@ -20,7 +22,7 @@ class AttendanceFrame(wx.Window):
         # List
         attendance_list = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(600, 630))
+            size=wx.Size(600, 1080))
         attendance_main_box.Add(attendance_list, flag=wx.EXPAND | wx.ALL)
         attendance_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowAttendanceDetail)
         self.attendance_list = attendance_list
@@ -43,6 +45,11 @@ class AttendanceFrame(wx.Window):
 
     def OnWhoHistory(self, e: models.WhoHistoryEvent):
         self.attendance_list.SetObjects(config.WHO_LOG)
+
+    def OnClearApp(self, e: models.AppClearEvent):
+        config.WHO_LOG.clear()
+        self.attendance_list.SetObjects(config.WHO_LOG)
+        e.Skip()
 
     def ShowAttendanceDetail(self, e: wx.EVT_LEFT_DCLICK):
         selected_object = self.attendance_list.GetSelectedObject()
