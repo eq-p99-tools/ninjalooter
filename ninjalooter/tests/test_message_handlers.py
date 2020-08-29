@@ -11,8 +11,9 @@ class TestMessageHandlers(base.NLTestBase):
     def setUp(self) -> None:
         utils.setup_aho()
 
+    @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_start_who(self, mock_post_event):
+    def test_handle_start_who(self, mock_post_event, mock_store_state):
         # Empty List, full /who
         config.PLAYER_AFFILIATIONS = {}
         for line in base.SAMPLE_WHO_LOG.splitlines():
@@ -48,8 +49,9 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual('Kingdom', config.PLAYER_AFFILIATIONS['Peter'])
         self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'])
 
+    @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_who(self, mock_post_event):
+    def test_handle_who(self, mock_post_event, mock_store_state):
         # Empty List, full /who
         config.PLAYER_AFFILIATIONS = {}
         for line in base.SAMPLE_WHO_LOG.splitlines():
@@ -101,8 +103,9 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(0, len(config.PLAYER_AFFILIATIONS))
         mock_post_event.assert_not_called()
 
+    @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_ooc(self, mock_post_event):
+    def test_handle_ooc(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
             'Jim': 'Venerate',
             'James': 'Kingdom',
@@ -178,8 +181,9 @@ class TestMessageHandlers(base.NLTestBase):
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
+    @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_auc(self, mock_post_event):
+    def test_handle_auc(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
             'Jim': 'Venerate',
             'Tim': 'Kingdom',
@@ -189,7 +193,7 @@ class TestMessageHandlers(base.NLTestBase):
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         disc_auction = models.DKPAuction(itemdrop, 'VCR')
         config.ACTIVE_AUCTIONS = {
-            item_name: disc_auction
+            itemdrop.uuid: disc_auction
         }
 
         # Someone in the alliance bids on an inactive item
@@ -198,7 +202,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertEqual(None, disc_auction.highest())
+        self.assertListEqual([], disc_auction.highest())
         self.assertEqual(1, len(config.ACTIVE_AUCTIONS))
         mock_post_event.assert_not_called()
 
@@ -208,7 +212,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertIsNone(disc_auction.highest())
+        self.assertEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Someone we haven't seen bids on an active item
@@ -217,7 +221,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertIsNone(disc_auction.highest())
+        self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Someone in the alliance says random stuff with a number
@@ -226,7 +230,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertIsNone(disc_auction.highest())
+        self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Some bad line is passed somehow
@@ -234,7 +238,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertIsNone(disc_auction.highest())
+        self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Someone in the alliance bids on two items at once
@@ -243,7 +247,7 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_AUC.match(line)
         result = message_handlers.handle_auc(match, 'window')
         self.assertFalse(result)
-        self.assertIsNone(disc_auction.highest())
+        self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Someone in the alliance bids on an active item

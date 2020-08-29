@@ -17,6 +17,8 @@ class PopulationFrame(wx.Window):
                                    self.OnWho)
         parent.GetParent().Connect(-1, -1, models.EVT_CLEAR_WHO,
                                    self.OnClearWho)
+        parent.GetParent().Connect(-1, -1, models.EVT_WHO_END,
+                                   self.ResetPopPreview)
         self.player_affiliations = config.WX_PLAYER_AFFILIATIONS or list()
         config.WX_PLAYER_AFFILIATIONS = self.player_affiliations
         self.pop_adjustments = dict()
@@ -41,7 +43,7 @@ class PopulationFrame(wx.Window):
         # List
         population_list = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(500, 1080))
+            size=wx.Size(500, 1200))
         population_box.Add(population_list, flag=wx.EXPAND | wx.ALL)
         self.population_list = population_list
 
@@ -62,8 +64,8 @@ class PopulationFrame(wx.Window):
                 "Level", "left", 40, "level",
                 groupKeyGetter=popGroupKey, fixedWidth=40),
             ObjectListView.ColumnDefn(
-                "Guild", "left", 160, "guild",
-                groupKeyGetter=popGroupKey, fixedWidth=160),
+                "Guild", "left", 148, "guild",
+                groupKeyGetter=popGroupKey, fixedWidth=148),
         ])
         population_list.SetObjects(self.player_affiliations)
         population_list.SetEmptyListMsg(
@@ -161,7 +163,6 @@ class PopulationFrame(wx.Window):
         player = models.Player(e.name, e.pclass, e.level, e.guild)
         self.player_affiliations.append(player)
         self.population_list.SetObjects(self.player_affiliations)
-        self.ResetPopPreview(e)
 
     def ResetPopPreview(self, e: wx.Event):
         pops = utils.get_pop_numbers(extras=self._get_spinner_pops())
@@ -173,7 +174,7 @@ class PopulationFrame(wx.Window):
         self.population_preview_list.SetObjects(self.pop_preview)
         if selected_index >= 0:
             self.population_preview_list.Select(selected_index)
-        self.CopyPopText(e)
+        # self.CopyPopText(e)
 
     def HalvePopPreview(self, e: wx.Event):
         selected_object = self.population_preview_list.GetSelectedObject()

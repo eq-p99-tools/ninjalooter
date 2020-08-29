@@ -2,6 +2,7 @@ import json
 
 import dateutil.parser
 
+from ninjalooter import config
 from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
@@ -55,12 +56,12 @@ class TestModels(base.NLTestBase):
 
     def test_ItemDrop_model(self):
         # ItemDrops just use string-times
-        # This item is for BRD and CLR, and is droppable with min_dkp 1
+        # This item is for BRD and CLR, and is droppable with min_dkp 3
         itemdrop = models.ItemDrop(
             "Ochre Tessera", "Bob", "Mon Aug 17 07:15:39 2020")
         self.assertEqual("BRD, CLR", itemdrop.classes())
         self.assertEqual("Yes", itemdrop.droppable())
-        self.assertEqual(1, itemdrop.min_dkp())
+        self.assertEqual(config.MIN_DKP, itemdrop.min_dkp())
 
         # This item is for BRD only and is NODROP
         itemdrop = models.ItemDrop(
@@ -93,31 +94,27 @@ class TestModels(base.NLTestBase):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         auc = models.DKPAuction(itemdrop, 'VCR')
-        self.assertIsNone(auc.highest())
+        self.assertListEqual([], auc.highest())
 
         # First bid, valid
         result = auc.add(10, 'Peter')
         self.assertTrue(result)
-        self.assertEqual(1, len(auc.highest()))
-        self.assertIn(('Peter', 10), auc.highest())
+        self.assertListEqual([('Peter', 10)], auc.highest())
 
         # Second bid, lower than first bid
         result = auc.add(8, 'Paul')
         self.assertFalse(result)
-        self.assertEqual(1, len(auc.highest()))
-        self.assertIn(('Peter', 10), auc.highest())
+        self.assertListEqual([('Peter', 10)], auc.highest())
 
         # Third bid, higher than first bid
         result = auc.add(12, 'Mary')
         self.assertTrue(result)
-        self.assertEqual(1, len(auc.highest()))
-        self.assertIn(('Mary', 12), auc.highest())
+        self.assertListEqual([('Mary', 12)], auc.highest())
 
         # Fourth bid, tied with highest bid
         result = auc.add(12, 'Dan')
         self.assertFalse(result)
-        self.assertEqual(1, len(auc.highest()))
-        self.assertIn(('Mary', 12), auc.highest())
+        self.assertListEqual([('Mary', 12)], auc.highest())
 
         # Invalid bid
         result = auc.add(None, 'Fred')
@@ -134,31 +131,27 @@ class TestModels(base.NLTestBase):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         auc = models.RandomAuction(itemdrop)
-        self.assertIsNone(auc.highest())
+        self.assertListEqual([], auc.highest())
 
         # First roll, valid
         result = auc.add(10, 'Peter')
         self.assertTrue(result)
-        self.assertEqual(1, len(tuple(auc.highest())))
-        self.assertIn(('Peter', 10), tuple(auc.highest()))
+        self.assertListEqual([('Peter', 10)], auc.highest())
 
         # Second roll, lower than first roll
         result = auc.add(8, 'Paul')
         self.assertTrue(result)
-        self.assertEqual(1, len(tuple(auc.highest())))
-        self.assertIn(('Peter', 10), tuple(auc.highest()))
+        self.assertListEqual([('Peter', 10)], auc.highest())
 
         # Third roll, higher than first roll
         result = auc.add(12, 'Mary')
         self.assertTrue(result)
-        self.assertEqual(1, len(tuple(auc.highest())))
-        self.assertIn(('Mary', 12), tuple(auc.highest()))
+        self.assertListEqual([('Mary', 12)], auc.highest())
 
         # Fifth roll, player rolls a second time
         result = auc.add(18, 'Paul')
         self.assertFalse(result)
-        self.assertEqual(1, len(tuple(auc.highest())))
-        self.assertIn(('Mary', 12), tuple(auc.highest()))
+        self.assertListEqual([('Mary', 12)], auc.highest())
 
         # Fifth roll, tied with highest roll
         result = auc.add(12, 'Dan')

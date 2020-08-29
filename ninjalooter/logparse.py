@@ -2,6 +2,8 @@ import os
 import threading
 import time
 
+import wx
+
 from ninjalooter import config
 from ninjalooter import logging
 from ninjalooter import message_handlers
@@ -22,7 +24,8 @@ LOG_MATCHERS = {
 }
 
 
-def parse_logfile(logfile: str, window: object, run: threading.Event):
+# pylint: disable=no-member
+def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
     if config.TRIE is None:
         utils.setup_aho()
     with open(logfile, 'r') as lfp:
@@ -45,12 +48,13 @@ def parse_logfile(logfile: str, window: object, run: threading.Event):
                         if matcher == config.MATCH_RAND1:
                             last_rand_player = result
                 if result:
-                    LOG.info("Handled line: %s", line)
+                    LOG.debug("Handled line: %s", line)
             time.sleep(0.1)
 
 
 class ParseThread(threading.Thread):
-    def __init__(self, window):
+    # pylint: disable=no-member
+    def __init__(self, window: wx.Window):
         super().__init__()
         self.window = window
         self.loop_run = threading.Event()
@@ -60,6 +64,8 @@ class ParseThread(threading.Thread):
         logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
         config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
+        self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
+                             .format(version=config.VERSION, name=name))
         parse_logfile(logfile, self.window, self.loop_run)
 
     def abort(self):

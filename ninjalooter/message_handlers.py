@@ -30,6 +30,7 @@ def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
         parsed_time, copy.copy(config.PLAYER_AFFILIATIONS))
     config.WHO_LOG.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
+    wx.PostEvent(window, models.WhoEndEvent())
     utils.store_state()
     return True
 
@@ -57,10 +58,10 @@ def handle_who(match: re.Match, window: wx.Frame) -> bool:
     return True
 
 
-def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
+def handle_ooc(match: re.Match, window: wx.Frame) -> list:
     if not match:
         # No match was made, probably junk
-        return tuple()
+        return list()
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
@@ -68,24 +69,19 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> tuple:
     if guild and guild not in config.ALLIANCE_MAP:
         # Some other guild is talking, discard line
         LOG.info("Ignoring ooc from guild %s", guild)
-        return tuple()
+        return list()
 
     # Handle text to return a list of items linked
-    found_items = config.TRIE.search_all(text)
-    found_items = list(found_items)
-    match_ranges = []
+    found_items = utils.get_items_from_text(text)
     for item in found_items:
-        match_ranges.append((item[1], len(item[0]) + item[1]))
-    item_names = utils.compose_ranges(match_ranges, text)
-    for item in item_names:
         drop = models.ItemDrop(item, name, timestamp)
         config.PENDING_AUCTIONS.append(drop)
         LOG.info("Added item to PENDING AUCTIONS: %s", drop)
-    if not item_names:
-        return tuple()
+    if not found_items:
+        return list()
     wx.PostEvent(window, models.DropEvent())
     utils.store_state()
-    return item_names
+    return found_items
 
 
 def handle_auc(match: re.Match, window: wx.Frame) -> bool:
@@ -99,19 +95,21 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
     text = match.group("text")
     bid = int(match.group("bid"))
 
-    found_items = tuple(config.TRIE.search_all(text))
+    if ' BID IN SHOUT, MIN ' in text:
+        return False
+
+    found_items = utils.get_items_from_text(text)
     if not found_items:
         # No item found in auction
         LOG.info("%s might have attempted to bid but no item name found: %s",
                  name, text)
         return False
-    found_items = tuple(found_items)
     if len(found_items) > 1:
         # Can't bid on two items at once
         LOG.info("%s attempted to bid for two items at once: %s",
                  name, found_items)
         return False
-    item, _ = found_items[0]
+    item = found_items[0]
 
     if guild not in config.ALLIANCE_MAP:
         # Player is not in the alliance
@@ -119,7 +117,12 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
                  name, item, guild)
         return False
     for auc_item in config.ACTIVE_AUCTIONS.values():
-        if item == auc_item.name().upper():
+        if item == auc_item.name():
+            if not isinstance(auc_item, models.DKPAuction):
+                LOG.info(
+                    "Ignoring bid by %s because `%s` is a random auction.",
+                    name, item)
+                return False
             result = auc_item.add(bid, name)
             wx.PostEvent(window, models.BidEvent(auc_item))
             utils.store_state()

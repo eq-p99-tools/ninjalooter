@@ -6,6 +6,7 @@ import wx
 
 from ninjalooter import config
 from ninjalooter import logging
+from ninjalooter import logparse
 from ninjalooter import models
 from ninjalooter import utils
 
@@ -65,6 +66,9 @@ class MenuBar(wx.MenuBar):
             config.LOG_DIRECTORY = selected
             config.CONF.set('default', 'logdir', selected)
             config.write()
+            self.parent.parser_thread.abort()
+            self.parent.parser_thread = logparse.ParseThread(self.parent)
+            self.parent.parser_thread.start()
 
     def OnExport(self, e: wx.Event):
         LOG.info("Exporting to Excel format.")

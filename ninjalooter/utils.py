@@ -155,7 +155,7 @@ def to_clipboard(text: str) -> None:
 
 # Thanks rici from StackOverflow for saving me time!
 # Based on https://stackoverflow.com/a/30472781
-def compose_ranges(ranges: list, text: str):
+def compose_ranges(ranges: list, text: str) -> list:
     starts, ends = [], []
     for start, end in ranges:
         starts.append(start)
@@ -182,6 +182,16 @@ def compose_ranges(ranges: list, text: str):
         combined_texts.append(
             text[item_range['start']:item_range['end']])
     return combined_texts
+
+
+def get_items_from_text(text: str) -> list:
+    found_items = config.TRIE.search_all(text)
+    found_items = list(found_items)
+    match_ranges = []
+    for item in found_items:
+        match_ranges.append((item[1], len(item[0]) + item[1]))
+    item_names = compose_ranges(match_ranges, text)
+    return item_names
 
 
 def load_state():

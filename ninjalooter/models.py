@@ -124,10 +124,8 @@ class ItemDrop(DictEquals):
         return "NO" if nodrop else "Yes"
 
     def min_dkp(self) -> int:
-        extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
-        if not extra_item_data:
-            return 1
-        return extra_item_data.get('min_dkp', 1)
+        extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name, {})
+        return extra_item_data.get('min_dkp', config.MIN_DKP)
 
     def __str__(self):
         return "{name} ({reporter} @ {time})".format(
@@ -160,7 +158,7 @@ class Auction(DictEquals):
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()
 
-    def highest(self) -> iter:
+    def highest(self) -> list:
         raise NotImplementedError()
 
     def bid_text(self) -> str:
@@ -171,17 +169,14 @@ class Auction(DictEquals):
 
     def highest_number(self) -> str:
         highest = self.highest()
-        if highest:
-            highest = list(highest)
         number = "None"
         if highest:
             number = highest[0][1]
         return number
 
     def highest_players(self) -> str:
-        highest = self.highest() or []
         players = []
-        for one in highest:
+        for one in self.highest():
             players.append(one[0])
         players = ', '.join(players)
         return players or "None"
@@ -196,7 +191,8 @@ class Auction(DictEquals):
         return self.item.droppable()
 
     def get_target_min(self) -> str:
-        return getattr(self, 'number', getattr(self, 'min_dkp', 1))
+        return getattr(self, 'number',
+                       getattr(self, 'min_dkp', config.MIN_DKP))
 
 
 class DKPAuction(Auction):
@@ -231,21 +227,34 @@ class DKPAuction(Auction):
                  player, self.item, number)
         return False
 
-    def highest(self) -> iter:
+    def highest(self) -> list:
         if not self.bids:
             LOG.info("No bids yet for %s", self.item)
-            return None
+            return list()
         bid = max(self.bids)
         bidder = self.bids[bid]
-        return ((bidder, bid),)  # noqa
+        return [(bidder, bid)]  # noqa
 
     def bid_text(self) -> str:
-        return "/shout `{item}` {alliance} BID IN SHOUT, MIN {min} DKP".format(
-            item=self.item.name, alliance=self.alliance,
-            min=self.get_target_min())
+        current_bid = self.highest_number()
+        if current_bid != 'None':
+            # current_leader = self.highest_players()
+            bid_message = (
+                "/shout [{item}] {alliance} BID IN SHOUT. "
+                "You MUST include the item name in your bid! Currently: "
+                "{number} DKP - Closing Soon!").format(
+                item=self.item.name, alliance=self.alliance,
+                number=current_bid)
+        else:
+            bid_message = (
+                "/shout [{item}] {alliance} BID IN SHOUT, MIN {min} DKP. "
+                "You MUST include the item name in your bid!").format(
+                item=self.item.name, alliance=self.alliance,
+                min=self.get_target_min())
+        return bid_message
 
     def win_text(self) -> str:
-        return "/shout Grats {player} on `{item}` ({number} DKP)!".format(
+        return "/shout Grats {player} on [{item}] ({number} DKP)!".format(
             player=self.highest_players(), number=self.highest_number(),
             item=self.item.name)
 
@@ -281,22 +290,22 @@ class RandomAuction(Auction):
         LOG.info("Accepted roll by %s for %s", player, self.item)
         return True
 
-    def highest(self) -> iter:
+    def highest(self) -> list:
         if not self.rolls:
             LOG.info("No rolls yet for %s", self.item)
-            return None
+            return list()
         high = max(self.rolls.values())
-        rollers = ((player, roll) for player, roll in self.rolls.items()
-                   if roll == high)
+        rollers = [(player, roll) for player, roll in self.rolls.items()
+                   if roll == high]
         return rollers
 
     def bid_text(self) -> str:
-        return "/shout `{item}` ROLL {number} NOW".format(
+        return "/shout [{item}] ROLL {number} NOW!".format(
             item=self.item.name, number=self.number)
         # TODO: alliance
 
     def win_text(self) -> str:
-        return ("/shout Grats {player} on `{item}` with {roll}/{target}!"
+        return ("/shout Grats {player} on [{item}] with {roll}/{target}!"
                 .format(player=self.highest_players(), item=self.item.name,
                         roll=self.highest_number(), target=self.number))
 
@@ -306,6 +315,7 @@ EVT_BID = wx.NewId()
 EVT_WHO = wx.NewId()
 EVT_CLEAR_WHO = wx.NewId()
 EVT_WHO_HISTORY = wx.NewId()
+EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 
@@ -362,6 +372,15 @@ class WhoHistoryEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_WHO_HISTORY)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+class WhoEndEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_WHO_END)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__)

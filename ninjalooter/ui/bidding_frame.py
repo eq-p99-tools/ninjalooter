@@ -34,7 +34,7 @@ class BiddingFrame(wx.Window):
 
         # List
         pending_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 154),
+            self, wx.ID_ANY, size=wx.Size(600, 180),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
         pending_box.Add(pending_list, flag=wx.EXPAND)
         self.pending_list = pending_list
@@ -44,8 +44,8 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=160),
             ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
                                       fixedWidth=80),
-            ObjectListView.ColumnDefn("Item", "left", 180, "name",
-                                      fixedWidth=180),
+            ObjectListView.ColumnDefn("Item", "left", 178, "name",
+                                      fixedWidth=178),
             ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
@@ -147,9 +147,9 @@ class BiddingFrame(wx.Window):
 
         # List
         history_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 154),
+            self, wx.ID_ANY, size=wx.Size(600, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
-        history_box.Add(history_list, flag=wx.EXPAND)
+        history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
         self.history_list = history_list
 
@@ -160,12 +160,12 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
-            ObjectListView.ColumnDefn("Rand/Min", "left", 90, "get_target_min",
-                                      fixedWidth=90),
-            ObjectListView.ColumnDefn("Bid/Roll", "left", 70, "highest_number",
-                                      fixedWidth=70),
-            ObjectListView.ColumnDefn("Winner", "left", 90, "highest_players",
-                                      fixedWidth=90),
+            ObjectListView.ColumnDefn("Rand/Min", "left", 65, "get_target_min",
+                                      fixedWidth=65),
+            ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number",
+                                      fixedWidth=65),
+            ObjectListView.ColumnDefn("Winner", "left", 108, "highest_players",
+                                      fixedWidth=108),
         ])
         history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
@@ -252,6 +252,7 @@ class BiddingFrame(wx.Window):
         self.active_list.SetObjects(
             list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
+        self.CopyBidText(e)
         utils.store_state()
 
     def StartAuctionRandom(self, e: wx.Event):
@@ -266,6 +267,7 @@ class BiddingFrame(wx.Window):
         self.active_list.SetObjects(
             list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
+        self.CopyBidText(e)
         utils.store_state()
 
     def CompleteAuction(self, e: wx.Event):
@@ -280,6 +282,7 @@ class BiddingFrame(wx.Window):
         self.history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
         self.history_list.SelectObject(selected_object)
+        self.CopyWinText(e)
         utils.store_state()
 
     def UndoComplete(self, e: wx.Event):
@@ -347,22 +350,49 @@ class BiddingFrame(wx.Window):
         selected_object = listbox.GetSelectedObject()
         if not selected_object:
             return
-        ItemDetailWindow(selected_object, parent=self)
+        ItemDetailWindow(selected_object, listbox, parent=self)
 
 
 class ItemDetailWindow(wx.Frame):
-    def __init__(self, item, parent=None, title="Item Detail"):
+    def __init__(self, item: models.Auction,
+                 listbox: ObjectListView.ObjectListView,
+                 parent=None, title="Item Detail"):
         wx.Frame.__init__(self, parent, title=title, size=(400, 400))
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.item = item
+        self.listbox = listbox
         main_box = wx.BoxSizer(wx.HORIZONTAL)
 
-        text_area = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY,
+        text_area = wx.TextCtrl(self, style=wx.TE_MULTILINE,
                                 size=wx.Size(400, 400))
-        data = getattr(item, 'rolls', getattr(item, 'bids', ""))
+        data = getattr(item, 'rolls', getattr(item, 'bids', dict()))
         bids_or_rolls = [
             "{}: {}".format(number, players)
             for number, players in data.items()]
         text_area.SetValue('\n'.join(bids_or_rolls))
         main_box.Add(text_area)
+        self.bid_data = text_area
 
         self.SetSizer(main_box)
         self.Show()
+
+    def OnClose(self, e: wx.Event):
+        text_data = self.bid_data.GetValue()
+        bid_data = {}
+        data = getattr(self.item, 'rolls', getattr(self.item, 'bids', dict()))
+        try:
+            for line in text_data.split('\n'):
+                if not line:
+                    continue
+                if isinstance(self.item, models.RandomAuction):
+                    bidder, bid = line.split(":")
+                    bid_data[bidder.strip()] = int(bid)
+                else:
+                    bid, bidder = line.split(":")
+                    bid_data[int(bid)] = bidder.strip()
+            data.clear()
+            data.update(bid_data)
+            self.listbox.RefreshObject(self.item)
+        except Exception:
+            pass
+        self.Destroy()
