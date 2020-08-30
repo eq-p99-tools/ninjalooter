@@ -21,7 +21,7 @@ NUMBERS = CONF.get(
              "7777, 8888, 9999")
 NUMBERS = [int(num.strip()) for num in NUMBERS.split(',')]
 MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
-RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=True)
+RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALLIANCES = {
     'BL': ('Black Lotus',),
