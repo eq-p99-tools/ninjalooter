@@ -37,8 +37,9 @@ class BiddingFrame(wx.Window):
         # List
         pending_list = ObjectListView.ObjectListView(
             self, wx.ID_ANY, size=wx.Size(600, 180),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         pending_box.Add(pending_list, flag=wx.EXPAND)
+        pending_list.Bind(wx.EVT_LEFT_DCLICK, self.OnIgnorePending)
         self.pending_list = pending_list
 
         pending_list.SetColumns([
@@ -64,15 +65,26 @@ class BiddingFrame(wx.Window):
         pending_button_ignore = wx.Button(self, label="Ignore")
         pending_button_dkp = wx.Button(self, label="DKP Bid")
         pending_button_roll = wx.Button(self, label="Roll")
-        pending_buttonspacer = wx.StaticLine(self)
+        # pending_buttonspacer = wx.StaticLine(self)
         pending_button_wiki = wx.Button(self, label="Wiki?")
         pending_buttons_box.Add(pending_button_ignore, flag=wx.TOP)
         pending_buttons_box.Add(pending_button_dkp, flag=wx.TOP, border=10)
         pending_buttons_box.Add(pending_button_roll, flag=wx.TOP, border=10)
-        pending_buttons_box.Add(pending_buttonspacer, flag=wx.TOP, border=10)
+        # pending_buttons_box.Add(pending_buttonspacer, flag=wx.TOP, border=10)
         pending_buttons_box.Add(pending_button_wiki, flag=wx.TOP, border=10)
+        min_dkp_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
+        min_dkp_label = wx.StaticText(
+            self, label="Min DKP")
+        min_dkp_label.SetFont(min_dkp_font)
+        min_dkp_spinner = wx.SpinCtrl(self, value=str(config.MIN_DKP))
+        min_dkp_spinner.SetRange(0, 1000)
+        min_dkp_spinner.Bind(wx.EVT_SPINCTRL, self.OnMinDkpSpin)
+        self.min_dkp_spinner = min_dkp_spinner
+        pending_buttons_box.Add(min_dkp_label,
+                                flag=wx.TOP | wx.LEFT, border=10)
+        pending_buttons_box.Add(min_dkp_spinner, flag=wx.LEFT, border=10)
 
-        pending_button_ignore.Bind(wx.EVT_BUTTON, self.IgnorePending)
+        pending_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnorePending)
         pending_button_dkp.Bind(wx.EVT_BUTTON, self.PickAuctionDKP)
         pending_button_roll.Bind(wx.EVT_BUTTON, self.StartAuctionRandom)
         pending_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiPending)
@@ -92,7 +104,7 @@ class BiddingFrame(wx.Window):
         # List
         active_list = ObjectListView.ObjectListView(
             self, wx.ID_ANY, size=wx.Size(600, 154),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         active_box.Add(active_list, flag=wx.EXPAND)
         active_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowActiveDetail)
         self.active_list = active_list
@@ -150,7 +162,7 @@ class BiddingFrame(wx.Window):
         # List
         history_list = ObjectListView.ObjectListView(
             self, wx.ID_ANY, size=wx.Size(600, 1000),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL, sortable=False)
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
         self.history_list = history_list
@@ -195,7 +207,7 @@ class BiddingFrame(wx.Window):
         self.SetSizer(bidding_main_box)
         parent.AddPage(self, 'Bidding')
 
-    def IgnorePending(self, e: wx.Event):
+    def OnIgnorePending(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()
         selected_index = self.pending_list.GetFirstSelected()
         if not selected_object:
@@ -206,6 +218,7 @@ class BiddingFrame(wx.Window):
         if item_count > 0:
             self.pending_list.Select(min(selected_index, item_count - 1))
         utils.store_state()
+        wx.PostEvent(self.Parent.Parent, models.IgnoreEvent())
 
     def DialogDuplicate(self):
         dlg = wx.MessageDialog(
@@ -228,11 +241,17 @@ class BiddingFrame(wx.Window):
         self.pending_list.SelectObject(selected_object.item)
         utils.store_state()
 
+    def OnMinDkpSpin(self, e: wx.SpinEvent):
+        min_dkp = self.min_dkp_spinner.GetValue()
+        config.MIN_DKP = min_dkp
+        config.CONF.set(
+            'default', 'min_dkp', str(min_dkp))
+        config.write()
+
     def PickAuctionDKP(self, e: wx.Event):
         class MyPopupMenu(wx.Menu):
             def __init__(self, parent):
                 super().__init__()
-                self.parent = parent
                 for alliance in config.ALLIANCES:
                     mi = wx.MenuItem(self, wx.NewId(), alliance)
                     self.Append(mi)
@@ -408,3 +427,46 @@ class ItemDetailWindow(wx.Frame):
         except Exception:
             pass
         self.Destroy()
+
+
+class IgnoredItemsWindow(wx.Frame):
+    def __init__(self, parent=None,
+                 title="Ignored Auctions (Double Click to Restore)"):
+        wx.Frame.__init__(self, parent, title=title, size=(616, 600))
+        self.Parent.Connect(-1, -1, models.EVT_IGNORE, self.OnRefresh)
+        main_box = wx.BoxSizer(wx.HORIZONTAL)
+
+        ignored_list = ObjectListView.ObjectListView(
+            self, wx.ID_ANY, size=wx.Size(600, 1080),
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
+        main_box.Add(ignored_list, flag=wx.EXPAND)
+
+        ignored_list.SetColumns([
+            ObjectListView.ColumnDefn("Report Time", "left", 160, "timestamp",
+                                      fixedWidth=160),
+            ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
+                                      fixedWidth=80),
+            ObjectListView.ColumnDefn("Item", "left", 178, "name",
+                                      fixedWidth=178),
+            ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
+                                      fixedWidth=95),
+            ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
+                                      fixedWidth=70),
+        ])
+        ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+        ignored_list.SetEmptyListMsg("No drops ignored.")
+        ignored_list.Bind(wx.EVT_LEFT_DCLICK, self.OnRestoreIgnored)
+        self.ignored_list = ignored_list
+
+        self.SetSizer(main_box)
+        self.Show()
+
+    def OnRefresh(self, e: models.IgnoreEvent):
+        self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+
+    def OnRestoreIgnored(self, e: wx.EVT_LEFT_DCLICK):
+        item = self.ignored_list.GetSelectedObject()
+        config.IGNORED_AUCTIONS.remove(item)
+        config.PENDING_AUCTIONS.append(item)
+        self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+        wx.PostEvent(self.Parent, models.DropEvent())

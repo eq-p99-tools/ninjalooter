@@ -318,6 +318,7 @@ EVT_WHO_HISTORY = wx.NewId()
 EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
+EVT_IGNORE = wx.NewId()
 
 
 class DropEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
@@ -399,6 +400,15 @@ class AppClearEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_APP_CLEAR)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+class IgnoreEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_IGNORE)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__)

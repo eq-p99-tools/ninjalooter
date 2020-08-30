@@ -178,7 +178,7 @@ class PopulationFrame(wx.Window):
         self.player_affiliations.append(player)
         self.population_list.SetObjects(self.player_affiliations)
 
-    def ResetPopPreview(self, e: wx.Event):
+    def ResetPopPreview(self, e: wx.SpinEvent):
         pops = utils.get_pop_numbers(extras=self._get_spinner_pops())
         self.pop_preview.clear()
         for alliance, pop in pops.items():

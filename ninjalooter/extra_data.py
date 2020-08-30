@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 TIMER_MOBS = {
     "a thunder spirit": 1,
     "a thunder spirit princess": 1,
@@ -25,7 +27,9 @@ TIMER_MOBS = {
 }
 
 EXTRA_ITEM_DATA = {
-    # Plane of Sky Items
+    ############################
+    # Plane of Sky Quest Items #
+    ############################
     "Ochre Tessera": {
         "classes": ["BRD", "CLR"],
         "nodrop": False,
@@ -40,7 +44,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Platinum Disc": {
-        "classes": ["BRD"],
+        "classes": ["BRD", "SHM"],
         "nodrop": False,
     },
     "Music Box": {
@@ -52,7 +56,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Phosphoric Globe": {
-        "classes": ["BRD"],
+        "classes": ["BRD", "SHM"],
         "nodrop": False,
     },
     "Shimmering Diamond": {
@@ -176,7 +180,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Azure Tessera": {
-        "classes": ["DRU"],
+        "classes": ["DRU", "WIZ"],
         "nodrop": False,
     },
     "Black Face Paint": {
@@ -212,7 +216,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Efreeti Statuette": {
-        "classes": ["DRU"],
+        "classes": ["DRU", "WIZ"],
         "nodrop": False,
     },
     "Wilder's Girdle": {
@@ -240,7 +244,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Lush Nectar": {
-        "classes": ["DRU"],
+        "classes": ["DRU", "WIZ"],
         "nodrop": False,
     },
     "Fire Sky Ruby": {
@@ -324,7 +328,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Large Sky Sapphire": {
-        "classes": ["ENC"],
+        "classes": ["ENC", "WIZ"],
         "nodrop": True,
     },
     "Efreeti Wind Staff": {
@@ -340,7 +344,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Iron Disc": {
-        "classes": ["MAG"],
+        "classes": ["MAG", "WIZ"],
         "nodrop": False,
     },
     "Gem of Empowerment": {
@@ -352,7 +356,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Hyaline Globe": {
-        "classes": ["MAG"],
+        "classes": ["MAG", "WIZ"],
         "nodrop": False,
     },
     "Ivory Pendant": {
@@ -569,7 +573,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Auburn Tessera": {
-        "classes": ["RNG"],
+        "classes": ["RNG", "SHM"],
         "nodrop": False,
     },
     "Ysgaril Root": {
@@ -605,7 +609,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Djinni Statuette": {
-        "classes": ["RNG"],
+        "classes": ["RNG", "SHM"],
         "nodrop": False,
     },
     "Spiroc Thunder Totem": {
@@ -617,7 +621,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Emerald Spiroc Feather": {
-        "classes": ["RNG"],
+        "classes": ["RNG", "SHM"],
         "nodrop": False,
     },
     "Bitter Honey": {
@@ -633,7 +637,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Thickened Nectar": {
-        "classes": ["RNG"],
+        "classes": ["RNG", "SHM"],
         "nodrop": False,
     },
     "Sphinx Tallow": {
@@ -649,7 +653,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": False,
     },
     "Ivory Tessera": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Gem of Invigoration": {
@@ -661,7 +665,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Bronze Disc": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Red Face Paint": {
@@ -673,7 +677,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Pearlescent Globe": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Black Griffon Feather": {
@@ -685,7 +689,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Pegasus Statuette": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Prismatic Sphere": {
@@ -697,7 +701,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Mottled Spiroc Feather": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Cracked Leather Belt": {
@@ -709,7 +713,7 @@ EXTRA_ITEM_DATA = {
         "nodrop": True,
     },
     "Honeyed Nectar": {
-        "classes": ["ROG"],
+        "classes": ["ROG", "WAR"],
         "nodrop": False,
     },
     "Bixie Stinger": {
@@ -796,135 +800,249 @@ EXTRA_ITEM_DATA = {
         "classes": ["SHD"],
         "nodrop": False,
     },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
-    # "": {
-    #     "classes": [],
-    #     "nodrop": False,
-    # },
+    "Drake Fang": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Leather Cord": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Ethereal Amber": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Shimmering Amber": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Ceremonial Belt": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Sphinx Hide": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Light Damask Mantle": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Wooden Bands": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Corrosive Venom": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Efreeti War Club": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Bixie Essence": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    # The p99 wiki has this item using a backtick? Likely inaccurate?
+    "Spiritualist's Ring": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    # Adding both because I don't know what it REALLY is in-game...
+    "Spiritualist`s Ring": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Symbol of Veeshan": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Efreeti War Maul": {
+        "classes": ["SHM"],
+        "nodrop": False,
+    },
+    "Small Ruby": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Azure Ring": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Small Pick": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Stone Amulet": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Silver Mesh": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Spiroc Air Totem": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Spiroc Wind Totem": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Wind Tablet": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Efreeti Belt": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Virulent Poison": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Djinni War Blade": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Bottled Djinni": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Ethereal Emerald": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Efreeti Battle Axe": {
+        "classes": ["WAR"],
+        "nodrop": False,
+    },
+    "Augmentor's Gem": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Grey Damask Cloak": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "Ethereal Opal": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Woven Skull Cap": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "Sky Topaz": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "High Quality Raiment": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "Mithril Air Ring": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Box of Winds": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "White-Tipped Spiroc Feather": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Pulsating Sapphire": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Amethyst Amulet": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "Copper Air Band": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    "Efreeti War Staff": {
+        "classes": ["WIZ"],
+        "nodrop": False,
+    },
+    #####################
+    # NOT QUEST RELATED #
+    #####################
+    "Belt of Concordance": {
+        "classes": ["BRD"],
+        "nodrop": True,
+    },
+    "Belt of Contention": {
+        "classes": ["WAR"],
+        "nodrop": True,
+    },
+    "Belt of Iniquity": {
+        "classes": ["SHD"],
+        "nodrop": True,
+    },
+    "Belt of the Pine": {
+        "classes": ["RNG"],
+        "nodrop": True,
+    },
+    "Belt of Tranquility": {
+        "classes": ["MNK"],
+        "nodrop": True,
+    },
+    "Belt of Transience": {
+        "classes": ["ROG"],
+        "nodrop": True,
+    },
+    "Belt of Virtue": {
+        "classes": ["PAL"],
+        "nodrop": True,
+    },
+    "Blade of Abrogation": {
+        "classes": ["SHD"],
+        "nodrop": True,
+    },
+    "Bracelet of Cessation": {
+        "classes": ["NEC"],
+        "nodrop": True,
+    },
+    "Bracelet of Distortion": {
+        "classes": ["WIZ"],
+        "nodrop": True,
+    },
+    "Bracelet of Exertion": {
+        "classes": ["MAG"],
+        "nodrop": True,
+    },
+    "Bracelet of Quiescence": {
+        "classes": ["ENC"],
+        "nodrop": True,
+    },
+    "Stein of Flowing Ichor": {
+        "classes": ["SHM"],
+        "nodrop": True,
+    },
+    "Symbol of Marr": {
+        "classes": ["PAL"],
+        "nodrop": True,
+    },
+    "Treant Tear": {
+        "classes": ["DRU"],
+        "nodrop": True,
+    },
+    "Weight of the Gods": {
+        "classes": ["CLR"],
+        "nodrop": True,
+    },
+    "White Satin Gloves": {
+        "classes": ["ALL"],
+        "nodrop": True,
+    },
+    "Whitened Treant Fists": {
+        "classes": ["MNK"],
+        "nodrop": True,
+    },
 }
-
-# set(map(lambda x: x.upper(), extra_data.EXTRA_ITEM_DATA.keys())) \
-# .difference(set(config.ITEMS.keys()))

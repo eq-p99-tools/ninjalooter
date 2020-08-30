@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = 1.7
+VERSION = 1.8
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -21,6 +21,8 @@ NUMBERS = CONF.get(
              "7777, 8888, 9999")
 NUMBERS = [int(num.strip()) for num in NUMBERS.split(',')]
 MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
+RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=True)
+NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
@@ -69,14 +71,14 @@ MATCH_OOC_ONLY = re.compile(
 MATCH_OOC_OR_SAY = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
-MATCH_OOC = MATCH_OOC_OR_SAY  # Use either for now until we clarify
+MATCH_DROP = MATCH_OOC_OR_SAY  # Use either for now until we clarify
 MATCH_AUC_ONLY = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")
 MATCH_AUC_OR_SHOUT = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+).*)'")
-MATCH_AUC = MATCH_AUC_OR_SHOUT
+MATCH_BID = MATCH_AUC_OR_SHOUT
 MATCH_RAND1 = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" \*\*A Magic Die is rolled by (?P<name>\w+)\.")

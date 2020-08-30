@@ -58,7 +58,7 @@ def handle_who(match: re.Match, window: wx.Frame) -> bool:
     return True
 
 
-def handle_ooc(match: re.Match, window: wx.Frame) -> list:
+def handle_drop(match: re.Match, window: wx.Frame) -> list:
     if not match:
         # No match was made, probably junk
         return list()
@@ -75,8 +75,14 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> list:
     found_items = utils.get_items_from_text(text)
     for item in found_items:
         drop = models.ItemDrop(item, name, timestamp)
-        config.PENDING_AUCTIONS.append(drop)
-        LOG.info("Added item to PENDING AUCTIONS: %s", drop)
+        if (config.NODROP_ONLY and
+                item in extra_data.EXTRA_ITEM_DATA and
+                not extra_data.EXTRA_ITEM_DATA[item].get('nodrop', True)):
+            config.IGNORED_AUCTIONS.append(drop)
+            LOG.info("Added droppable item to IGNORED AUCTIONS: %s", drop)
+        else:
+            config.PENDING_AUCTIONS.append(drop)
+            LOG.info("Added item to PENDING AUCTIONS: %s", drop)
     if not found_items:
         return list()
     wx.PostEvent(window, models.DropEvent())
@@ -84,7 +90,7 @@ def handle_ooc(match: re.Match, window: wx.Frame) -> list:
     return found_items
 
 
-def handle_auc(match: re.Match, window: wx.Frame) -> bool:
+def handle_bid(match: re.Match, window: wx.Frame) -> bool:
     if not match:
         # No match was made, probably junk
         return False
@@ -92,6 +98,7 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
     if name == "You":
         name = config.PLAYER_NAME
     guild = config.PLAYER_AFFILIATIONS.get(name)
+    alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
     bid = int(match.group("bid"))
 
@@ -111,17 +118,17 @@ def handle_auc(match: re.Match, window: wx.Frame) -> bool:
         return False
     item = found_items[0]
 
-    if guild not in config.ALLIANCE_MAP:
-        # Player is not in the alliance
-        LOG.info("%s attempted to bid for %s, but is in the wrong guild: %s",
-                 name, item, guild)
-        return False
     for auc_item in config.ACTIVE_AUCTIONS.values():
         if item == auc_item.name():
             if not isinstance(auc_item, models.DKPAuction):
                 LOG.info(
                     "Ignoring bid by %s because `%s` is a random auction.",
                     name, item)
+                return False
+            if config.RESTRICT_BIDS and alliance != auc_item.alliance:
+                # Player is not in the correct alliance
+                LOG.info("%s attempted to bid for %s, but is in the wrong "
+                         "guild/alliance: %s/%s", name, item, guild, alliance)
                 return False
             result = auc_item.add(bid, name)
             wx.PostEvent(window, models.BidEvent(auc_item))

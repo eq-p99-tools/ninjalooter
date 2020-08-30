@@ -115,24 +115,57 @@ class TestMessageHandlers(base.NLTestBase):
         # Item linked by a non-federation guild member
         line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
                 "'Copper Disc'")
-        match = config.MATCH_OOC.match(line)
-        items = message_handlers.handle_ooc(match, 'window')
+        match = config.MATCH_DROP.match(line)
+        items = message_handlers.handle_drop(match, 'window')
         self.assertEqual(0, len(items))
         self.assertEqual(0, len(config.PENDING_AUCTIONS))
         mock_post_event.assert_not_called()
 
         # Item linked by a federation guild member
+
+        # NODROP filter on, droppable item
+        config.NODROP_ONLY = True
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Copper Disc'")
         jim_disc_1 = models.ItemDrop(
             'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
-        match = config.MATCH_OOC.match(line)
-        items = list(message_handlers.handle_ooc(match, 'window'))
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
         self.assertIn('Copper Disc', items)
+        self.assertEqual(0, len(config.PENDING_AUCTIONS))
+        mock_post_event.assert_called_once_with(
+            'window', models.DropEvent())
+        mock_post_event.reset_mock()
+
+        # NODROP filter on, NODROP item
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'Belt of Iniquity'")
+        jim_belt_1 = models.ItemDrop(
+            'Belt of Iniquity', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(1, len(items))
+        self.assertIn('Belt of Iniquity', items)
         self.assertEqual(1, len(config.PENDING_AUCTIONS))
         self.assertListEqual(
-            [jim_disc_1],
+            [jim_belt_1],
+            config.PENDING_AUCTIONS)
+        mock_post_event.assert_called_once_with(
+            'window', models.DropEvent())
+        mock_post_event.reset_mock()
+
+        # NODROP filter off, droppable item
+        config.NODROP_ONLY = False
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'Copper Disc'")
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(1, len(items))
+        self.assertIn('Copper Disc', items)
+        self.assertEqual(2, len(config.PENDING_AUCTIONS))
+        self.assertListEqual(
+            [jim_belt_1, jim_disc_1],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
@@ -140,21 +173,18 @@ class TestMessageHandlers(base.NLTestBase):
 
         # Two items linked by a federation guild member, plus chat
         line = ("[Sun Aug 16 22:47:41 2020] James says out of character, "
-                "'Copper Disc and Platinum Disc and Golden Amber Earring woo'")
-        james_disc_1 = models.ItemDrop(
-            'Copper Disc', 'James', 'Sun Aug 16 22:47:41 2020')
-        james_disc_2 = models.ItemDrop(
+                "'Platinum Disc and Golden Amber Earring woo'")
+        james_disc = models.ItemDrop(
             'Platinum Disc', 'James', 'Sun Aug 16 22:47:41 2020')
         james_earring = models.ItemDrop(
             'Golden Amber Earring', 'James', 'Sun Aug 16 22:47:41 2020')
-        match = config.MATCH_OOC.match(line)
-        items = list(message_handlers.handle_ooc(match, 'window'))
-        self.assertEqual(3, len(items))
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(2, len(items))
         self.assertListEqual(
-            ['Copper Disc', 'Platinum Disc', 'Golden Amber Earring'],
-            items)
+            ['Platinum Disc', 'Golden Amber Earring'], items)
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
+            [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
@@ -163,21 +193,21 @@ class TestMessageHandlers(base.NLTestBase):
         # Random chatter by federation guild member
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'four score and seven years ago, we wanted pixels'")
-        match = config.MATCH_OOC.match(line)
-        items = list(message_handlers.handle_ooc(match, 'window'))
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
+            [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
         # Some bad line is passed somehow
         line = "???"
-        match = config.MATCH_OOC.match(line)
-        items = list(message_handlers.handle_ooc(match, 'window'))
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
-            [jim_disc_1, james_disc_1, james_disc_2, james_earring],
+            [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
@@ -199,8 +229,8 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an inactive item
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         self.assertEqual(1, len(config.ACTIVE_AUCTIONS))
@@ -209,8 +239,8 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone outside the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
@@ -218,8 +248,8 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone we haven't seen bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Paul auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
@@ -227,16 +257,16 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance says random stuff with a number
         line = ("[Sun Aug 16 22:47:31 2020] Tim auctions, "
                 "'I am 12 and what channel is this'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
         # Some bad line is passed somehow
         line = "???"
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
@@ -244,8 +274,8 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on two items at once
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP Platinum Disc'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
@@ -253,8 +283,8 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_AUC.match(line)
-        result = message_handlers.handle_auc(match, 'window')
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 10), disc_auction.highest())
         mock_post_event.assert_called_once_with(

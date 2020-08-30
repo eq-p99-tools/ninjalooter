@@ -55,11 +55,11 @@ SAMPLE_WHO_LOG = """
 
 SAMPLE_OOC_DROP = """
 [Mon Aug 17 07:15:36 2020] Dob begins to walk faster.
-[Mon Aug 17 07:15:39 2020] Peter says out of character, 'Belt of Iniquity'
+[Mon Aug 17 07:15:39 2020] Peter says out of character, 'Belt of Iniquity, Copper Disc'
 [Mon Aug 17 07:15:42 2020] Mary says, 'Hail, Paul'
 [Mon Aug 17 07:15:58 2020] Paul says, 'lfg'
 [Mon Aug 17 07:16:05 2020] Tim shouts, 'looted Miniature Sword'
-"""
+"""  # noqa
 
 SAMPLE_AUC_BID = """
 [Sun Aug 16 17:41:25 2020] You auction, 'Belt of Iniquity 10 DKP MIN'
