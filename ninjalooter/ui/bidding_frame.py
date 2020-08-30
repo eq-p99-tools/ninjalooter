@@ -43,14 +43,14 @@ class BiddingFrame(wx.Window):
         self.pending_list = pending_list
 
         pending_list.SetColumns([
-            ObjectListView.ColumnDefn("Report Time", "left", 160, "timestamp",
-                                      fixedWidth=160),
+            ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp",
+                                      fixedWidth=170),
             ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
                                       fixedWidth=80),
             ObjectListView.ColumnDefn("Item", "left", 178, "name",
                                       fixedWidth=178),
-            ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
-                                      fixedWidth=95),
+            ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
+                                      fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
         ])
@@ -442,14 +442,14 @@ class IgnoredItemsWindow(wx.Frame):
         main_box.Add(ignored_list, flag=wx.EXPAND)
 
         ignored_list.SetColumns([
-            ObjectListView.ColumnDefn("Report Time", "left", 160, "timestamp",
-                                      fixedWidth=160),
+            ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp",
+                                      fixedWidth=170),
             ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
                                       fixedWidth=80),
             ObjectListView.ColumnDefn("Item", "left", 178, "name",
                                       fixedWidth=178),
-            ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
-                                      fixedWidth=95),
+            ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
+                                      fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
         ])
