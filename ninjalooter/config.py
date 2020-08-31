@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.8.1"
+VERSION = "1.8.2"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -27,6 +27,7 @@ ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
     'VCR': ('Venerate', 'Castle', 'Reconstructed'),
+    'Seal Team': ('Seal Team',),
 }
 
 # Data store variables

@@ -462,7 +462,10 @@ class IgnoredItemsWindow(wx.Frame):
         self.Show()
 
     def OnRefresh(self, e: models.IgnoreEvent):
-        self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+        try:
+            self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+        except RuntimeError:
+            pass
 
     def OnRestoreIgnored(self, e: wx.EVT_LEFT_DCLICK):
         item = self.ignored_list.GetSelectedObject()

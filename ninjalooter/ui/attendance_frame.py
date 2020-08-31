@@ -71,10 +71,7 @@ class AttendanceDetailWindow(wx.Frame):
         main_box.Add(attendance_record, flag=wx.EXPAND | wx.ALL)
 
         def attendanceGroupKey(player):
-            group_key = config.ALLIANCE_MAP.get(player.guild, "None")
-            if player.guild in ('Seal Team',):
-                group_key = 'Seal Team'
-            return group_key
+            return config.ALLIANCE_MAP.get(player.guild, "None")
 
         attendance_record.SetColumns([
             ObjectListView.ColumnDefn(

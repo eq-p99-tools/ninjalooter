@@ -50,10 +50,7 @@ class PopulationFrame(wx.Window):
         self.population_list = population_list
 
         def popGroupKey(player):
-            group_key = config.ALLIANCE_MAP.get(player.guild, "None")
-            if player.guild in ('Seal Team',):
-                group_key = 'Seal Team'
-            return group_key
+            return config.ALLIANCE_MAP.get(player.guild, "None")
 
         population_list.SetColumns([
             ObjectListView.ColumnDefn(
@@ -179,11 +176,24 @@ class PopulationFrame(wx.Window):
         self.population_list.SetObjects(self.player_affiliations)
 
     def ResetPopPreview(self, e: wx.SpinEvent):
+        raw_pops = utils.get_pop_numbers()
         pops = utils.get_pop_numbers(extras=self._get_spinner_pops())
         self.pop_preview.clear()
         for alliance, pop in pops.items():
             pop_obj = models.PopulationPreview(alliance, str(pop))
             self.pop_preview.append(pop_obj)
+        to_remove = list()
+        for pop in self.pop_preview:
+            if int(pop.population) <= 0:
+                pop.population = "0"
+                to_remove.append(pop)
+        for pop in to_remove:
+            self.pop_preview.remove(pop)
+        for alliance, pop in raw_pops.items():
+            spinner = self.pop_adjustments.get(alliance)
+            if spinner:
+                spinner.SetMin(0 - pop)
+
         selected_index = self.population_preview_list.GetFirstSelected()
         self.population_preview_list.SetObjects(self.pop_preview)
         if selected_index >= 0:
