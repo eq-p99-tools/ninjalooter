@@ -57,7 +57,7 @@ class MenuBar(wx.MenuBar):
         bidding_menu = wx.Menu()
 
         show_ignored_mi = wx.MenuItem(
-            file_menu, wx.ID_NEW, '&Show Ignored Items...')
+            file_menu, wx.ID_ANY, '&Show Ignored Items...')
         bidding_menu.Append(show_ignored_mi)
         self.Bind(wx.EVT_MENU, self.OnShowIgnored, show_ignored_mi)
 
