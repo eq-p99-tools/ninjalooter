@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.8.2"
+VERSION = "1.8.3"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -26,7 +26,7 @@ NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
-    'VCR': ('Venerate', 'Castle', 'Reconstructed'),
+    'VCR': ('Venerate', 'Castle', 'Reconstructed', 'Aussie Crew'),
     'Seal Team': ('Seal Team',),
 }
 

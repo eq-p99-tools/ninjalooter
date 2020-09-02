@@ -66,7 +66,8 @@ class ParseThread(threading.Thread):
         LOG.info("Starting logparser thread for %s...", name)
         self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
                              .format(version=config.VERSION, name=name))
-        parse_logfile(logfile, self.window, self.loop_run)
+        if logfile:
+            parse_logfile(logfile, self.window, self.loop_run)
 
     def abort(self):
         self.loop_run.clear()
