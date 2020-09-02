@@ -18,6 +18,7 @@ LOG = logging.getLogger(__name__)
 class MenuBar(wx.MenuBar):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._parent = parent
 
         #############
         # File Menu #
@@ -25,26 +26,42 @@ class MenuBar(wx.MenuBar):
         file_menu = wx.Menu()
 
         set_log_mi = wx.MenuItem(file_menu, wx.ID_FIND, '&Set Log Directory')
-        set_log_bitmap = wx.Bitmap(os.path.join("data", "icons", "gear.png"))
+        set_log_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "gear.png"))
         set_log_mi.SetBitmap(set_log_bitmap)
         file_menu.Append(set_log_mi)
         self.Bind(wx.EVT_MENU, self.OnConfigure, set_log_mi)
 
+        self.alwaysontop_mi = wx.MenuItem(
+            file_menu, wx.ID_ANY, '&Always On Top',
+            kind=wx.ITEM_CHECK)
+        file_menu.Append(self.alwaysontop_mi)
+        self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
+        self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
+        self.OnAlwaysOnTop(None)
+
+        file_menu.AppendSeparator()
+
         export_mi = wx.MenuItem(
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
-        export_bitmap = wx.Bitmap(os.path.join("data", "icons", "export.png"))
+        export_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExport, export_mi)
 
         clear_mi = wx.MenuItem(file_menu, wx.ID_NEW, '&Clear Data')
-        clear_bitmap = wx.Bitmap(os.path.join("data", "icons", "clear.png"))
+        clear_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "clear.png"))
         clear_mi.SetBitmap(clear_bitmap)
         file_menu.Append(clear_mi)
         self.Bind(wx.EVT_MENU, self.OnClearApp, clear_mi)
 
+        file_menu.AppendSeparator()
+
         exit_mi = wx.MenuItem(file_menu, wx.ID_EXIT, '&Quit\tCtrl+W')
-        exit_bitmap = wx.Bitmap(os.path.join("data", "icons", "exit.png"))
+        exit_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "exit.png"))
         exit_mi.SetBitmap(exit_bitmap)
         file_menu.Append(exit_mi)
         self.Bind(wx.EVT_MENU, parent.OnClose, exit_mi)
@@ -71,7 +88,7 @@ class MenuBar(wx.MenuBar):
         self.Bind(wx.EVT_MENU, self.OnRestrict, self.restrict_mi)
 
         self.nodrop_only_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, '&Ignore droppables',
+            bidding_menu, wx.ID_ANY, '&Ignore Droppable Items',
             kind=wx.ITEM_CHECK)
         bidding_menu.Append(self.nodrop_only_mi)
         self.nodrop_only_mi.Check(config.NODROP_ONLY)
@@ -151,6 +168,18 @@ class MenuBar(wx.MenuBar):
         config.NODROP_ONLY = self.nodrop_only_mi.IsChecked()
         config.CONF.set(
             'default', 'nodrop_only', str(config.NODROP_ONLY))
+        config.write()
+
+    def OnAlwaysOnTop(self, e: wx.MenuEvent):
+        config.ALWAYS_ON_TOP = self.alwaysontop_mi.IsChecked()
+        config.CONF.set(
+            'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
+        if config.ALWAYS_ON_TOP:
+            self._parent.SetWindowStyle(
+                self._parent.GetWindowStyle() | wx.STAY_ON_TOP)
+        else:
+            self._parent.SetWindowStyle(
+                self._parent.GetWindowStyle() & ~wx.STAY_ON_TOP)
         config.write()
 
     def OnShowIgnored(self, e: wx.MenuEvent):

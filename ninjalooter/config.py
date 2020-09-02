@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.8.3"
+VERSION = "1.9"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -13,6 +13,8 @@ CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
 
 # Configurable Stuff
+if not CONF.has_section('default'):
+    CONF.add_section('default')
 LOG_DIRECTORY = CONF.get("default", "logdir", fallback="C:\\Everquest\\")
 LOG_LEVEL = CONF.getint("default", "loglevel", fallback=logging.INFO)
 NUMBERS = CONF.get(
@@ -23,6 +25,7 @@ NUMBERS = [int(num.strip()) for num in NUMBERS.split(',')]
 MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
+ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
 ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),

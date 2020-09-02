@@ -23,6 +23,7 @@ LOG = logging.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
+LOG.info("Project working directory: %s", PROJECT_DIR)
 
 
 def ignore_pending_item(item: models.ItemDrop) -> None:

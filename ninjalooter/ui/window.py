@@ -27,7 +27,8 @@ class MainWindow(wx.Frame):
         wx.Frame.__init__(self, parent, title=title, size=(725, 800))
         icon = wx.Icon()
         icon.CopyFromBitmap(
-            wx.Bitmap(os.path.join("data", "icons", "ninja_attack.ico"),
+            wx.Bitmap(os.path.join(
+                utils.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
                       wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon)
         self.Bind(wx.EVT_CLOSE, self.OnClose)

@@ -15,6 +15,9 @@ a = Analysis(['ninjalooter\\cmd\\run.py'],
              win_private_assemblies=False,
              cipher=block_cipher
 )
+from glob import glob
+a.datas += [(filename, filename, '.') for filename in glob('data/icons/*')]
+a.datas += [('data/items.json', 'data/items.json', '.')]
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
@@ -22,7 +25,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='ninjalooter',
-          debug=False,
+          debug=True,
           strip=False,
           upx=False,
           runtime_tmpdir=None,
