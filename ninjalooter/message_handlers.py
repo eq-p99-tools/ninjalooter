@@ -68,6 +68,7 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
     guild = config.PLAYER_AFFILIATIONS.get(name)
     if text.lower().startswith("looted"):
         LOG.info("Ignoring ooc starting with 'looted'")
+        return list()
     if config.RESTRICT_BIDS and guild and guild not in config.ALLIANCE_MAP:
         # Some other guild is talking, discard line
         LOG.info("Ignoring ooc from guild %s", guild)

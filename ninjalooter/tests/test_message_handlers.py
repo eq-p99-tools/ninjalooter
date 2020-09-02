@@ -105,16 +105,30 @@ class TestMessageHandlers(base.NLTestBase):
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_ooc(self, mock_post_event, mock_store_state):
+    def test_handle_drop(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
             'Jim': 'Venerate',
             'James': 'Kingdom',
             'Dan': 'Dial a Daniel',
         }
         config.PENDING_AUCTIONS = list()
-        # Item linked by a non-federation guild member
+        # FILTER OFF - Item linked by a non-federation guild member
+        config.RESTRICT_BIDS = False
         line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
-                "'Copper Disc'")
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP.match(line)
+        items = message_handlers.handle_drop(match, 'window')
+        self.assertEqual(1, len(items))
+        self.assertEqual(1, len(config.PENDING_AUCTIONS))
+        mock_post_event.assert_called_once_with(
+            'window', models.DropEvent())
+        mock_post_event.reset_mock()
+
+        config.PENDING_AUCTIONS = list()
+        # FILTER ON - Item linked by a non-federation guild member
+        config.RESTRICT_BIDS = True
+        line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
+                "'Belt of Iniquity'")
         match = config.MATCH_DROP.match(line)
         items = message_handlers.handle_drop(match, 'window')
         self.assertEqual(0, len(items))
@@ -201,6 +215,17 @@ class TestMessageHandlers(base.NLTestBase):
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
+        # Someone reports they looted an item
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'looted Belt of Iniquity'")
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(0, len(items))
+        self.assertListEqual(
+            [jim_belt_1, jim_disc_1, james_disc, james_earring],
+            config.PENDING_AUCTIONS)
+        mock_post_event.assert_not_called()
+
         # Some bad line is passed somehow
         line = "???"
         match = config.MATCH_DROP.match(line)
@@ -213,7 +238,7 @@ class TestMessageHandlers(base.NLTestBase):
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_auc(self, mock_post_event, mock_store_state):
+    def test_handle_bid(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
             'Jim': 'Venerate',
             'Tim': 'Kingdom',
@@ -226,7 +251,8 @@ class TestMessageHandlers(base.NLTestBase):
             itemdrop.uuid: disc_auction
         }
 
-        # Someone in the alliance bids on an inactive item
+        # FILTER ON - Someone in the alliance bids on an inactive item
+        config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
         match = config.MATCH_BID.match(line)
@@ -236,7 +262,28 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(1, len(config.ACTIVE_AUCTIONS))
         mock_post_event.assert_not_called()
 
-        # Someone outside the alliance bids on an active item
+        # FILTER ON - Someone outside the alliance bids on an active item
+        line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
+                "'Copper Disc 10 DKP'")
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertFalse(result)
+        self.assertEqual([], disc_auction.highest())
+        mock_post_event.assert_not_called()
+
+        # FILTER OFF - Someone in the alliance bids on an inactive item
+        config.RESTRICT_BIDS = False
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Platinum Disc 10 DKP'")
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertFalse(result)
+        self.assertListEqual([], disc_auction.highest())
+        self.assertEqual(1, len(config.ACTIVE_AUCTIONS))
+        mock_post_event.assert_not_called()
+
+        # FILTER ON - Someone outside the alliance bids on an active item
+        config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
         match = config.MATCH_BID.match(line)
