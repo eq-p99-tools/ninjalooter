@@ -93,7 +93,12 @@ class TestModels(base.NLTestBase):
     def test_DKPAuction_model(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
-        auc = models.DKPAuction(itemdrop, 'VCR')
+        auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
+        self.assertListEqual([], auc.highest())
+
+        # Bid too low
+        result = auc.add(2, 'Peter')
+        self.assertFalse(result)
         self.assertListEqual([], auc.highest())
 
         # First bid, valid

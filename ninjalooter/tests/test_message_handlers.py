@@ -141,8 +141,10 @@ class TestMessageHandlers(base.NLTestBase):
         config.NODROP_ONLY = True
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Copper Disc'")
+        jim_disc_1_uuid = "jim_disc_1_uuid"
         jim_disc_1 = models.ItemDrop(
-            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020',
+            uuid=jim_disc_1_uuid)
         match = config.MATCH_DROP.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
@@ -155,10 +157,14 @@ class TestMessageHandlers(base.NLTestBase):
         # NODROP filter on, NODROP item
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Belt of Iniquity'")
+        jim_belt_1_uuid = "jim_belt_1_uuid"
         jim_belt_1 = models.ItemDrop(
-            'Belt of Iniquity', 'Jim', 'Sun Aug 16 22:47:31 2020')
+            'Belt of Iniquity', 'Jim', 'Sun Aug 16 22:47:31 2020',
+            uuid=jim_belt_1_uuid)
         match = config.MATCH_DROP.match(line)
-        items = list(message_handlers.handle_drop(match, 'window'))
+        with mock.patch('uuid.uuid4') as mock_uuid4:
+            mock_uuid4.return_value = jim_belt_1_uuid
+            items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
         self.assertIn('Belt of Iniquity', items)
         self.assertEqual(1, len(config.PENDING_AUCTIONS))
@@ -174,7 +180,9 @@ class TestMessageHandlers(base.NLTestBase):
         line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Copper Disc'")
         match = config.MATCH_DROP.match(line)
-        items = list(message_handlers.handle_drop(match, 'window'))
+        with mock.patch('uuid.uuid4') as mock_uuid4:
+            mock_uuid4.return_value = jim_disc_1_uuid
+            items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
         self.assertIn('Copper Disc', items)
         self.assertEqual(2, len(config.PENDING_AUCTIONS))
@@ -188,12 +196,18 @@ class TestMessageHandlers(base.NLTestBase):
         # Two items linked by a federation guild member, plus chat
         line = ("[Sun Aug 16 22:47:41 2020] James says out of character, "
                 "'Platinum Disc and Golden Amber Earring woo'")
+        james_disc_uuid = "james_disc_uuid"
+        james_earring_uuid = "james_earring_uuid"
         james_disc = models.ItemDrop(
-            'Platinum Disc', 'James', 'Sun Aug 16 22:47:41 2020')
+            'Platinum Disc', 'James', 'Sun Aug 16 22:47:41 2020',
+            uuid=james_disc_uuid)
         james_earring = models.ItemDrop(
-            'Golden Amber Earring', 'James', 'Sun Aug 16 22:47:41 2020')
+            'Golden Amber Earring', 'James', 'Sun Aug 16 22:47:41 2020',
+            uuid=james_earring_uuid)
         match = config.MATCH_DROP.match(line)
-        items = list(message_handlers.handle_drop(match, 'window'))
+        with mock.patch('uuid.uuid4') as mock_uuid4:
+            mock_uuid4.side_effect = [james_disc_uuid, james_earring_uuid]
+            items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(2, len(items))
         self.assertListEqual(
             ['Platinum Disc', 'Golden Amber Earring'], items)

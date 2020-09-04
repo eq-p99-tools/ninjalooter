@@ -131,21 +131,6 @@ class ItemDrop(DictEquals):
         return "{name} ({reporter} @ {time})".format(
             name=self.name, reporter=self.reporter, time=self.timestamp)
 
-    def __eq__(self, other):
-        """Don't include UUID in comparison.
-
-        This has the side effect of causing synthetic test data to behave
-        oddly if it is repeated *exactly* -- starting auctions will always
-        pop the first instance of the item, which may have a different uuid
-        than expected. This should never be possible in real usage, and it
-        makes testing a lot easier, so I will leave this even though it does
-        smell a bit like a bug.
-        """
-        if not isinstance(other, self.__class__):
-            return False
-        return ((self.name, self.reporter, self.timestamp) ==
-                (other.name, other.reporter, other.timestamp))
-
 
 class Auction(DictEquals):
     item = None
@@ -215,6 +200,11 @@ class DKPAuction(Auction):
             # Not a real bid
             LOG.info("%s attempted to bid for %s but didn't post a number",
                      player, self.item)
+            return False
+        if number < self.min_dkp:
+            # Bid too low
+            LOG.info("%s attempted to bid for %s but bid too low: %d < %d",
+                     player, self.item, number, self.min_dkp)
             return False
         if not self.bids or number > max(self.bids):
             # Valid bid
