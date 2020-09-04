@@ -41,7 +41,7 @@ class Player(DictEquals):
         self.name = name
         self.pclass = pclass
         self.level = level
-        self.guild = guild
+        self.guild = guild or ""
 
 
 class WhoLog(DictEquals):

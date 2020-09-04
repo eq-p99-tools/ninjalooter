@@ -47,7 +47,7 @@ def handle_who(match: re.Match, window: wx.Frame) -> bool:
         LOG.info("Adding player history for %s as guild %s",
                  name, guild)
         config.HISTORICAL_AFFILIATIONS[name] = guild
-    elif guild is not None or (guild is None and pclass != "ANONYMOUS"):
+    elif guild or (not guild and pclass != "ANONYMOUS"):
         LOG.info("Updating player history for %s from %s to %s",
                  name, config.HISTORICAL_AFFILIATIONS[name], guild)
         config.HISTORICAL_AFFILIATIONS[name] = guild
