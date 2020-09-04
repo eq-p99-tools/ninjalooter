@@ -1045,4 +1045,8 @@ EXTRA_ITEM_DATA = {
         "classes": ["MNK"],
         "nodrop": True,
     },
+    "Spiroc Wingblade": {
+        "classes": ["WAR", "RNG"],
+        "nodrop": True,
+    },
 }
