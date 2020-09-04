@@ -38,7 +38,6 @@ class MenuBar(wx.MenuBar):
         file_menu.Append(self.alwaysontop_mi)
         self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
         self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
-        self.OnAlwaysOnTop(None)
 
         file_menu.AppendSeparator()
 

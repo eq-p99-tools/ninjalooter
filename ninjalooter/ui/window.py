@@ -5,6 +5,7 @@ import os.path
 import ObjectListView
 import wx
 
+from ninjalooter import config
 from ninjalooter import logging
 from ninjalooter import logparse
 from ninjalooter import overrides
@@ -52,6 +53,8 @@ class MainWindow(wx.Frame):
         killtimes_frame.KillTimesFrame(notebook)
 
         self.Show(True)
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.parser_thread = logparse.ParseThread(self)
         self.parser_thread.start()
 
