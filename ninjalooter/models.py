@@ -108,6 +108,10 @@ class ItemDrop(DictEquals):
         self.reporter = reporter
         self.timestamp = timestamp
         self.uuid = uuid or str(uuid_lib.uuid4())
+        if name in extra_data.EXTRA_ITEM_DATA:
+            for key in extra_data.EXTRA_ITEM_DATA:
+                if name.lower() == key.lower():
+                    self.name = key
 
     def classes(self) -> str:
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
@@ -227,20 +231,21 @@ class DKPAuction(Auction):
 
     def bid_text(self) -> str:
         current_bid = self.highest_number()
+        classes = ' ({})'.format(self.classes()) if self.classes() else ""
         if current_bid != 'None':
-            # current_leader = self.highest_players()
             bid_message = (
-                "/shout [{item}] {alliance} BID IN SHOUT. "
+                "/shout [{item}]{classes} - `{alliance}` BID IN SHOUT. "
                 "You MUST include the item name in your bid! Currently: "
-                "{number} DKP - Closing Soon!").format(
+                "{number} DKP - Closing Soon! ").format(
                 item=self.item.name, alliance=self.alliance,
-                number=current_bid)
+                number=current_bid, classes=classes)
         else:
             bid_message = (
-                "/shout [{item}] {alliance} BID IN SHOUT, MIN {min} DKP. "
-                "You MUST include the item name in your bid!").format(
+                "/shout [{item}]{classes} - `{alliance}` BID IN SHOUT, "
+                "MIN {min} DKP. "
+                "You MUST include the item name in your bid! ").format(
                 item=self.item.name, alliance=self.alliance,
-                min=self.get_target_min())
+                min=self.get_target_min(), classes=classes)
         return bid_message
 
     def win_text(self) -> str:
@@ -290,12 +295,13 @@ class RandomAuction(Auction):
         return rollers
 
     def bid_text(self) -> str:
-        return "/shout [{item}] ROLL {number} NOW!".format(
-            item=self.item.name, number=self.number)
+        classes = ' ({})'.format(self.classes()) if self.classes() else ""
+        return "/shout [{item}]{classes} ROLL {number} NOW!".format(
+            item=self.item.name, number=self.number, classes=classes)
         # TODO: alliance
 
     def win_text(self) -> str:
-        return ("/shout Grats {player} on [{item}] with {roll}/{target}!"
+        return ("/shout Grats {player} on [{item}] with {roll} / {target}!"
                 .format(player=self.highest_players(), item=self.item.name,
                         roll=self.highest_number(), target=self.number))
 

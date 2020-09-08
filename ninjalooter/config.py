@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.9.1"
+VERSION = "1.9.2"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -29,8 +29,8 @@ ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
 ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
-    'VCR': ('Venerate', 'Castle', 'Reconstructed', 'Aussie Crew'),
     'Seal Team': ('Seal Team',),
+    'VCR': ('Venerate', 'Castle', 'Reconstructed', 'Aussie Crew'),
 }
 
 # Data store variables

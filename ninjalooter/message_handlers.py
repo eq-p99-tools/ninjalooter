@@ -122,7 +122,7 @@ def handle_bid(match: re.Match, window: wx.Frame) -> bool:
     item = found_items[0]
 
     for auc_item in config.ACTIVE_AUCTIONS.values():
-        if item == auc_item.name():
+        if item.lower() == auc_item.name().lower():
             if not isinstance(auc_item, models.DKPAuction):
                 LOG.info(
                     "Ignoring bid by %s because `%s` is a random auction.",

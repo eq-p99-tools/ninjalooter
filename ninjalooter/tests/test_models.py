@@ -69,6 +69,11 @@ class TestModels(base.NLTestBase):
         self.assertEqual("BRD", itemdrop.classes())
         self.assertEqual("NO", itemdrop.droppable())
 
+        # This item should have the case fixed
+        itemdrop = models.ItemDrop(
+            "light WOOLEN Mask", "Bob", "Mon Aug 17 07:15:39 2020")
+        self.assertEqual("Light Woolen Mask", itemdrop.name)
+
         # Should be JSON Encodable
         itemdrop_json = json.dumps(itemdrop, cls=utils.JSONEncoder)
 
@@ -90,7 +95,7 @@ class TestModels(base.NLTestBase):
         loaded_auc = json.loads(auc_json, cls=utils.JSONDecoder)
         self.assertEqual(auc, loaded_auc)
 
-    def test_DKPAuction_model(self):
+    def test_DKPAuction_model_add(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
@@ -132,7 +137,40 @@ class TestModels(base.NLTestBase):
         loaded_auc = json.loads(auc_json, cls=utils.JSONDecoder)
         self.assertEqual(auc, loaded_auc)
 
-    def test_RandomAuction_model(self):
+    def test_DKPAuction_model_bid_text(self):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
+
+        # No bids
+        self.assertEqual(
+            "/shout [Copper Disc] (DRU, SHD) - `VCR` BID IN SHOUT, MIN 3 DKP. "
+            "You MUST include the item name in your bid! ",
+            auc.bid_text())
+
+        # Valid bid
+        result = auc.add(3, 'Peter')
+        self.assertTrue(result)
+        self.assertListEqual([('Peter', 3)], auc.highest())
+
+        # Bid exists
+        self.assertEqual(
+            "/shout [Copper Disc] (DRU, SHD) - `VCR` BID IN SHOUT. "
+            "You MUST include the item name in your bid! Currently: "
+            "3 DKP - Closing Soon! ",
+            auc.bid_text())
+
+        item_name = 'Golden Jasper Earring'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
+
+        # No bids
+        self.assertEqual(
+            "/shout [Golden Jasper Earring] - `VCR` BID IN SHOUT, MIN 3 DKP. "
+            "You MUST include the item name in your bid! ",
+            auc.bid_text())
+
+    def test_RandomAuction_model_add(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         auc = models.RandomAuction(itemdrop)
@@ -180,6 +218,24 @@ class TestModels(base.NLTestBase):
         # Should be JSON Decodable
         loaded_auc = json.loads(auc_json, cls=utils.JSONDecoder)
         self.assertEqual(auc, loaded_auc)
+
+    def test_RandomAuction_model_bid_text(self):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        config.NUMBERS = ['12345']
+        auc = models.RandomAuction(itemdrop)
+
+        self.assertEqual(
+            "/shout [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
+            auc.bid_text())
+
+        item_name = 'Golden Jasper Earring'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.RandomAuction(itemdrop)
+
+        self.assertEqual(
+            "/shout [Golden Jasper Earring] ROLL 12345 NOW!",
+            auc.bid_text())
 
     def test_get_next_number(self):
         models.config.NUMBERS = [10, 20, 30]

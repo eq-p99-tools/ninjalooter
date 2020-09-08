@@ -4,3 +4,4 @@ ObjectListView
 pyperclip
 python-dateutil
 XlsxWriter
+pydicti

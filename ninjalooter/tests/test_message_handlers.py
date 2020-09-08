@@ -255,6 +255,7 @@ class TestMessageHandlers(base.NLTestBase):
     def test_handle_bid(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
             'Jim': 'Venerate',
+            'Pim': 'Castle',
             'Tim': 'Kingdom',
             'Dan': 'Dial a Daniel',
         }
@@ -348,5 +349,16 @@ class TestMessageHandlers(base.NLTestBase):
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 10), disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
+
+        # Someone in the alliance bids on an active item with wrong case
+        line = ("[Sun Aug 16 22:47:31 2020] Pim auctions, "
+                "'copper DISC 11 DKP'")
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertIn(('Pim', 11), disc_auction.highest())
         mock_post_event.assert_called_once_with(
             'window', models.BidEvent(disc_auction))

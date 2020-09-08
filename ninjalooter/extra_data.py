@@ -1,4 +1,5 @@
 # pylint: disable=too-many-lines
+import pydicti
 
 TIMER_MOBS = {
     "a thunder spirit": 1,
@@ -26,7 +27,7 @@ TIMER_MOBS = {
     "Noble Dojorn": 1.5,
 }
 
-EXTRA_ITEM_DATA = {
+EXTRA_ITEM_DATA = pydicti.Dicti({
     ############################
     # Plane of Sky Quest Items #
     ############################
@@ -1049,4 +1050,4 @@ EXTRA_ITEM_DATA = {
         "classes": ["WAR", "RNG"],
         "nodrop": True,
     },
-}
+})
