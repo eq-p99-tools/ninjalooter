@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.9.2"
+VERSION = "1.9.3"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -30,7 +30,7 @@ ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
     'Seal Team': ('Seal Team',),
-    'VCR': ('Venerate', 'Castle', 'Reconstructed', 'Aussie Crew'),
+    'VC': ('Venerate', 'Castle'),
 }
 
 # Data store variables
@@ -81,7 +81,7 @@ MATCH_AUC_ONLY = re.compile(
     r" (?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")
 MATCH_AUC_OR_SHOUT = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+).*)'")
+    r" (?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
 MATCH_BID = MATCH_AUC_OR_SHOUT
 MATCH_RAND1 = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"

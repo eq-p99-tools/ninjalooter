@@ -362,3 +362,16 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertIn(('Pim', 11), disc_auction.highest())
         mock_post_event.assert_called_once_with(
             'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
+
+        # Someone in the alliance bids on an active item for their 2nd main
+        # This would trigger a bug with "2nd" being read as "2 DKP"
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 2nd main 12dkp'")
+        match = config.MATCH_BID.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertIn(('Jim', 12), disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
