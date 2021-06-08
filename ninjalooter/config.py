@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.9.5"
+VERSION = "1.9.6"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -90,7 +90,11 @@ MATCH_AUC_ONLY = re.compile(
 MATCH_AUC_OR_SHOUT = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" (?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
-MATCH_BID = MATCH_AUC_OR_SHOUT
+MATCH_GU_AUC_OR_SHOUT = re.compile(
+    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
+    r" (?P<name>\w+) (shouts?|auctions?|tells the guild|say to your guild),"
+    r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID = MATCH_GU_AUC_OR_SHOUT
 MATCH_RAND1 = re.compile(
     r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
     r" \*\*A Magic Die is rolled by (?P<name>\w+)\.")
