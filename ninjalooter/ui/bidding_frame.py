@@ -85,7 +85,7 @@ class BiddingFrame(wx.Window):
         pending_buttons_box.Add(min_dkp_spinner, flag=wx.LEFT, border=10)
 
         pending_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnorePending)
-        pending_button_dkp.Bind(wx.EVT_BUTTON, self.PickAuctionDKP)
+        pending_button_dkp.Bind(wx.EVT_BUTTON, self.StartAuctionDKP)
         pending_button_roll.Bind(wx.EVT_BUTTON, self.StartAuctionRandom)
         pending_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiPending)
 
@@ -249,6 +249,7 @@ class BiddingFrame(wx.Window):
         config.write()
 
     def PickAuctionDKP(self, e: wx.Event):
+        """This is no longer used, in favor of selecting a default alliance."""
         class MyPopupMenu(wx.Menu):
             def __init__(self, parent):
                 super().__init__()
@@ -260,12 +261,10 @@ class BiddingFrame(wx.Window):
         self.PopupMenu(MyPopupMenu(self), e.EventObject.GetPosition())
 
     def StartAuctionDKP(self, e: wx.Event):
-        menu_item = [mi for mi in e.EventObject.MenuItems if mi.Id == e.Id][0]
-        alliance = menu_item.ItemLabel
         selected_object = self.pending_list.GetSelectedObject()
         if not selected_object:
             return
-        auc = utils.start_auction_dkp(selected_object, alliance)
+        auc = utils.start_auction_dkp(selected_object, config.DEFAULT_ALLIANCE)
         if not auc:
             self.DialogDuplicate()
             return

@@ -157,7 +157,7 @@ class TestModels(base.NLTestBase):
         self.assertEqual(
             "/shout [Copper Disc] (DRU, SHD) - `VCR` BID IN SHOUT. "
             "You MUST include the item name in your bid! Currently: "
-            "3 DKP - Closing Soon! ",
+            "`Peter` with 3 DKP - Closing Soon! ",
             auc.bid_text())
 
         item_name = 'Golden Jasper Earring'

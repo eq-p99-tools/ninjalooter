@@ -236,7 +236,8 @@ class DKPAuction(Auction):
             bid_message = (
                 "/shout [{item}]{classes} - `{alliance}` BID IN SHOUT. "
                 "You MUST include the item name in your bid! Currently: "
-                "{number} DKP - Closing Soon! ").format(
+                "`{player}` with {number} DKP - Closing Soon! ").format(
+                player=self.highest_players(),
                 item=self.item.name, alliance=self.alliance,
                 number=current_bid, classes=classes)
         else:

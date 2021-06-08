@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.9.3"
+VERSION = "1.9.5"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -26,12 +26,20 @@ MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
-ALLIANCES = {
-    'BL': ('Black Lotus',),
-    'Kingdom': ('Kingdom', 'Karens of Karana'),
-    'Seal Team': ('Seal Team',),
-    'VC': ('Venerate', 'Castle'),
-}
+CONF_ALLIANCES = CONF.get(
+    "default", "alliances",
+    fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
+             "Castle:Castle;"
+             "Kingdom:Kingdom,Karens of Karana;"
+             "Seal Team:Seal Team"
+)
+ALLIANCES = {}
+for alliance in CONF_ALLIANCES.split(";"):
+    alliance, members = alliance.split(":")
+    members = tuple(map(lambda x: x.strip(), members.split(",")))
+    ALLIANCES[alliance] = members
+DEFAULT_ALLIANCE = CONF.get("default", "default_alliance",
+                            fallback=tuple(ALLIANCES.keys())[0])
 
 # Data store variables
 PENDING_AUCTIONS = list()

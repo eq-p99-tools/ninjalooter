@@ -79,6 +79,16 @@ class MenuBar(wx.MenuBar):
 
         bidding_menu.AppendSeparator()
 
+        alliance_menu = wx.Menu()
+        for alliance in config.ALLIANCES:
+            alliance_item = wx.MenuItem(
+                alliance_menu, wx.ID_ANY, alliance, kind=wx.ITEM_RADIO)
+            alliance_menu.Append(alliance_item)
+            if config.DEFAULT_ALLIANCE == alliance:
+                alliance_item.Check()
+            self.Bind(wx.EVT_MENU, self.OnSetAlliance, alliance_item)
+        bidding_menu.AppendSubMenu(alliance_menu, '&Alliance')
+
         self.restrict_mi = wx.MenuItem(
             bidding_menu, wx.ID_ANY, '&Restrict to Alliance',
             kind=wx.ITEM_CHECK)
@@ -96,6 +106,13 @@ class MenuBar(wx.MenuBar):
         self.Append(bidding_menu, '&Bidding')
 
         parent.SetMenuBar(self)
+
+    def OnSetAlliance(self, e: wx.MenuEvent):
+        menu_item = [mi for mi in e.EventObject.MenuItems if mi.Id == e.Id][0]
+        config.DEFAULT_ALLIANCE = menu_item.ItemLabel
+        config.CONF.set(
+            'default', 'default_alliance', config.DEFAULT_ALLIANCE)
+        config.write()
 
     def OnConfigure(self, e: wx.MenuEvent):
         existing_logdir = config.LOG_DIRECTORY

@@ -1,7 +1,18 @@
 import unittest
 
+SAMPLE_ALLIANCES = {
+    'BL': ('Black Lotus',),
+    'Kingdom': ('Kingdom', 'Karens of Karana'),
+    'Seal Team': ('Seal Team',),
+    'VCR': ('Venerate', 'Castle', 'Reconstructed'),
+}
+SAMPLE_ALLIANCE_MAP = dict()
+for alliance, guilds in SAMPLE_ALLIANCES.items():
+    for guild in guilds:
+        SAMPLE_ALLIANCE_MAP[guild] = alliance
+
 SAMPLE_PLAYER_AFFILIATIONS = {
-    # 6 VCR
+    # 6 VC
     'Bill': 'Reconstructed',
     'Ted': 'Castle',
     'James': 'Castle',
