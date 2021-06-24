@@ -36,9 +36,10 @@ class BiddingFrame(wx.Window):
 
         # List
         pending_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 180),
+            self, wx.ID_ANY, size=wx.Size(725, 180),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         pending_box.Add(pending_list, flag=wx.EXPAND)
+        pending_list.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.UpdateMinDKP)
         pending_list.Bind(wx.EVT_LEFT_DCLICK, self.OnIgnorePending)
         self.pending_list = pending_list
 
@@ -49,6 +50,8 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=80),
             ObjectListView.ColumnDefn("Item", "left", 178, "name",
                                       fixedWidth=178),
+            ObjectListView.ColumnDefn("Min DKP", "center", 70, "min_dkp",
+                                      fixedWidth=70),
             ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
                                       fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
@@ -103,7 +106,7 @@ class BiddingFrame(wx.Window):
 
         # List
         active_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 154),
+            self, wx.ID_ANY, size=wx.Size(725, 154),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         active_box.Add(active_list, flag=wx.EXPAND)
         active_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowActiveDetail)
@@ -122,9 +125,16 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=70),
             ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players",
                                       fixedWidth=90),
+            ObjectListView.ColumnDefn("Time Left", "left", 70,
+                                      "time_remaining_text",
+                                      fixedWidth=70),
         ])
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         active_list.SetEmptyListMsg("No auctions pending.")
+        self.active_list_refresh_timer = wx.Timer(self, id=1)
+        self.Bind(wx.EVT_TIMER, self.refresh_active_list,
+                  self.active_list_refresh_timer)
+        self.active_list_refresh_timer.Start(1000)
 
         # Buttons
         active_buttons_box = wx.BoxSizer(wx.VERTICAL)
@@ -161,7 +171,7 @@ class BiddingFrame(wx.Window):
 
         # List
         history_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 1000),
+            self, wx.ID_ANY, size=wx.Size(725, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
@@ -207,6 +217,26 @@ class BiddingFrame(wx.Window):
         self.SetSizer(bidding_main_box)
         parent.AddPage(self, 'Bidding')
 
+    def refresh_active_list(self, event):
+        self.active_list.RefreshObjects(list(config.ACTIVE_AUCTIONS.values()))
+
+        RED = config.MIN_BID_TIME / 3
+        YELLOW = config.MIN_BID_TIME / 3 * 2
+        for idx, obj in enumerate(self.active_list.GetObjects()):
+            remaining = obj.time_remaining().seconds
+            if remaining < RED:
+                self.active_list.SetItemBackgroundColour(idx, wx.RED)
+            elif remaining < YELLOW:
+                self.active_list.SetItemBackgroundColour(idx, wx.YELLOW)
+            else:
+                self.active_list.SetItemBackgroundColour(idx, wx.GREEN)
+
+    def UpdateMinDKP(self, e: wx.Event):
+        selected_object = self.pending_list.GetSelectedObject()
+        if not selected_object:
+            return
+        self.min_dkp_spinner.SetValue(selected_object.min_dkp())
+
     def OnIgnorePending(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()
         selected_index = self.pending_list.GetFirstSelected()
@@ -243,10 +273,17 @@ class BiddingFrame(wx.Window):
 
     def OnMinDkpSpin(self, e: wx.SpinEvent):
         min_dkp = self.min_dkp_spinner.GetValue()
-        config.MIN_DKP = min_dkp
-        config.CONF.set(
-            'default', 'min_dkp', str(min_dkp))
-        config.write()
+        selected_object = self.pending_list.GetSelectedObject()
+        if not selected_object:
+            return
+        selected_object.min_dkp_override = min_dkp
+        self.pending_list.RefreshObject(selected_object)
+
+        # Old way: set up default mindkp
+        # config.MIN_DKP = min_dkp
+        # config.CONF.set(
+        #     'default', 'min_dkp', str(min_dkp))
+        # config.write()
 
     def PickAuctionDKP(self, e: wx.Event):
         """This is no longer used, in favor of selecting a default alliance."""

@@ -1,6 +1,7 @@
 # pylint: disable=no-member
 
 from __future__ import annotations
+import datetime
 import uuid as uuid_lib
 
 import dateutil.parser
@@ -44,14 +45,36 @@ class Player(DictEquals):
         self.guild = guild or ""
 
 
+class CredittLog(DictEquals):
+    time = None
+    user = None
+    message = None
+    raw_message = None
+
+    def __init__(self, time, user, message, raw_message):
+        self.time = time
+        self.user = user
+        self.message = message
+        self.raw_message = raw_message
+
+    def target(self):
+        message_cleaned = self.message.lower().split('creditt')
+        return message_cleaned[1].strip().capitalize()
+
+
 class WhoLog(DictEquals):
     time = None
     log = None
+    raidtick = False
 
-    def __init__(self, time, log):
+    def __init__(self, time, log, raidtick=False):
         super().__init__()
         self.time = time
         self.log = log
+        self.raidtick = raidtick
+
+    def eqtime(self) -> datetime.datetime:
+        return self.time.strftime("%a %b %d %H:%M:%S %Y")
 
     def populations(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
@@ -102,12 +125,15 @@ class ItemDrop(DictEquals):
     reporter = None
     timestamp = None
     uuid = None
+    min_dkp_override = None
 
-    def __init__(self, name, reporter, timestamp, uuid=None):
+    def __init__(self, name, reporter, timestamp, uuid=None,
+                 min_dkp_override=None):
         self.name = name
         self.reporter = reporter
         self.timestamp = timestamp
         self.uuid = uuid or str(uuid_lib.uuid4())
+        self.min_dkp_override = min_dkp_override
         if name in extra_data.EXTRA_ITEM_DATA:
             for key in extra_data.EXTRA_ITEM_DATA:
                 if name.lower() == key.lower():
@@ -128,6 +154,8 @@ class ItemDrop(DictEquals):
         return "NO" if nodrop else "Yes"
 
     def min_dkp(self) -> int:
+        if self.min_dkp_override:
+            return self.min_dkp_override
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name, {})
         return extra_item_data.get('min_dkp', config.MIN_DKP)
 
@@ -139,10 +167,15 @@ class ItemDrop(DictEquals):
 class Auction(DictEquals):
     item = None
     complete = None
+    start_time = None
 
-    def __init__(self, item: ItemDrop, complete=False):
+    def __init__(self, item: ItemDrop, complete=False, start_time=None):
         self.item = item
         self.complete = complete
+        if start_time:
+            self.start_time = dateutil.parser.DEFAULTPARSER.parse(start_time)
+        else:
+            self.start_time = datetime.datetime.now()
 
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()
@@ -182,6 +215,23 @@ class Auction(DictEquals):
     def get_target_min(self) -> str:
         return getattr(self, 'number',
                        getattr(self, 'min_dkp', config.MIN_DKP))
+
+    def time_remaining(self) -> datetime.timedelta:
+        elapsed = datetime.datetime.now() - self.start_time
+        min_bid_time = datetime.timedelta(seconds=config.MIN_BID_TIME)
+        return max(min_bid_time - elapsed, datetime.timedelta(0))
+
+    def time_remaining_text(self) -> str:
+        remaining = self.time_remaining()
+        # if remaining.seconds == 0:
+        #     return "NOW"
+        minutes = int(remaining.seconds / 60)
+        seconds = remaining.seconds % 60
+        if minutes:
+            time_remaining = "{}m{:02d}s".format(minutes, seconds)
+        else:
+            time_remaining = "{}s".format(seconds)
+        return time_remaining
 
 
 class DKPAuction(Auction):
@@ -223,7 +273,7 @@ class DKPAuction(Auction):
 
     def highest(self) -> list:
         if not self.bids:
-            LOG.info("No bids yet for %s", self.item)
+            LOG.debug("No bids yet for %s", self.item)
             return list()
         bid = max(self.bids)
         bidder = self.bids[bid]
@@ -234,23 +284,30 @@ class DKPAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         if current_bid != 'None':
             bid_message = (
-                "/shout [{item}]{classes} - `{alliance}` BID IN SHOUT. "
+                "/gu [{item}]{classes} - `{alliance}` BID IN /GU. "
                 "You MUST include the item name in your bid! Currently: "
-                "`{player}` with {number} DKP - Closing Soon! ").format(
+                "`{player}` with {number} DKP - Closing in {time_remaining}! "
+            ).format(
                 player=self.highest_players(),
                 item=self.item.name, alliance=self.alliance,
-                number=current_bid, classes=classes)
+                number=current_bid, classes=classes,
+                time_remaining=self.time_remaining_text()
+            )
         else:
             bid_message = (
-                "/shout [{item}]{classes} - `{alliance}` BID IN SHOUT, "
+                "/gu [{item}]{classes} - `{alliance}` BID IN /GU, "
                 "MIN {min} DKP. "
-                "You MUST include the item name in your bid! ").format(
+                "You MUST include the item name in your bid! Closes in "
+                "{time_remaining}."
+            ).format(
                 item=self.item.name, alliance=self.alliance,
-                min=self.get_target_min(), classes=classes)
+                min=self.get_target_min(), classes=classes,
+                time_remaining=self.time_remaining_text()
+            )
         return bid_message
 
     def win_text(self) -> str:
-        return "/shout Grats {player} on [{item}] ({number} DKP)!".format(
+        return "/gu Grats {player} on [{item}] ({number} DKP)!".format(
             player=self.highest_players(), number=self.highest_number(),
             item=self.item.name)
 
@@ -297,7 +354,7 @@ class RandomAuction(Auction):
 
     def bid_text(self) -> str:
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
-        return "/shout [{item}]{classes} ROLL {number} NOW!".format(
+        return "/gu [{item}]{classes} ROLL {number} NOW!".format(
             item=self.item.name, number=self.number, classes=classes)
         # TODO: alliance
 
@@ -314,20 +371,23 @@ EVT_CLEAR_WHO = wx.NewId()
 EVT_WHO_HISTORY = wx.NewId()
 EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
+EVT_CREDITT = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 EVT_IGNORE = wx.NewId()
 
 
-class DropEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
-    def __init__(self):
-        super().__init__()
-        self.SetEventType(EVT_DROP)
-
+class LogEvent(wx.PyEvent):
     def __eq__(self, other):
         return isinstance(other, self.__class__)
 
 
-class BidEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class DropEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_DROP)
+
+
+class BidEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self, item):
         super().__init__()
         self.item = item
@@ -337,7 +397,7 @@ class BidEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
         return isinstance(other, self.__class__) and self.item == other.item
 
 
-class WhoEvent(wx.PyEvent):
+class WhoEvent(LogEvent):
     def __init__(self, name, pclass, level, guild):
         super().__init__()
         self.SetEventType(EVT_WHO)
@@ -357,55 +417,43 @@ class WhoEvent(wx.PyEvent):
             self.name, self.pclass, self.level, self.guild)
 
 
-class ClearWhoEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class ClearWhoEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_CLEAR_WHO)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)
 
-
-class WhoHistoryEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class WhoHistoryEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_WHO_HISTORY)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)
 
-
-class WhoEndEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class WhoEndEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_WHO_END)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)
 
-
-class KillEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class KillEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_KILL)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)
+
+class CredittEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_CREDITT)
 
 
-class AppClearEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class AppClearEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_APP_CLEAR)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)
 
-
-class IgnoreEvent(wx.PyEvent):  # pylint: disable=too-few-public-methods
+class IgnoreEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_IGNORE)
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__)

@@ -1,4 +1,5 @@
 # pylint: disable=too-many-lines
+import json
 import pydicti
 
 TIMER_MOBS = {
@@ -45,7 +46,7 @@ EXTRA_ITEM_DATA = pydicti.Dicti({
     "Ochre Tessera": {
         "classes": ["BRD", "CLR"],
         "nodrop": False,
-        # "min_dkp": 3,
+        # "min_dkp": 1,
     },
     "Songbird Statuette": {
         "classes": ["BRD"],
@@ -1062,3 +1063,10 @@ EXTRA_ITEM_DATA = pydicti.Dicti({
         "nodrop": True,
     },
 })
+
+try:
+    with open('item_data.json') as extra_item_data:
+        OVERRIDE_EXTRA_ITEM_DATA = pydicti.Dicti(json.load(extra_item_data))
+    EXTRA_ITEM_DATA.update(OVERRIDE_EXTRA_ITEM_DATA)
+except FileNotFoundError:
+    pass

@@ -2,7 +2,9 @@
 logdir = C:\Everquest\Logs\
 numbers = 1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999
 min_dkp = 1
+min_bid_time = 150
 restrict_bids = False
 nodrop_only = True
+raidtick_filter = False
 alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
 default_alliance = Force of Will

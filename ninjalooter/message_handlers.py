@@ -1,6 +1,7 @@
 # pylint: disable=no-member
 
 import copy
+import datetime
 import re
 
 import dateutil.parser
@@ -16,6 +17,22 @@ from ninjalooter import utils
 LOG = logging.getLogger(__name__)
 
 
+def handle_raidtick(match: re.Match, window: wx.Frame) -> bool:
+    tick_time = match.group('time')
+    config.LAST_RAIDTICK = dateutil.parser.parse(tick_time)
+    return True
+
+
+def handle_creditt(match: re.Match, window: wx.Frame) -> bool:
+    time = match.group('time')
+    user = match.group('from')
+    message = match.group('message')
+    raw_message = match.group(0)
+    creddit_entry = models.CredittLog(time, user, message, raw_message)
+    config.CREDITT_LOG.append(creddit_entry)
+    wx.PostEvent(window, models.CredittEvent())
+
+
 # pylint: disable=unused-argument
 def handle_start_who(match: re.Match, window: wx.Frame) -> bool:
     config.PLAYER_AFFILIATIONS.clear()
@@ -26,8 +43,12 @@ def handle_start_who(match: re.Match, window: wx.Frame) -> bool:
 def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
     who_time = match.group('time')
     parsed_time = dateutil.parser.parse(who_time)
+    raidtick_was = datetime.datetime.now() - config.LAST_RAIDTICK
+    raidtick_who = False
+    if raidtick_was <= datetime.timedelta(seconds=3):
+        raidtick_who = True
     log_entry = models.WhoLog(
-        parsed_time, copy.copy(config.PLAYER_AFFILIATIONS))
+        parsed_time, copy.copy(config.PLAYER_AFFILIATIONS), raidtick_who)
     config.WHO_LOG.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
     wx.PostEvent(window, models.WhoEndEvent())
@@ -67,7 +88,7 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
     text = match.group("text")
     guild = config.PLAYER_AFFILIATIONS.get(name)
     if text.lower().startswith("looted"):
-        LOG.info("Ignoring ooc starting with 'looted'")
+        LOG.info("Ignoring drop message starting with 'looted'")
         return list()
     if config.RESTRICT_BIDS and guild and guild not in config.ALLIANCE_MAP:
         # Some other guild is talking, discard line
@@ -77,6 +98,8 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
     # Handle text to return a list of items linked
     found_items = utils.get_items_from_text(text)
     for item in found_items:
+        if item.lower() in utils.get_active_item_names():
+            continue
         drop = models.ItemDrop(item, name, timestamp)
         if (config.NODROP_ONLY and
                 item in extra_data.EXTRA_ITEM_DATA and

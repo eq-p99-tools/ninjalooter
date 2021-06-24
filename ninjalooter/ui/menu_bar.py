@@ -47,7 +47,15 @@ class MenuBar(wx.MenuBar):
             utils.PROJECT_DIR, "data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
-        self.Bind(wx.EVT_MENU, self.OnExport, export_mi)
+        self.Bind(wx.EVT_MENU, self.OnExportExcel, export_mi)
+
+        export_mi = wx.MenuItem(
+            file_menu, wx.ID_FLOPPY, '&Export to EQDKPlus\tCtrl+P')
+        export_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "export.png"))
+        export_mi.SetBitmap(export_bitmap)
+        file_menu.Append(export_mi)
+        self.Bind(wx.EVT_MENU, self.OnExportEQDKP, export_mi)
 
         clear_mi = wx.MenuItem(file_menu, wx.ID_NEW, '&Clear Data')
         clear_bitmap = wx.Bitmap(os.path.join(
@@ -134,7 +142,7 @@ class MenuBar(wx.MenuBar):
             self.Parent.parser_thread = logparse.ParseThread(self.Parent)
             self.Parent.parser_thread.start()
 
-    def OnExport(self, e: wx.MenuEvent):
+    def OnExportExcel(self, e: wx.MenuEvent):
         LOG.info("Exporting to Excel format.")
         saveFileDialog = wx.FileDialog(
             self.Parent, "Export to Excel", "", "",
@@ -147,6 +155,36 @@ class MenuBar(wx.MenuBar):
         saveFileDialog.Destroy()
         if result == wx.ID_OK:
             result = utils.export_to_excel(filename)
+            if not result:
+                dlg = wx.MessageDialog(
+                    self,
+                    "Failed to export data. The most common cause of this\n"
+                    "error is attempting to export to a file that is still "
+                    "open\nin Excel.",
+                    "Failed to Export", wx.OK | wx.ICON_ERROR)
+                dlg.ShowModal()
+                dlg.Destroy()
+            else:
+                dlg = wx.MessageDialog(
+                    self,
+                    "Successfully exported data to:\n%s" % filename,
+                    "Export Complete", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+
+    def OnExportEQDKP(self, e: wx.MenuEvent):
+        LOG.info("Exporting to EQDKPlus format.")
+        saveFileDialog = wx.FileDialog(
+            self.Parent, "Export to EQDKP", "", "",
+            "Excel Spreadsheet (*.xlsx)|*.xlsx", wx.FD_SAVE)
+
+        result = saveFileDialog.ShowModal()
+        filename = saveFileDialog.GetPath()
+        if not filename.endswith(".xlsx"):
+            filename = filename + ".xlsx"
+        saveFileDialog.Destroy()
+        if result == wx.ID_OK:
+            result = utils.export_to_eqdkp(filename)
             if not result:
                 dlg = wx.MessageDialog(
                     self,

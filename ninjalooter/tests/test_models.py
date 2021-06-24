@@ -144,8 +144,9 @@ class TestModels(base.NLTestBase):
 
         # No bids
         self.assertEqual(
-            "/shout [Copper Disc] (DRU, SHD) - `VCR` BID IN SHOUT, MIN 3 DKP. "
-            "You MUST include the item name in your bid! ",
+            "/gu [Copper Disc] (DRU, SHD) - `VCR` BID IN /GU, MIN 3 DKP. "
+            "You MUST include the item name in your bid! Closes in {}."
+            .format(auc.time_remaining_text()),
             auc.bid_text())
 
         # Valid bid
@@ -155,9 +156,10 @@ class TestModels(base.NLTestBase):
 
         # Bid exists
         self.assertEqual(
-            "/shout [Copper Disc] (DRU, SHD) - `VCR` BID IN SHOUT. "
+            "/gu [Copper Disc] (DRU, SHD) - `VCR` BID IN /GU. "
             "You MUST include the item name in your bid! Currently: "
-            "`Peter` with 3 DKP - Closing Soon! ",
+            "`Peter` with 3 DKP - Closing in {}! "
+            .format(auc.time_remaining_text()),
             auc.bid_text())
 
         item_name = 'Golden Jasper Earring'
@@ -166,8 +168,9 @@ class TestModels(base.NLTestBase):
 
         # No bids
         self.assertEqual(
-            "/shout [Golden Jasper Earring] - `VCR` BID IN SHOUT, MIN 3 DKP. "
-            "You MUST include the item name in your bid! ",
+            "/gu [Golden Jasper Earring] - `VCR` BID IN /GU, MIN 3 DKP. "
+            "You MUST include the item name in your bid! Closes in {}."
+            .format(auc.time_remaining_text()),
             auc.bid_text())
 
     def test_RandomAuction_model_add(self):
@@ -226,7 +229,7 @@ class TestModels(base.NLTestBase):
         auc = models.RandomAuction(itemdrop)
 
         self.assertEqual(
-            "/shout [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
+            "/gu [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
             auc.bid_text())
 
         item_name = 'Golden Jasper Earring'
@@ -234,7 +237,7 @@ class TestModels(base.NLTestBase):
         auc = models.RandomAuction(itemdrop)
 
         self.assertEqual(
-            "/shout [Golden Jasper Earring] ROLL 12345 NOW!",
+            "/gu [Golden Jasper Earring] ROLL 12345 NOW!",
             auc.bid_text())
 
     def test_get_next_number(self):

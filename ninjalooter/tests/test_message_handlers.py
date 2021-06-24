@@ -114,34 +114,34 @@ class TestMessageHandlers(base.NLTestBase):
             'Dan': 'Dial a Daniel',
         }
         config.PENDING_AUCTIONS = list()
-        # FILTER OFF - Item linked by a non-federation guild member
-        config.RESTRICT_BIDS = False
-        line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
-                "'Belt of Iniquity'")
-        match = config.MATCH_DROP.match(line)
-        items = message_handlers.handle_drop(match, 'window')
-        self.assertEqual(1, len(items))
-        self.assertEqual(1, len(config.PENDING_AUCTIONS))
-        mock_post_event.assert_called_once_with(
-            'window', models.DropEvent())
-        mock_post_event.reset_mock()
+        # # FILTER OFF - Item linked by a non-federation guild member
+        # config.RESTRICT_BIDS = False
+        # line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
+        #         "'Belt of Iniquity'")
+        # match = config.MATCH_DROP.match(line)
+        # items = message_handlers.handle_drop(match, 'window')
+        # self.assertEqual(1, len(items))
+        # self.assertEqual(1, len(config.PENDING_AUCTIONS))
+        # mock_post_event.assert_called_once_with(
+        #     'window', models.DropEvent())
+        # mock_post_event.reset_mock()
 
-        config.PENDING_AUCTIONS = list()
-        # FILTER ON - Item linked by a non-federation guild member
-        config.RESTRICT_BIDS = True
-        line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
-                "'Belt of Iniquity'")
-        match = config.MATCH_DROP.match(line)
-        items = message_handlers.handle_drop(match, 'window')
-        self.assertEqual(0, len(items))
-        self.assertEqual(0, len(config.PENDING_AUCTIONS))
-        mock_post_event.assert_not_called()
+        # config.PENDING_AUCTIONS = list()
+        # # FILTER ON - Item linked by a non-federation guild member
+        # config.RESTRICT_BIDS = True
+        # line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
+        #         "'Belt of Iniquity'")
+        # match = config.MATCH_DROP.match(line)
+        # items = message_handlers.handle_drop(match, 'window')
+        # self.assertEqual(0, len(items))
+        # self.assertEqual(0, len(config.PENDING_AUCTIONS))
+        # mock_post_event.assert_not_called()
 
         # Item linked by a federation guild member
 
         # NODROP filter on, droppable item
         config.NODROP_ONLY = True
-        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Copper Disc'")
         jim_disc_1_uuid = "jim_disc_1_uuid"
         jim_disc_1 = models.ItemDrop(
@@ -157,7 +157,7 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # NODROP filter on, NODROP item
-        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Belt of Iniquity'")
         jim_belt_1_uuid = "jim_belt_1_uuid"
         jim_belt_1 = models.ItemDrop(
@@ -179,7 +179,7 @@ class TestMessageHandlers(base.NLTestBase):
 
         # NODROP filter off, droppable item
         config.NODROP_ONLY = False
-        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Copper Disc'")
         match = config.MATCH_DROP.match(line)
         with mock.patch('uuid.uuid4') as mock_uuid4:
@@ -196,7 +196,7 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # Two items linked by a federation guild member, plus chat
-        line = ("[Sun Aug 16 22:47:41 2020] James says out of character, "
+        line = ("[Sun Aug 16 22:47:41 2020] James tells the guild, "
                 "'Platinum Disc and Golden Amber Earring woo'")
         james_disc_uuid = "james_disc_uuid"
         james_earring_uuid = "james_earring_uuid"
@@ -221,7 +221,7 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # Random chatter by federation guild member
-        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'four score and seven years ago, we wanted pixels'")
         match = config.MATCH_DROP.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
@@ -232,7 +232,7 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.assert_not_called()
 
         # Someone reports they looted an item
-        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'looted Belt of Iniquity'")
         match = config.MATCH_DROP.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
@@ -377,3 +377,5 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.assert_called_once_with(
             'window', models.BidEvent(disc_auction))
         mock_post_event.reset_mock()
+
+        config.ACTIVE_AUCTIONS = {}

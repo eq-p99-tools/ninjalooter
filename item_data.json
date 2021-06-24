@@ -1,0 +1,1807 @@
+{
+  "Ochre Tessera": {
+    "classes": [
+      "BRD",
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Songbird Statuette": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Light Woolen Mask": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Platinum Disc": {
+    "classes": [
+      "BRD",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Music Box": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Light Woolen Mantle": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Phosphoric Globe": {
+    "classes": [
+      "BRD",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Shimmering Diamond": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Crude Wooden Flute": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Imp Statuette": {
+    "classes": [
+      "BRD",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Dull Stone": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Amulet of Woven Hair": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Saffron Spiroc Feather": {
+    "classes": [
+      "BRD",
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Adamantium Bands": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Glowing Diamond": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Horn": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Manna Nectar": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Nebulous Emerald": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Nebulous Diamond": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Spear": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sky Emerald": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Silver Hoop": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Gold Disc": {
+    "classes": [
+      "CLR",
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Dark Wood": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Small Shield": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Adumbrate Globe": {
+    "classes": [
+      "CLR",
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Faintly Glowing Diamond": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Shiny Pauldrons": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Statuette": {
+    "classes": [
+      "CLR",
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Healing Totem": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Silvered Spiroc Necklace": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Glowing Sapphire": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Djinni Aura": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Mace": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Shimmering Topaz": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Mithril Bands": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Standard": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Azure Tessera": {
+    "classes": [
+      "DRU",
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Black Face Paint": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Worn Leather Mask": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Copper Disc": {
+    "classes": [
+      "DRU",
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Nature Walker's Sky Emerald": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Mantle of Woven Grass": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Diaphanous Globe": {
+    "classes": [
+      "DRU",
+      "PAL",
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Hardened Clay": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Battle Staff": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Statuette": {
+    "classes": [
+      "DRU",
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Wilder's Girdle": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Divine Honeycomb": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "White-tipped Spiroc Feather": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ethereal Ruby": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Elder's Totem": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Acidic Venom": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Lush Nectar": {
+    "classes": [
+      "DRU",
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Fire Sky Ruby": {
+    "classes": [
+      "DRU-wt3",
+      "SHM-wt12"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Storm Sky Opal": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Scimitar": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Crimson Tessera": {
+    "classes": [
+      "ENC",
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Darkstone Emerald": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Finely Woven Cloth Cord": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Silver Disc": {
+    "classes": [
+      "ENC",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bluish Stone": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Light Cloth Mantle": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Rugous Globe": {
+    "classes": [
+      "ENC",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sky Pearl": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Silken Mask": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Harpy Statuette": {
+    "classes": [
+      "ENC",
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Black Nebulous Sapphire": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Adamantium Earring": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Carmine Spiroc Feather": {
+    "classes": [
+      "ENC",
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ganoric Poison": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Glowing Necklace": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Sweet Nectar": {
+    "classes": [
+      "ENC",
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Black Sky Diamond": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Large Sky Sapphire": {
+    "classes": [
+      "ENC",
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Wind Staff": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ethereal Sapphire": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Feathered Cape": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Iron Disc": {
+    "classes": [
+      "MAG",
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Gem of Empowerment": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ceramic Mask": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Hyaline Globe": {
+    "classes": [
+      "MAG",
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ivory Pendant": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Golden Coffer": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Finely Woven Cloth Amice": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Large Diamond": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Blood Sky Amethyst": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Golden Efreeti Ring": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Sphinx Crown": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Hazy Opal": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Magi Staff": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Crown of Elemental Mastery": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Large Opal": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Djinni Stave": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Verdant Tessera": {
+    "classes": [
+      "MNK",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Finely Woven Gold Mesh": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Silken Strands": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Tiny Ruby": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Cracked Leather Eyepatch": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Shimmering Opal": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Dove Slippers": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Talon": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Silken Wrap": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "White Spiroc Feather": {
+    "classes": [
+      "MNK",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ethereal Amethyst": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Brass Knuckles": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Nebulous Sapphire": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Aged Nectar": {
+    "classes": [
+      "MNK",
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Writ of Quellious": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Tear of Quellious": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Ebon Shard": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Griffon's Beak": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Feathers": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Black Silk Cape": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Djinni Blood": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Fine Cloth Raiment": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Obsidian Amulet": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Pulsating Ruby": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Nebulous Ruby": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ring of Veeshan": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Gorgon Head": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Glowing Black Pearl": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Efreeti Great Staff": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Silvery Girdle": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ivory Sky Diamond": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Griffon Statuette": {
+    "classes": [
+      "PAL",
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Peace Totem": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bixie Sword Blade": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Dark Spiroc Feather": {
+    "classes": [
+      "PAL",
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ethereal Topaz": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sphinx Claw": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Dulcet Nectar": {
+    "classes": [
+      "PAL",
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Golden Hilt": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Large Sky Diamond": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Zweihander": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Auburn Tessera": {
+    "classes": [
+      "RNG",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ysgaril Root": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Griffon Talon": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Mithril Disc": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Harpy Tongue": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Fine Velvet Cloak": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Gridelin Globe": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Dragon-hide Mantle": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Earth Totem": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Djinni Statuette": {
+    "classes": [
+      "RNG",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Thunder Totem": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "White Gold Earring": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Emerald Spiroc Feather": {
+    "classes": [
+      "RNG",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bitter Honey": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Circlet of Brambles": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Long Sword": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Thickened Nectar": {
+    "classes": [
+      "RNG",
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sphinx Tallow": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Shimmering Pearl": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Bow": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ivory Tessera": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Gem of Invigoration": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Inlaid Choker": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bronze Disc": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Red Face Paint": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Jester's Mask": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Pearlescent Globe": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Black Griffon Feather": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Sky Totem": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Pegasus Statuette": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Prismatic Sphere": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Fine Wool Cloak": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Mottled Spiroc Feather": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Cracked Leather Belt": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sphinxian Circlet": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Honeyed Nectar": {
+    "classes": [
+      "ROG",
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bixie Stinger": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Lightning Rod": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bloodsky Sapphire": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Ebon Tessera": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sphinx Eye Opal": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Finely Crafted Amulet": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Small Sapphire": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Silvery Ring": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Dried Leather": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Finely Woven Cloth Belt": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Blood Sky Emerald": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Rusted Pauldrons": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Obsidian Shard": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Shield": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Jar of Honey": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Sphinxian Ring": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Fae Pauldrons": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Large Sky Pearl": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bloodstained Hilt": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Blood Sky Ruby": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Axe": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Drake Fang": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Leather Cord": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Ethereal Amber": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Shimmering Amber": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ceremonial Belt": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Sphinx Hide": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Light Damask Mantle": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Wooden Bands": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Corrosive Venom": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Club": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Bixie Essence": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiritualist's Ring": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiritualist`s Ring": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Symbol of Veeshan": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti War Maul": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Small Ruby": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Azure Ring": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Small Pick": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Stone Amulet": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Silver Mesh": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Spiroc Air Totem": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Wind Totem": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Wind Tablet": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Belt": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Virulent Poison": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Djinni War Blade": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bottled Djinni": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Ethereal Emerald": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Efreeti Battle Axe": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Augmentor's Gem": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Grey Damask Cloak": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Ethereal Opal": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Woven Skull Cap": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Sky Topaz": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "High Quality Raiment": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Mithril Air Ring": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Box of Winds": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Pulsating Sapphire": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Amethyst Amulet": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Copper Air Band": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Efreeti War Staff": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": false,
+    "min_dkp": 1
+  },
+  "Belt of Concordance": {
+    "classes": [
+      "BRD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of Contention": {
+    "classes": [
+      "WAR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of Iniquity": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of the Pine": {
+    "classes": [
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of Tranquility": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of Transience": {
+    "classes": [
+      "ROG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Belt of Virtue": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Blade of Abrogation": {
+    "classes": [
+      "SHD"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bracelet of Cessation": {
+    "classes": [
+      "NEC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bracelet of Distortion": {
+    "classes": [
+      "WIZ"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bracelet of Exertion": {
+    "classes": [
+      "MAG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Bracelet of Quiescence": {
+    "classes": [
+      "ENC"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Stein of Flowing Ichor": {
+    "classes": [
+      "SHM"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Symbol of Marr": {
+    "classes": [
+      "PAL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Treant Tear": {
+    "classes": [
+      "DRU"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Weight of the Gods": {
+    "classes": [
+      "CLR"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "White Satin Gloves": {
+    "classes": [
+      "ALL"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Whitened Treant Fists": {
+    "classes": [
+      "MNK"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  },
+  "Spiroc Wingblade": {
+    "classes": [
+      "WAR",
+      "RNG"
+    ],
+    "nodrop": true,
+    "min_dkp": 1
+  }
+}

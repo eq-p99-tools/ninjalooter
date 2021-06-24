@@ -1,9 +1,10 @@
 import configparser
+import datetime
 import logging
 import re
 import sys
 
-VERSION = "1.9.6"
+VERSION = "1.10.0"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -23,9 +24,12 @@ NUMBERS = CONF.get(
              "7777, 8888, 9999")
 NUMBERS = [int(num.strip()) for num in NUMBERS.split(',')]
 MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
+MIN_BID_TIME = CONF.getint("default", "min_bid_time", fallback=150) + 1
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
+SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
+                                     fallback=False)
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
@@ -49,6 +53,7 @@ HISTORICAL_AUCTIONS = dict()
 PLAYER_AFFILIATIONS = dict()
 HISTORICAL_AFFILIATIONS = dict()
 WHO_LOG = list()
+CREDITT_LOG = list()
 KILL_TIMERS = list()
 
 # Calculated variables
@@ -59,52 +64,68 @@ for alliance, guilds in ALLIANCES.items():
         ALLIANCE_MAP[guild] = alliance
 TRIE = None
 ITEMS = dict()
+LAST_RAIDTICK = datetime.datetime.now()
 LAST_NUMBER = 0
-PLAYER_NAME = None
+PLAYER_NAME = ""
 
 # Constants
 BASE_WIKI_URL = 'http://wiki.project1999.com'
 SAVE_STATE_FILE = 'state.json'
 
 # Regexes
+TIMESTAMP = r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] +"
 MATCH_START_WHO = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] "
-    r"Players on EverQuest:")
+    TIMESTAMP + r"Players on EverQuest:")
 MATCH_WHO = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" +(?:AFK +)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
+    TIMESTAMP +
+    r"(?:AFK +)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
     r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w ]+)>)?")
 MATCH_END_WHO = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] "
+    TIMESTAMP +
     r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w ]+)\.")
 MATCH_OOC_ONLY = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) says? out of character, '(?P<text>.*)'")
+    TIMESTAMP +
+    r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
 MATCH_OOC_OR_SAY = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
-MATCH_DROP = MATCH_OOC_OR_SAY  # Use either for now until we clarify
+    TIMESTAMP +
+    r"(?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
+MATCH_GU_OR_SAY = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) (says?|tells the guild|say to your guild)?,"
+    r" '(?P<text>.*)'")
 MATCH_AUC_ONLY = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")
+    TIMESTAMP +
+    r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")
 MATCH_AUC_OR_SHOUT = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    TIMESTAMP +
+    r"(?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
 MATCH_GU_AUC_OR_SHOUT = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<name>\w+) (shouts?|auctions?|tells the guild|say to your guild),"
+    TIMESTAMP +
+    r"(?P<name>\w+) (shouts?|auctions?|tells the guild|say to your guild),"
     r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
-MATCH_BID = MATCH_GU_AUC_OR_SHOUT
 MATCH_RAND1 = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" \*\*A Magic Die is rolled by (?P<name>\w+)\.")
+    TIMESTAMP +
+    r"\*\*A Magic Die is rolled by (?P<name>\w+)\.")
 MATCH_RAND2 = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" \*\*It could have been any number from (?P<from>\d+) to (?P<to>\d+), "
+    TIMESTAMP +
+    r"\*\*It could have been any number from (?P<from>\d+) to (?P<to>\d+), "
     r"but this time it turned up a (?P<result>\d+)\.(?P<name>\w+)")
 MATCH_KILL = re.compile(
-    r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\]"
-    r" (?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
+    TIMESTAMP +
+    r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
+MATCH_RAIDTICK = re.compile(
+    TIMESTAMP +
+    r".*RAIDTICK.*"
+)
+MATCH_CREDITT = re.compile(
+    TIMESTAMP +
+    r"(?P<from>.*) (-> {}: |tells you, ')".format(PLAYER_NAME) +
+    r"(?P<message>.*(creditt|gratss).*?)'?$",
+    flags=re.IGNORECASE
+)
+
+MATCH_DROP = MATCH_GU_OR_SAY
+MATCH_BID = MATCH_GU_AUC_OR_SHOUT
 
 
 def write():

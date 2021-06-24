@@ -1,5 +1,6 @@
 # pylint: disable=too-many-locals,too-many-branches
 
+import collections
 import datetime
 import inspect
 import json
@@ -195,6 +196,14 @@ def get_items_from_text(text: str) -> list:
     return item_names
 
 
+def get_active_item_names() -> list:
+    """Return all active item bids as a list of lowercase item names."""
+    active_items = []
+    for auc_item in config.ACTIVE_AUCTIONS.values():
+        active_items.append(auc_item.name().lower())
+    return active_items
+
+
 def load_state():
     try:
         with open(config.SAVE_STATE_FILE, 'r') as ssfp:
@@ -221,6 +230,7 @@ def store_state():
         "HISTORICAL_AFFILIATIONS": config.HISTORICAL_AFFILIATIONS,
         "WHO_LOG": config.WHO_LOG,
         "KILL_TIMERS": config.KILL_TIMERS,
+        "CREDITT_LOG": config.CREDITT_LOG,
     }
     with open(config.SAVE_STATE_FILE, 'w') as ssfp:
         json.dump(json_state, ssfp, cls=JSONEncoder)
@@ -299,6 +309,87 @@ def export_to_excel(filename):
                 attendance_sheet.write_row(row_num, 0, (name, guild))
                 row_num += 1
             attendance_sheet.autofilter(0, 0, row_num - 1, 1)
+
+    # Save the workbook
+    try:
+        workbook.close()
+        return True
+    except xlsxwriter.exceptions.FileCreateError:
+        return False
+
+
+def export_to_eqdkp(filename):
+    # Recreate /who lines for each recorded raidtick
+    raidtick_logs = []
+    for wholog in config.WHO_LOG:
+        if wholog.raidtick:
+            tick_time = wholog.eqtime()
+            tick_lines = []
+            for member, guild in wholog.log.items():
+                tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
+                tick_lines.append(tick_line)
+            if tick_lines:
+                raidtick_logs.append(tick_lines)
+
+    # Get all raw creditt messages
+    creditt_messages = [x.raw_message for x in config.CREDITT_LOG]
+
+    # Assemble all recorded loots into parsable format
+    closed_loots = []
+    for auction in config.HISTORICAL_AUCTIONS.values():
+        highest = auction.highest()
+        if highest and isinstance(auction, models.DKPAuction):
+            winner, dkp = highest[0]
+            closed_loots.append(
+                f"[{auction.item.timestamp}] You say, 'LOOT: "
+                f" {auction.item.name} {winner} {dkp}'"
+            )
+        elif highest:
+            winner, roll = highest[0]
+            closed_loots.append(
+                f"[{auction.item.timestamp}] You say, 'LOOT: "
+                f" {auction.item.name} {winner} 0'"
+            )
+
+    # Set up the workbook
+    workbook = xlsxwriter.Workbook(
+        filename, {'default_date_format': 'm/d/yyyy h:mm:ss AM/PM'})
+    sheets = collections.OrderedDict()
+    sheet_rows = {}
+
+    # Make a sheet for creditt and gratss adjustments
+    creditt_sheet = workbook.add_worksheet("Creditt & Gratss")
+    for row, creditt in enumerate(creditt_messages):
+        creditt_sheet.write_string(row, 0, creditt)
+
+    # Create a page per raidtick
+    for tick in raidtick_logs:
+        tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group('time')
+        parsed_time = dateutil.parser.parse(tick_timestamp)
+        time_str = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
+        worksheet = workbook.add_worksheet(time_str)
+        sheets[parsed_time] = worksheet
+        # Write /who logs
+        for row, line in enumerate(tick):
+            worksheet.write_string(row, 0, line)
+            sheet_rows[time_str] = row + 1
+
+    for sheet_timestamp in reversed(sheets):
+        sheet = sheets[sheet_timestamp]
+        # Write loots after each tick, working backwards
+        for loot in closed_loots.copy():
+            loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
+            parsed_time = dateutil.parser.parse(loot_timestamp)
+            if parsed_time > sheet_timestamp:
+                sheet_rows[sheet.name] += 1
+                sheet.write_string(sheet_rows[sheet.name], 0, loot)
+                closed_loots.remove(loot)
+
+    # Write any remaining loots to the earliest sheet
+    first_sheet = list(sheets.values())[0]
+    for loot in closed_loots:
+        sheet_rows[first_sheet.name] += 1
+        first_sheet.write_string(sheet_rows[first_sheet.name], 0, loot)
 
     # Save the workbook
     try:
