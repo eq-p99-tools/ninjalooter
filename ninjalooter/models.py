@@ -223,8 +223,8 @@ class Auction(DictEquals):
 
     def time_remaining_text(self) -> str:
         remaining = self.time_remaining()
-        # if remaining.seconds == 0:
-        #     return "NOW"
+        if remaining.seconds == 0:
+            return "a few moments"
         minutes = int(remaining.seconds / 60)
         seconds = remaining.seconds % 60
         if minutes:
@@ -297,7 +297,7 @@ class DKPAuction(Auction):
             bid_message = (
                 "/gu [{item}]{classes} - `{alliance}` BID IN /GU, "
                 "MIN {min} DKP. "
-                "You MUST include the item name in your bid! Closes in "
+                "You MUST include the item name in your bid! Closing in "
                 "{time_remaining}."
             ).format(
                 item=self.item.name, alliance=self.alliance,
@@ -307,7 +307,7 @@ class DKPAuction(Auction):
         return bid_message
 
     def win_text(self) -> str:
-        return "/gu Grats {player} on [{item}] ({number} DKP)!".format(
+        return "/gu Gratss {player} on [{item}] ({number} DKP)!".format(
             player=self.highest_players(), number=self.highest_number(),
             item=self.item.name)
 
@@ -359,7 +359,7 @@ class RandomAuction(Auction):
         # TODO: alliance
 
     def win_text(self) -> str:
-        return ("/shout Grats {player} on [{item}] with {roll} / {target}!"
+        return ("/shout Gratss {player} on [{item}] with {roll} / {target}!"
                 .format(player=self.highest_players(), item=self.item.name,
                         roll=self.highest_number(), target=self.number))
 

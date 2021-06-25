@@ -23,6 +23,7 @@ LOG_MATCHERS = {
     config.MATCH_KILL: message_handlers.handle_kill,
     config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
     config.MATCH_CREDITT: message_handlers.handle_creditt,
+    config.MATCH_GRATSS: message_handlers.handle_creditt,
 }
 
 

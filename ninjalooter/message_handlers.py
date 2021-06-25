@@ -128,7 +128,7 @@ def handle_bid(match: re.Match, window: wx.Frame) -> bool:
     text = match.group("text")
     bid = int(match.group("bid"))
 
-    if ' BID IN SHOUT, MIN ' in text:
+    if 'BID IN /GU' in text:
         return False
 
     found_items = utils.get_items_from_text(text)

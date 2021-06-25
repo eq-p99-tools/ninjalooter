@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.10.0"
+VERSION = "1.10.1"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -120,7 +120,12 @@ MATCH_RAIDTICK = re.compile(
 MATCH_CREDITT = re.compile(
     TIMESTAMP +
     r"(?P<from>.*) (-> {}: |tells you, ')".format(PLAYER_NAME) +
-    r"(?P<message>.*(creditt|gratss).*?)'?$",
+    r"(?P<message>.*creditt.*?)'?$",
+    flags=re.IGNORECASE
+)
+MATCH_GRATSS = re.compile(
+    TIMESTAMP +
+    r"(?P<from>.*) .*?(, '|: )(?P<message>.*gratss.*?)'?$",
     flags=re.IGNORECASE
 )
 
