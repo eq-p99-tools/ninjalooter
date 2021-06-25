@@ -27,7 +27,7 @@ class PopulationFrame(wx.Window):
         self.pop_preview = list()
 
         ##########################
-        # Population Frame (Tab 2)
+        # Population Frame (Tab 3)
         ##########################
         label_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
         population_main_box = wx.BoxSizer(wx.VERTICAL)

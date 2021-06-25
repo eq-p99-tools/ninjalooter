@@ -373,6 +373,10 @@ def export_to_eqdkp(filename):
         for row, line in enumerate(tick):
             worksheet.write_string(row, 0, line)
             sheet_rows[time_str] = row + 1
+    # If there weren't any ticks, just make one sheet to hold loot
+    if not sheets and closed_loots:
+        sheets["Loot"] = workbook.add_worksheet("Loot")
+        sheet_rows["Loot"] = -1
 
     for sheet_timestamp in reversed(sheets):
         sheet = sheets[sheet_timestamp]
@@ -380,7 +384,7 @@ def export_to_eqdkp(filename):
         for loot in closed_loots.copy():
             loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
             parsed_time = dateutil.parser.parse(loot_timestamp)
-            if parsed_time > sheet_timestamp:
+            if sheet_timestamp == "Loot" or parsed_time > sheet_timestamp:
                 sheet_rows[sheet.name] += 1
                 sheet.write_string(sheet_rows[sheet.name], 0, loot)
                 closed_loots.remove(loot)

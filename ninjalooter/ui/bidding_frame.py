@@ -48,10 +48,10 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=170),
             ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
                                       fixedWidth=80),
-            ObjectListView.ColumnDefn("Item", "left", 178, "name",
-                                      fixedWidth=178),
-            ObjectListView.ColumnDefn("Min DKP", "center", 70, "min_dkp",
-                                      fixedWidth=70),
+            ObjectListView.ColumnDefn("Item", "left", 240, "name",
+                                      fixedWidth=240),
+            ObjectListView.ColumnDefn("Min. DKP", "center", 61, "min_dkp",
+                                      fixedWidth=61),
             ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
                                       fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
@@ -77,10 +77,10 @@ class BiddingFrame(wx.Window):
         pending_buttons_box.Add(pending_button_wiki, flag=wx.TOP, border=10)
         min_dkp_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
         min_dkp_label = wx.StaticText(
-            self, label="Min DKP")
+            self, label="Min. DKP")
         min_dkp_label.SetFont(min_dkp_font)
         min_dkp_spinner = wx.SpinCtrl(self, value=str(config.MIN_DKP))
-        min_dkp_spinner.SetRange(0, 1000)
+        min_dkp_spinner.SetRange(0, 10000)
         min_dkp_spinner.Bind(wx.EVT_SPINCTRL, self.OnMinDkpSpin)
         self.min_dkp_spinner = min_dkp_spinner
         pending_buttons_box.Add(min_dkp_label,
@@ -113,21 +113,21 @@ class BiddingFrame(wx.Window):
         self.active_list = active_list
 
         active_list.SetColumns([
-            ObjectListView.ColumnDefn("Item", "left", 180, "name",
-                                      fixedWidth=180),
+            ObjectListView.ColumnDefn("Item", "left", 215, "name",
+                                      fixedWidth=215),
             ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
-            ObjectListView.ColumnDefn("Rand/Min", "left", 90, "get_target_min",
-                                      fixedWidth=90),
-            ObjectListView.ColumnDefn("Bid/Roll", "left", 70, "highest_number",
+            ObjectListView.ColumnDefn("Rand/Min", "left", 70, "get_target_min",
                                       fixedWidth=70),
+            ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number",
+                                      fixedWidth=65),
             ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players",
                                       fixedWidth=90),
-            ObjectListView.ColumnDefn("Time Left", "left", 70,
+            ObjectListView.ColumnDefn("Time Left", "left", 100,
                                       "time_remaining_text",
-                                      fixedWidth=70),
+                                      fixedWidth=100),
         ])
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         active_list.SetEmptyListMsg("No auctions pending.")
@@ -178,8 +178,8 @@ class BiddingFrame(wx.Window):
         self.history_list = history_list
 
         history_list.SetColumns([
-            ObjectListView.ColumnDefn("Item", "left", 180, "name",
-                                      fixedWidth=180),
+            ObjectListView.ColumnDefn("Item", "left", 240, "name",
+                                      fixedWidth=240),
             ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
@@ -220,16 +220,22 @@ class BiddingFrame(wx.Window):
     def refresh_active_list(self, event):
         self.active_list.RefreshObjects(list(config.ACTIVE_AUCTIONS.values()))
 
-        RED = config.MIN_BID_TIME / 3
-        YELLOW = config.MIN_BID_TIME / 3 * 2
+        # https://www.youtube.com/watch?v=d3D7Y_ycSms
+        DANGER_ZONE = config.MIN_BID_TIME / 3
+
+        WARNING_ZONE = config.MIN_BID_TIME / 3 * 2
+
         for idx, obj in enumerate(self.active_list.GetObjects()):
             remaining = obj.time_remaining().seconds
-            if remaining < RED:
-                self.active_list.SetItemBackgroundColour(idx, wx.RED)
-            elif remaining < YELLOW:
-                self.active_list.SetItemBackgroundColour(idx, wx.YELLOW)
+            if remaining < DANGER_ZONE:
+                self.active_list.SetItemBackgroundColour(
+                    idx, config.DANGER_COLOR)
+            elif remaining < WARNING_ZONE:
+                self.active_list.SetItemBackgroundColour(
+                    idx, config.WARN_COLOR)
             else:
-                self.active_list.SetItemBackgroundColour(idx, wx.GREEN)
+                self.active_list.SetItemBackgroundColour(
+                    idx, config.SAFE_COLOR)
 
     def UpdateMinDKP(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()

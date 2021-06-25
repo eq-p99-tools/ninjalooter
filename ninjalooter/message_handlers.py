@@ -190,10 +190,10 @@ def handle_rand2(match: re.Match, window: wx.Frame) -> bool:
 def handle_kill(match: re.Match, window: wx.Frame) -> bool:
     time = match.group('time')
     victim = match.group('victim')
-    if victim in extra_data.TIMER_MOBS:
-        kt_obj = models.KillTimer(time, victim)
-        config.KILL_TIMERS.append(kt_obj)
-        wx.PostEvent(window, models.KillEvent())
-        utils.store_state()
-        return True
-    return False
+    # if victim in extra_data.TIMER_MOBS:
+    kt_obj = models.KillTimer(time, victim)
+    config.KILL_TIMERS.append(kt_obj)
+    wx.PostEvent(window, models.KillEvent())
+    utils.store_state()
+    return True
+    # return False

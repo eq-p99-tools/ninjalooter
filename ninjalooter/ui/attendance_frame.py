@@ -18,7 +18,7 @@ class AttendanceFrame(wx.Window):
                                    self.OnClearApp)
 
         ##############################
-        # Attendance Log Frame (Tab 3)
+        # Attendance Log Frame (Tab 2)
         ##############################
         attendance_main_box = wx.BoxSizer(wx.VERTICAL)
         attendance_splitter = wx.SplitterWindow(
@@ -28,9 +28,9 @@ class AttendanceFrame(wx.Window):
 
         # Attendance / Raidtick List
         attendance_box = wx.BoxSizer(wx.HORIZONTAL)
-        attendance_list = ObjectListView.GroupListView(
+        attendance_list = ObjectListView.ObjectListView(
             pane_1, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(622, 600))
+            size=wx.Size(650, 600))
         attendance_box.Add(attendance_list, flag=wx.EXPAND | wx.ALL)
         attendance_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowAttendanceDetail)
         self.attendance_list = attendance_list
@@ -40,8 +40,11 @@ class AttendanceFrame(wx.Window):
                 "Time", "left", 180, "time",
                 fixedWidth=180),
             ObjectListView.ColumnDefn(
-                "Populations", "left", 400, "populations",
-                fixedWidth=400),
+                "RT", "left", 25, "raidtick_display",
+                fixedWidth=25),
+            ObjectListView.ColumnDefn(
+                "Populations", "left", 425, "populations",
+                fixedWidth=425),
         ])
         attendance_list.SetObjects(config.WHO_LOG)
         attendance_list.SetEmptyListMsg(
@@ -63,7 +66,7 @@ class AttendanceFrame(wx.Window):
         creditt_box = wx.BoxSizer(wx.HORIZONTAL)
         creditt_list = ObjectListView.ObjectListView(
             pane_2, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(622, 200))
+            size=wx.Size(650, 200))
         creditt_box.Add(creditt_list, flag=wx.EXPAND | wx.ALL)
         # creditt_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditCreditt)
         self.creditt_list = creditt_list
@@ -76,8 +79,8 @@ class AttendanceFrame(wx.Window):
                 "From", "left", 120, "user",
                 fixedWidth=120),
             ObjectListView.ColumnDefn(
-                "Message", "left", 322, "message",
-                fixedWidth=322),
+                "Message", "left", 350, "message",
+                fixedWidth=350),
         ])
         creditt_list.SetObjects(config.CREDITT_LOG)
         creditt_list.SetEmptyListMsg("No creditt/gratss messages received.")
@@ -100,7 +103,7 @@ class AttendanceFrame(wx.Window):
         self.SetSizer(attendance_main_box)
         attendance_main_box.Fit(self)
         attendance_splitter.SetSashPosition(500)
-        parent.AddPage(self, 'Attendance Logs [WORK IN PROGRESS]')
+        parent.AddPage(self, 'Attendance Logs')
 
     def OnIgnoreCreditt(self, e: wx.Event):
         selected_object = self.creditt_list.GetSelectedObject()
@@ -154,7 +157,15 @@ class AttendanceFrame(wx.Window):
 class AttendanceDetailWindow(wx.Frame):
     def __init__(self, item, parent=None, title="Attendance Record"):
         wx.Frame.__init__(self, parent, title=title, size=(420, 800))
-        main_box = wx.BoxSizer(wx.HORIZONTAL)
+        self.item = item
+
+        main_box = wx.BoxSizer(wx.VERTICAL)
+
+        raidtick_checkbox = wx.CheckBox(self, label="Raidtick")
+        raidtick_checkbox.SetValue(item.raidtick)
+        raidtick_checkbox.Bind(wx.EVT_CHECKBOX, self.OnRaidtickCheck)
+        main_box.Add(raidtick_checkbox, border=10)
+        self.raidtick_checkbox = raidtick_checkbox
 
         attendance_record = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
@@ -179,3 +190,7 @@ class AttendanceDetailWindow(wx.Frame):
 
         self.SetSizer(main_box)
         self.Show()
+
+    def OnRaidtickCheck(self, e: wx.EVT_CHECKBOX):
+        self.item.raidtick = self.raidtick_checkbox.IsChecked()
+        self.GetParent().OnRaidtickOnly(e)

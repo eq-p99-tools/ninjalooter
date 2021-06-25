@@ -8,3 +8,8 @@ nodrop_only = True
 raidtick_filter = False
 alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
 default_alliance = Force of Will
+
+[theme]
+safe_color = #CCE2CB
+warn_color = #F6EAC2
+danger_color = #FFAEA5

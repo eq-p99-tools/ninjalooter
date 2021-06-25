@@ -43,11 +43,11 @@ class MainWindow(wx.Frame):
         # Bidding Frame
         bidding_frame.BiddingFrame(notebook)
 
-        # Population Frame
-        population_frame.PopulationFrame(notebook)
-
         # Attendance Frame
         attendance_frame.AttendanceFrame(notebook)
+
+        # Population Frame
+        population_frame.PopulationFrame(notebook)
 
         # Kill Times Frame
         killtimes_frame.KillTimesFrame(notebook)

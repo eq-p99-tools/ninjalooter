@@ -13,6 +13,12 @@ else:
 CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
 
+
+def write():
+    with open(CONFIG_FILENAME, 'w') as file_pointer:
+        CONF.write(file_pointer)
+
+
 # Configurable Stuff
 if not CONF.has_section('default'):
     CONF.add_section('default')
@@ -30,6 +36,17 @@ NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
 SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
                                      fallback=False)
+SAFE_COLOR = CONF.get("theme", "safe_color", fallback="#CCE2CB")
+WARN_COLOR = CONF.get("theme", "warn_color", fallback="#F6EAC2")
+DANGER_COLOR = CONF.get("theme", "danger_color", fallback="#FFAEA5")
+# Writeback new theme data
+if not CONF.has_section("theme"):
+    CONF.add_section("theme")
+    CONF.set("theme", "safe_color", SAFE_COLOR)
+    CONF.set("theme", "warn_color", WARN_COLOR)
+    CONF.set("theme", "danger_color", DANGER_COLOR)
+    write()
+
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
@@ -131,8 +148,3 @@ MATCH_GRATSS = re.compile(
 
 MATCH_DROP = MATCH_GU_OR_SAY
 MATCH_BID = MATCH_GU_AUC_OR_SHOUT
-
-
-def write():
-    with open(CONFIG_FILENAME, 'w') as file_pointer:
-        CONF.write(file_pointer)

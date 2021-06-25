@@ -76,6 +76,9 @@ class WhoLog(DictEquals):
     def eqtime(self) -> datetime.datetime:
         return self.time.strftime("%a %b %d %H:%M:%S %Y")
 
+    def raidtick_display(self):
+        return "✔️" if self.raidtick else ""  # or "❌"?
+
     def populations(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
         for guild in self.log.values():
@@ -201,7 +204,7 @@ class Auction(DictEquals):
         for one in self.highest():
             players.append(one[0])
         players = ', '.join(players)
-        return players or "None"
+        return players or ""
 
     def name(self) -> str:
         return self.item.name
@@ -307,8 +310,14 @@ class DKPAuction(Auction):
         return bid_message
 
     def win_text(self) -> str:
+        player = self.highest_players()
+        if not player:
+            player = "ROT"
+        dkp = self.highest_number()
+        if dkp == "None":
+            dkp = "0"
         return "/gu Gratss {player} on [{item}] ({number} DKP)!".format(
-            player=self.highest_players(), number=self.highest_number(),
+            player=player, number=dkp,
             item=self.item.name)
 
 
@@ -345,7 +354,7 @@ class RandomAuction(Auction):
 
     def highest(self) -> list:
         if not self.rolls:
-            LOG.info("No rolls yet for %s", self.item)
+            LOG.debug("No rolls yet for %s", self.item)
             return list()
         high = max(self.rolls.values())
         rollers = [(player, roll) for player, roll in self.rolls.items()
@@ -359,9 +368,15 @@ class RandomAuction(Auction):
         # TODO: alliance
 
     def win_text(self) -> str:
+        player = self.highest_players()
+        if player == "None":
+            player = "ROT"
+        roll = self.highest_number()
+        if roll == "None":
+            roll = "0"
         return ("/shout Gratss {player} on [{item}] with {roll} / {target}!"
-                .format(player=self.highest_players(), item=self.item.name,
-                        roll=self.highest_number(), target=self.number))
+                .format(player=player, item=self.item.name,
+                        roll=roll, target=self.number))
 
 
 EVT_DROP = wx.NewId()
