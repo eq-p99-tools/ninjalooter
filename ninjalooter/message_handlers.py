@@ -15,6 +15,7 @@ from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
+AWARD_MESSAGE_MATCHER = re.compile(r"Gratss \w+ on \[\w+] \(\d+ DKP\)!")
 
 
 def handle_raidtick(match: re.Match, window: wx.Frame) -> bool:
@@ -28,9 +29,12 @@ def handle_creditt(match: re.Match, window: wx.Frame) -> bool:
     user = match.group('from')
     message = match.group('message')
     raw_message = match.group(0)
+    if AWARD_MESSAGE_MATCHER.match(message):
+        return False
     creddit_entry = models.CredittLog(time, user, message, raw_message)
     config.CREDITT_LOG.append(creddit_entry)
     wx.PostEvent(window, models.CredittEvent())
+    return True
 
 
 # pylint: disable=unused-argument
@@ -57,12 +61,11 @@ def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
 
 
 def handle_who(match: re.Match, window: wx.Frame) -> bool:
-    if not match:
-        # No match was made, probably junk
-        return False
     name = match.group("name")
     guild = match.group("guild")
     pclass = match.group("class") or ""
+    if pclass in extra_data.CLASS_TITLES:
+        pclass = extra_data.CLASS_TITLES[pclass]
     level = (match.group("level") or "??").strip()
     if name not in config.HISTORICAL_AFFILIATIONS:
         LOG.info("Adding player history for %s as guild %s",
@@ -80,9 +83,6 @@ def handle_who(match: re.Match, window: wx.Frame) -> bool:
 
 
 def handle_drop(match: re.Match, window: wx.Frame) -> list:
-    if not match:
-        # No match was made, probably junk
-        return list()
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
@@ -117,9 +117,6 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
 
 
 def handle_bid(match: re.Match, window: wx.Frame) -> bool:
-    if not match:
-        # No match was made, probably junk
-        return False
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME

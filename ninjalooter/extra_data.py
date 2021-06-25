@@ -39,6 +39,65 @@ TIMER_MOBS = {
     "the Hand of Veeshan": 8,
 }
 
+CLASS_TITLES = {
+    # Bard
+    "Minstrel": "Bard",
+    "Troubadour": "Bard",
+    "Virtuoso": "Bard",
+    # Cleric
+    "Vicar": "Cleric",
+    "Templar": "Cleric",
+    "High Priest": "Cleric",
+    # Druid
+    "Wanderer": "Druid",
+    "Preserver": "Druid",
+    "Hierophant": "Druid",
+    # Enchanter
+    "Illusionist": "Enchanter",
+    "Beguiler": "Enchanter",
+    "Phantasmist": "Enchanter",
+    # Magician
+    "Elementalist": "Magician",
+    "Conjurer": "Magician",
+    "Arch Mage": "Magician",
+    # Monk
+    "Disciple": "Monk",
+    "Master": "Monk",
+    "Grandmaster": "Monk",
+    # Necromancer
+    "Heretic": "Necromancer",
+    "Defiler": "Necromancer",
+    "Warlock": "Necromancer",
+    # Paladin
+    "Cavalier": "Paladin",
+    "Knight": "Paladin",
+    "Crusader": "Paladin",
+    # Ranger
+    "Pathfinder": "Ranger",
+    "Outrider": "Ranger",
+    "Warder": "Ranger",
+    # Rogue
+    "Rake": "Rogue",
+    "Blackguard": "Rogue",
+    "Assassin": "Rogue",
+    # Shadow Knight
+    "Reaver": "Shadow Knight",
+    "Revenant": "Shadow Knight",
+    "Grave Lord": "Shadow Knight",
+    # Shaman
+    "Mystic": "Shaman",
+    "Luminary": "Shaman",
+    "Oracle": "Shaman",
+    # Warrior
+    "Champion": "Warrior",
+    "Myrmidon": "Warrior",
+    "Warlord": "Warrior",
+    # Wizard
+    "Channeler": "Wizard",
+    "Evoker": "Wizard",
+    "Sorcerer": "Wizard"
+}
+
 EXTRA_ITEM_DATA = pydicti.Dicti({
     ############################
     # Plane of Sky Quest Items #

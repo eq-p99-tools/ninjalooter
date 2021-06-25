@@ -57,8 +57,8 @@ class PopulationFrame(wx.Window):
                 "Name", "left", 180, "name",
                 groupKeyGetter=popGroupKey, fixedWidth=180),
             ObjectListView.ColumnDefn(
-                "Class", "left", 90, "pclass",
-                groupKeyGetter=popGroupKey, fixedWidth=90),
+                "Class", "left", 100, "pclass",
+                groupKeyGetter=popGroupKey, fixedWidth=100),
             ObjectListView.ColumnDefn(
                 "Level", "left", 40, "level",
                 groupKeyGetter=popGroupKey, fixedWidth=40),

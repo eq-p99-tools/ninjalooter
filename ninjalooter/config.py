@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.10.1"
+VERSION = "1.10.2"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -125,7 +125,7 @@ MATCH_CREDITT = re.compile(
 )
 MATCH_GRATSS = re.compile(
     TIMESTAMP +
-    r"(?P<from>.*) .*?(, '|: )(?P<message>.*gratss.*?)'?$",
+    r"(?P<from>.*?) .*?(, '|: )(?P<message>.*gratss.*?)'?$",
     flags=re.IGNORECASE
 )
 
