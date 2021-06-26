@@ -287,23 +287,23 @@ class DKPAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         if current_bid != 'None':
             bid_message = (
-                "/gu [{item}]{classes} - `{alliance}` BID IN /GU. "
+                "/gu [{item}]{classes} - BID IN /GU. "
                 "You MUST include the item name in your bid! Currently: "
                 "`{player}` with {number} DKP - Closing in {time_remaining}! "
             ).format(
                 player=self.highest_players(),
-                item=self.item.name, alliance=self.alliance,
+                item=self.item.name,
                 number=current_bid, classes=classes,
                 time_remaining=self.time_remaining_text()
             )
         else:
             bid_message = (
-                "/gu [{item}]{classes} - `{alliance}` BID IN /GU, "
+                "/gu [{item}]{classes} - BID IN /GU, "
                 "MIN {min} DKP. "
                 "You MUST include the item name in your bid! Closing in "
                 "{time_remaining}."
             ).format(
-                item=self.item.name, alliance=self.alliance,
+                item=self.item.name,
                 min=self.get_target_min(), classes=classes,
                 time_remaining=self.time_remaining_text()
             )
@@ -365,7 +365,6 @@ class RandomAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         return "/gu [{item}]{classes} ROLL {number} NOW!".format(
             item=self.item.name, number=self.number, classes=classes)
-        # TODO: alliance
 
     def win_text(self) -> str:
         player = self.highest_players()

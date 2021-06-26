@@ -97,14 +97,6 @@ class TestMessageHandlers(base.NLTestBase):
             'window', models.WhoEvent('Jim', 'Cleric', '50', None))
         mock_post_event.reset_mock()
 
-        # Some bad line is passed somehow
-        config.PLAYER_AFFILIATIONS = {}
-        line = "???"
-        match = config.MATCH_WHO.match(line)
-        message_handlers.handle_who(match, 'window')
-        self.assertEqual(0, len(config.PLAYER_AFFILIATIONS))
-        mock_post_event.assert_not_called()
-
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_drop(self, mock_post_event, mock_store_state):
@@ -242,16 +234,6 @@ class TestMessageHandlers(base.NLTestBase):
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
-        # Some bad line is passed somehow
-        line = "???"
-        match = config.MATCH_DROP.match(line)
-        items = list(message_handlers.handle_drop(match, 'window'))
-        self.assertEqual(0, len(items))
-        self.assertListEqual(
-            [jim_belt_1, jim_disc_1, james_disc, james_earring],
-            config.PENDING_AUCTIONS)
-        mock_post_event.assert_not_called()
-
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_bid(self, mock_post_event, mock_store_state):
@@ -321,14 +303,6 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance says random stuff with a number
         line = ("[Sun Aug 16 22:47:31 2020] Tim auctions, "
                 "'I am 12 and what channel is this'")
-        match = config.MATCH_BID.match(line)
-        result = message_handlers.handle_bid(match, 'window')
-        self.assertFalse(result)
-        self.assertListEqual([], disc_auction.highest())
-        mock_post_event.assert_not_called()
-
-        # Some bad line is passed somehow
-        line = "???"
         match = config.MATCH_BID.match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
