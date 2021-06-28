@@ -3,6 +3,7 @@
 import os.path
 
 import wx
+import wx.adv
 
 from ninjalooter import config
 from ninjalooter import logging
@@ -44,18 +45,28 @@ class MenuBar(wx.MenuBar):
         export_mi = wx.MenuItem(
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
         export_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "export.png"))
+            utils.PROJECT_DIR, "data", "icons", "excel.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExportExcel, export_mi)
 
         export_mi = wx.MenuItem(
-            file_menu, wx.ID_FLOPPY, '&Export to EQDKPlus\tCtrl+P')
+            file_menu, wx.ID_CONVERT, '&Export to EQDKPlus\tCtrl+P')
         export_bitmap = wx.Bitmap(os.path.join(
             utils.PROJECT_DIR, "data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExportEQDKP, export_mi)
+
+        file_menu.AppendSeparator()
+
+        replay_mi = wx.MenuItem(file_menu, wx.ID_OPEN, '&Replay Log File')
+        replay_mi.Enable(False)
+        replay_bitmap = wx.Bitmap(os.path.join(
+            utils.PROJECT_DIR, "data", "icons", "reload.png"))
+        replay_mi.SetBitmap(replay_bitmap)
+        file_menu.Append(replay_mi)
+        self.Bind(wx.EVT_MENU, self.OnReplayLog, replay_mi)
 
         clear_mi = wx.MenuItem(file_menu, wx.ID_NEW, '&Clear Data')
         clear_bitmap = wx.Bitmap(os.path.join(
@@ -115,7 +126,94 @@ class MenuBar(wx.MenuBar):
 
         parent.SetMenuBar(self)
 
-    def OnSetAlliance(self, e: wx.MenuEvent):
+    def OnReplayLog(self, e: wx.MenuEvent):
+        LOG.info("Attempting to replay an eqlog...")
+        # openFileDialog = wx.FileDialog(
+        #     self.Parent, "Open EQ Logfile", "D:\\EverQuest\\Logs\\", "",
+        #     "EQ Logfile (eqlog_*.txt)|eqlog_*.txt", wx.FD_OPEN)
+
+        # result = openFileDialog.ShowModal()
+        # filename = openFileDialog.GetPath()
+        # openFileDialog.Destroy()
+        # if result != wx.ID_OK:
+        #     return
+        filename = "D:\\EverQuest\\Logs\\eqlog_Allstar_P1999Green.txt"
+
+        # Load the lines from the logfile
+        with open(filename, 'r') as logfile:
+            loglines = logfile.readlines()
+
+        # Get the timestamp bounds
+        try:
+            first_time = utils.get_timestamp(loglines)
+            last_time = utils.get_timestamp(reversed(loglines))
+        except (TypeError, ValueError):
+            LOG.exception("Failed to find a first/last timestamp")
+            return
+        LOG.info("%s -> %s", first_time, last_time)
+
+        if not first_time and last_time:
+            return
+
+        time_select_dialog = wx.Dialog(self.Parent, title="Select Time Bounds")
+        time_select_main_box = wx.BoxSizer(wx.VERTICAL)
+
+        # Time Bounds
+        time_select_bounds_box = wx.GridBagSizer(3, 2)
+        bold_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
+        from_label = wx.StaticText(time_select_dialog, label="From")
+        from_label.SetFont(bold_font)
+        date_chooser_from = wx.adv.DatePickerCtrl(time_select_dialog)
+        date_chooser_from.SetValue(first_time)
+        time_chooser_from = wx.adv.TimePickerCtrl(time_select_dialog)
+        time_chooser_from.SetValue(first_time)
+        to_label = wx.StaticText(time_select_dialog, label="To")
+        to_label.SetFont(bold_font)
+        date_chooser_to = wx.adv.DatePickerCtrl(time_select_dialog)
+        date_chooser_to.SetValue(last_time)
+        time_chooser_to = wx.adv.TimePickerCtrl(time_select_dialog)
+        time_chooser_to.SetValue(last_time)
+        time_select_bounds_box.Add(
+            from_label, pos=(0, 0), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL)
+        time_select_bounds_box.Add(
+            date_chooser_from, pos=(0, 1), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALL)
+        time_select_bounds_box.Add(
+            time_chooser_from, pos=(0, 2), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALL)
+        time_select_bounds_box.Add(
+            to_label, pos=(1, 0), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL)
+        time_select_bounds_box.Add(
+            date_chooser_to, pos=(1, 1), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALL)
+        time_select_bounds_box.Add(
+            time_chooser_to, pos=(1, 2), border=2,
+            flag=wx.ALIGN_RIGHT | wx.ALL)
+
+        # Buttons
+        time_select_buttons_box = time_select_dialog.CreateButtonSizer(
+            wx.OK | wx.CANCEL)
+
+        time_select_main_box.Add(time_select_bounds_box, border=10,
+                                 flag=wx.ALL | wx.EXPAND)
+        time_select_main_box.Add(time_select_buttons_box, border=10,
+                                 flag=wx.BOTTOM | wx.RIGHT | wx.EXPAND)
+        time_select_dialog.SetSizer(time_select_main_box)
+        time_select_dialog.Fit()
+
+        # Show the modal
+        if time_select_dialog.ShowModal() != wx.ID_OK:
+            print("cancel pressed")
+            time_select_dialog.Destroy()
+            return
+
+        print("ok pressed")
+        time_select_dialog.Destroy()
+
+    @staticmethod
+    def OnSetAlliance(e: wx.MenuEvent):
         menu_item = [mi for mi in e.EventObject.MenuItems if mi.Id == e.Id][0]
         config.DEFAULT_ALLIANCE = menu_item.ItemLabel
         config.CONF.set(
@@ -175,7 +273,7 @@ class MenuBar(wx.MenuBar):
     def OnExportEQDKP(self, e: wx.MenuEvent):
         LOG.info("Exporting to EQDKPlus format.")
         saveFileDialog = wx.FileDialog(
-            self.Parent, "Export to EQDKP", "", "",
+            self.Parent, "Export to EQDKPlus", "", "",
             "Excel Spreadsheet (*.xlsx)|*.xlsx", wx.FD_SAVE)
 
         result = saveFileDialog.ShowModal()

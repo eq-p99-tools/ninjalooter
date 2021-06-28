@@ -2,6 +2,7 @@
 # pylint: disable=too-many-locals,too-many-statements
 import ObjectListView
 import wx
+import wx.lib.splitter
 
 from ninjalooter import config
 from ninjalooter import models
@@ -19,24 +20,32 @@ class BiddingFrame(wx.Window):
         # Bidding Frame (Tab 1)
         #######################
         # bidding_frame = wx.Window(notebook)
-        bidding_main_box = wx.BoxSizer(wx.VERTICAL)
+        bidding_splitter = wx.lib.splitter.MultiSplitterWindow(
+            self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
+        bidding_splitter.SetOrientation(wx.VERTICAL)
+        pane_1 = wx.Panel(bidding_splitter, wx.ID_ANY)
+        pane_2 = wx.Panel(bidding_splitter, wx.ID_ANY)
+        pane_3 = wx.Panel(bidding_splitter, wx.ID_ANY)
+        bidding_main_box1 = wx.BoxSizer(wx.VERTICAL)
+        bidding_main_box2 = wx.BoxSizer(wx.VERTICAL)
+        bidding_main_box3 = wx.BoxSizer(wx.VERTICAL)
         label_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
 
         # ----------------
         # Pending Loot Box
         # ----------------
         pending_label = wx.StaticText(
-            self, label="Pending Drops", style=wx.ALIGN_LEFT)
+            pane_1, label="Pending Drops", style=wx.ALIGN_LEFT)
         pending_label.SetFont(label_font)
-        bidding_main_box.Add(
+        bidding_main_box1.Add(
             pending_label, flag=wx.LEFT | wx.TOP, border=10)
         pending_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box.Add(
+        bidding_main_box1.Add(
             pending_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         pending_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(725, 180),
+            pane_1, wx.ID_ANY, size=wx.Size(725, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         pending_box.Add(pending_list, flag=wx.EXPAND)
         pending_list.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.UpdateMinDKP)
@@ -65,11 +74,11 @@ class BiddingFrame(wx.Window):
         pending_box.Add(pending_buttons_box,
                         flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
-        pending_button_ignore = wx.Button(self, label="Ignore")
-        pending_button_dkp = wx.Button(self, label="DKP Bid")
-        pending_button_roll = wx.Button(self, label="Roll")
+        pending_button_ignore = wx.Button(pane_1, label="Ignore")
+        pending_button_dkp = wx.Button(pane_1, label="DKP Bid")
+        pending_button_roll = wx.Button(pane_1, label="Roll")
         # pending_buttonspacer = wx.StaticLine(self)
-        pending_button_wiki = wx.Button(self, label="Wiki?")
+        pending_button_wiki = wx.Button(pane_1, label="Wiki?")
         pending_buttons_box.Add(pending_button_ignore, flag=wx.TOP)
         pending_buttons_box.Add(pending_button_dkp, flag=wx.TOP, border=10)
         pending_buttons_box.Add(pending_button_roll, flag=wx.TOP, border=10)
@@ -77,9 +86,9 @@ class BiddingFrame(wx.Window):
         pending_buttons_box.Add(pending_button_wiki, flag=wx.TOP, border=10)
         min_dkp_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
         min_dkp_label = wx.StaticText(
-            self, label="Min. DKP")
+            pane_1, label="Min. DKP")
         min_dkp_label.SetFont(min_dkp_font)
-        min_dkp_spinner = wx.SpinCtrl(self, value=str(config.MIN_DKP))
+        min_dkp_spinner = wx.SpinCtrl(pane_1, value=str(config.MIN_DKP))
         min_dkp_spinner.SetRange(0, 10000)
         min_dkp_spinner.Bind(wx.EVT_SPINCTRL, self.OnMinDkpSpin)
         self.min_dkp_spinner = min_dkp_spinner
@@ -96,17 +105,17 @@ class BiddingFrame(wx.Window):
         # Active Loot Box
         # ---------------
         active_label = wx.StaticText(
-            self, label="Active Auctions", style=wx.ALIGN_LEFT)
+            pane_2, label="Active Auctions", style=wx.ALIGN_LEFT)
         active_label.SetFont(label_font)
-        bidding_main_box.Add(
+        bidding_main_box2.Add(
             active_label, flag=wx.LEFT | wx.TOP, border=10)
         active_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box.Add(
+        bidding_main_box2.Add(
             active_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         active_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(725, 154),
+            pane_2, wx.ID_ANY, size=wx.Size(725, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         active_box.Add(active_list, flag=wx.EXPAND)
         active_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowActiveDetail)
@@ -141,11 +150,11 @@ class BiddingFrame(wx.Window):
         active_box.Add(active_buttons_box,
                        flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
-        active_button_undo = wx.Button(self, label="Undo")
-        active_buttonspacer = wx.StaticLine(self)
-        active_button_gettext = wx.Button(self, label="Copy Bid")
-        active_button_complete = wx.Button(self, label="Complete")
-        active_button_wiki = wx.Button(self, label="Wiki?")
+        active_button_undo = wx.Button(pane_2, label="Undo")
+        active_buttonspacer = wx.StaticLine(pane_2)
+        active_button_gettext = wx.Button(pane_2, label="Copy Bid")
+        active_button_complete = wx.Button(pane_2, label="Complete")
+        active_button_wiki = wx.Button(pane_2, label="Wiki?")
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
         active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=10)
         active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=10)
@@ -161,17 +170,17 @@ class BiddingFrame(wx.Window):
         # Historical Loot Box
         # -------------------
         history_label = wx.StaticText(
-            self, label="Historical Auctions", style=wx.ALIGN_LEFT)
+            pane_3, label="Historical Auctions", style=wx.ALIGN_LEFT)
         history_label.SetFont(label_font)
-        bidding_main_box.Add(
+        bidding_main_box3.Add(
             history_label, flag=wx.LEFT | wx.TOP, border=10)
         history_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box.Add(
+        bidding_main_box3.Add(
             history_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         history_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(725, 1000),
+            pane_3, wx.ID_ANY, size=wx.Size(725, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
         history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
@@ -200,10 +209,10 @@ class BiddingFrame(wx.Window):
         history_box.Add(history_buttons_box,
                         flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
-        history_button_undo = wx.Button(self, label="Undo")
-        history_buttonspacer = wx.StaticLine(self)
-        history_button_gettext = wx.Button(self, label="Copy Text")
-        history_button_wiki = wx.Button(self, label="Wiki?")
+        history_button_undo = wx.Button(pane_3, label="Undo")
+        history_buttonspacer = wx.StaticLine(pane_3)
+        history_button_gettext = wx.Button(pane_3, label="Copy Text")
+        history_button_wiki = wx.Button(pane_3, label="Wiki?")
         history_buttons_box.Add(history_button_undo, flag=wx.TOP)
         history_buttons_box.Add(history_buttonspacer, flag=wx.TOP, border=10)
         history_buttons_box.Add(history_button_gettext, flag=wx.TOP, border=10)
@@ -214,7 +223,20 @@ class BiddingFrame(wx.Window):
         history_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiHistory)
 
         # Finalize Tab
+        pane_1.SetSizer(bidding_main_box1)
+        pane_2.SetSizer(bidding_main_box2)
+        pane_3.SetSizer(bidding_main_box3)
+        bidding_splitter.AppendWindow(pane_1)
+        bidding_splitter.AppendWindow(pane_2)
+        bidding_splitter.AppendWindow(pane_3)
+        bidding_main_box = wx.BoxSizer()
+        bidding_main_box.Add(bidding_splitter, 1, wx.EXPAND, 0)
         self.SetSizer(bidding_main_box)
+        bidding_splitter.SetMinimumPaneSize(215)
+        bidding_splitter.SetSashPosition(0, config.ACTIVE_SASH_POS)
+        bidding_splitter.SetSashPosition(1, config.HISTORICAL_SASH_POS)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged,
+                  source=bidding_splitter)
         parent.AddPage(self, 'Bidding')
 
     def refresh_active_list(self, event):
@@ -236,6 +258,14 @@ class BiddingFrame(wx.Window):
             else:
                 self.active_list.SetItemBackgroundColour(
                     idx, config.SAFE_COLOR)
+
+    @staticmethod
+    def OnSashChanged(e: wx.lib.splitter.MultiSplitterEvent):
+        index, new_pos = e.GetSashIdx(), e.GetSashPosition()
+        if index == 0:
+            config.ACTIVE_SASH_POS = new_pos
+        elif index == 1:
+            config.HISTORICAL_SASH_POS = new_pos
 
     def UpdateMinDKP(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()

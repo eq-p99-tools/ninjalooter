@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.10.2"
+VERSION = "1.10.4"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -71,7 +71,12 @@ PLAYER_AFFILIATIONS = dict()
 HISTORICAL_AFFILIATIONS = dict()
 WHO_LOG = list()
 CREDITT_LOG = list()
+GRATSS_LOG = list()
 KILL_TIMERS = list()
+CREDITT_SASH_POS = 400
+GRATSS_SASH_POS = 150
+ACTIVE_SASH_POS = 215
+HISTORICAL_SASH_POS = 215
 
 # Calculated variables
 WX_PLAYER_AFFILIATIONS = None

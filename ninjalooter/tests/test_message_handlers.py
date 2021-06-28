@@ -144,8 +144,7 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(1, len(items))
         self.assertIn('Copper Disc', items)
         self.assertEqual(0, len(config.PENDING_AUCTIONS))
-        mock_post_event.assert_called_once_with(
-            'window', models.DropEvent())
+        mock_post_event.assert_not_called()
         mock_post_event.reset_mock()
 
         # NODROP filter on, NODROP item
@@ -233,6 +232,42 @@ class TestMessageHandlers(base.NLTestBase):
             [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
+
+        # Bid message doesn't register as a drop
+        config.ACTIVE_AUCTIONS.clear()
+        auction1 = utils.start_auction_dkp(jim_disc_1, 'VCR')
+        self.assertEqual(config.ACTIVE_AUCTIONS.get(jim_disc_1_uuid), auction1)
+        config.PENDING_AUCTIONS.clear()
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Copper Disc'")
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        # One item should be found
+        self.assertListEqual(['Copper Disc'], items)
+        self.assertListEqual([], config.PENDING_AUCTIONS)
+        mock_post_event.assert_not_called()
+
+        # A gratss message from another app should not register
+        bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
+                    "'Copper Disc 1 main'")
+        config.RESTRICT_BIDS = False
+        bid_match = config.MATCH_BID.match(bid_line)
+        message_handlers.handle_bid(bid_match, 'window')
+        config.HISTORICAL_AUCTIONS[jim_disc_1_uuid] = (
+            auction1)
+        config.ACTIVE_AUCTIONS.pop(auction1.item.uuid)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Gratss Toald on [Copper Disc] (1 DKP)!'")
+        match = config.MATCH_DROP.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        match = config.MATCH_GRATSS.match(line)
+        self.assertFalse(message_handlers.handle_gratss(match, 'window'))
+        self.assertListEqual([], items)
+
+        # Ignore items if a number is present, it's probably a bid
+        match = config.MATCH_DROP.match(bid_line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertListEqual([], items)
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')

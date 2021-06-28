@@ -19,6 +19,23 @@ class TestModels(base.NLTestBase):
         loaded_player = json.loads(player_json, cls=utils.JSONDecoder)
         self.assertEqual(player, loaded_player)
 
+    def test_CredittLog_model(self):
+        creditt = models.CredittLog('time', 'user', 'cReDiTt john', 'raw')
+        self.assertEqual('time', creditt.time)
+        self.assertEqual('user', creditt.user)
+        self.assertEqual('cReDiTt john', creditt.message)
+        self.assertEqual('raw', creditt.raw_message)
+        self.assertEqual('John', creditt.target())
+
+    def test_GratssLog_model(self):
+        gratss = models.GratssLog(
+            'time', 'user', 'GRAtss toald Cloak of Flames 5 DKP', 'raw')
+        self.assertEqual('time', gratss.time)
+        self.assertEqual('user', gratss.user)
+        self.assertEqual('GRAtss toald Cloak of Flames 5 DKP', gratss.message)
+        self.assertEqual('raw', gratss.raw_message)
+        self.assertEqual('Toald', gratss.target())
+
     def test_WhoLog_model(self):
         # WhoLogs use real datetime times
         sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")

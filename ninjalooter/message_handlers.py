@@ -15,7 +15,9 @@ from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
-AWARD_MESSAGE_MATCHER = re.compile(r"Gratss \w+ on \[\w+] \(\d+ DKP\)!")
+AWARD_MESSAGE_MATCHER = re.compile(
+    r"Gratss (?P<name>\w+) on \[(?P<item>(\w+\s?)+)] \((?P<dkp>\d+) DKP\)!")
+NUMBER_MATCHER = re.compile(r".*\d.*")
 
 
 def handle_raidtick(match: re.Match, window: wx.Frame) -> bool:
@@ -29,11 +31,33 @@ def handle_creditt(match: re.Match, window: wx.Frame) -> bool:
     user = match.group('from')
     message = match.group('message')
     raw_message = match.group(0)
-    if AWARD_MESSAGE_MATCHER.match(message):
-        return False
     creddit_entry = models.CredittLog(time, user, message, raw_message)
     config.CREDITT_LOG.append(creddit_entry)
     wx.PostEvent(window, models.CredittEvent())
+    return True
+
+
+def handle_gratss(match: re.Match, window: wx.Frame) -> bool:
+    time = match.group('time')
+    user = match.group('from')
+    message = match.group('message')
+    raw_message = match.group(0)
+
+    # Don't register a gratss message if it's one of our award messages
+    award_match = AWARD_MESSAGE_MATCHER.match(message)
+    if award_match:
+        for old_auction in config.HISTORICAL_AUCTIONS.values():
+            # there was a bid and it matches player/dkp and item name
+            if (old_auction.highest() and
+                    old_auction.highest()[0] == (  #
+                            award_match.group('name'),
+                            int(award_match.group('dkp'))) and
+                    old_auction.item.name == award_match.group('item')):
+                # don't count this item
+                return False
+    gratss_entry = models.GratssLog(time, user, message, raw_message)
+    config.GRATSS_LOG.append(gratss_entry)
+    wx.PostEvent(window, models.GratssEvent())
     return True
 
 
@@ -90,6 +114,13 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
     if text.lower().startswith("looted"):
         LOG.info("Ignoring drop message starting with 'looted'")
         return list()
+    if AWARD_MESSAGE_MATCHER.match(text):
+        LOG.info("Ignoring drop message that matches Gratss")
+        return list()
+    if NUMBER_MATCHER.match(text):
+        # line contains a number, it's probably a bid, ignore it
+        LOG.info("Ignoring drop message with a number, probably a bid")
+        return list()
     if config.RESTRICT_BIDS and guild and guild not in config.ALLIANCE_MAP:
         # Some other guild is talking, discard line
         LOG.info("Ignoring ooc from guild %s", guild)
@@ -97,6 +128,7 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
 
     # Handle text to return a list of items linked
     found_items = utils.get_items_from_text(text)
+    used_found_items = []
     for item in found_items:
         if item.lower() in utils.get_active_item_names():
             continue
@@ -109,9 +141,11 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
         else:
             config.PENDING_AUCTIONS.append(drop)
             LOG.info("Added item to PENDING AUCTIONS: %s", drop)
+            used_found_items.append(item)
     if not found_items:
         return list()
-    wx.PostEvent(window, models.DropEvent())
+    if used_found_items:
+        wx.PostEvent(window, models.DropEvent())
     utils.store_state()
     return found_items
 

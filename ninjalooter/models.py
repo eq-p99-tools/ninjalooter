@@ -57,9 +57,34 @@ class CredittLog(DictEquals):
         self.message = message
         self.raw_message = raw_message
 
-    def target(self):
-        message_cleaned = self.message.lower().split('creditt')
-        return message_cleaned[1].strip().capitalize()
+    def target(self) -> str:
+        try:
+            message_cleaned = (self.message.lower().split('creditt')[1]
+                               .strip().capitalize())
+        except:  # noqa
+            message_cleaned = self.message
+        return message_cleaned
+
+
+class GratssLog(DictEquals):
+    time = None
+    user = None
+    message = None
+    raw_message = None
+
+    def __init__(self, time, user, message, raw_message):
+        self.time = time
+        self.user = user
+        self.message = message
+        self.raw_message = raw_message
+
+    def target(self) -> str:
+        try:
+            message_cleaned = (self.message.lower().split('gratss')[1]
+                               .split(' ')[1].strip().capitalize())
+        except:  # noqa
+            message_cleaned = self.message
+        return message_cleaned
 
 
 class WhoLog(DictEquals):
@@ -373,7 +398,7 @@ class RandomAuction(Auction):
         roll = self.highest_number()
         if roll == "None":
             roll = "0"
-        return ("/shout Gratss {player} on [{item}] with {roll} / {target}!"
+        return ("/gu Gratss {player} on [{item}] with {roll} / {target}!"
                 .format(player=player, item=self.item.name,
                         roll=roll, target=self.number))
 
@@ -386,6 +411,7 @@ EVT_WHO_HISTORY = wx.NewId()
 EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
 EVT_CREDITT = wx.NewId()
+EVT_GRATSS = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 EVT_IGNORE = wx.NewId()
 
@@ -459,6 +485,12 @@ class CredittEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_CREDITT)
+
+
+class GratssEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_GRATSS)
 
 
 class AppClearEvent(LogEvent):  # pylint: disable=too-few-public-methods

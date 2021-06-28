@@ -23,6 +23,7 @@ from ninjalooter import models
 LOG = logging.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
+RE_TIMESTAMP = re.compile(config.TIMESTAMP)
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 LOG.info("Project working directory: %s", PROJECT_DIR)
 
@@ -204,6 +205,20 @@ def get_active_item_names() -> list:
     return active_items
 
 
+def get_timestamp(iterable_obj) -> datetime.datetime:
+    """Return the first parsed timestamp found.
+
+    :param iterable_obj: an iterator or something otherwise iterable
+    :type iterable_obj: iterable
+    :raises TypeError, ValueError
+    """
+    for item in iterable_obj:
+        match = RE_TIMESTAMP.match(item)
+        if match:
+            return dateutil.parser.parse(match.group("time"))
+    return datetime.datetime.fromtimestamp(0)
+
+
 def load_state():
     try:
         with open(config.SAVE_STATE_FILE, 'r') as ssfp:
@@ -231,6 +246,11 @@ def store_state():
         "WHO_LOG": config.WHO_LOG,
         "KILL_TIMERS": config.KILL_TIMERS,
         "CREDITT_LOG": config.CREDITT_LOG,
+        "GRATSS_LOG": config.GRATSS_LOG,
+        "CREDITT_SASH_POS": config.CREDITT_SASH_POS,
+        "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
+        "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
+        "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
     }
     with open(config.SAVE_STATE_FILE, 'w') as ssfp:
         json.dump(json_state, ssfp, cls=JSONEncoder)
@@ -331,8 +351,9 @@ def export_to_eqdkp(filename):
             if tick_lines:
                 raidtick_logs.append(tick_lines)
 
-    # Get all raw creditt messages
+    # Get all raw creditt/gratss messages
     creditt_messages = [x.raw_message for x in config.CREDITT_LOG]
+    gratss_messages = [x.raw_message for x in config.GRATSS_LOG]
 
     # Assemble all recorded loots into parsable format
     closed_loots = []
@@ -345,7 +366,7 @@ def export_to_eqdkp(filename):
                 f" {auction.item.name} {winner} {dkp}'"
             )
         elif highest:
-            winner, roll = highest[0]
+            winner, _ = highest[0]
             closed_loots.append(
                 f"[{auction.item.timestamp}] You say, 'LOOT: "
                 f" {auction.item.name} {winner} 0'"
@@ -361,6 +382,8 @@ def export_to_eqdkp(filename):
     creditt_sheet = workbook.add_worksheet("Creditt & Gratss")
     for row, creditt in enumerate(creditt_messages):
         creditt_sheet.write_string(row, 0, creditt)
+    for row, gratss in enumerate(gratss_messages):
+        creditt_sheet.write_string(len(creditt_messages) + row + 1, 0, gratss)
 
     # Create a page per raidtick
     for tick in raidtick_logs:
