@@ -264,6 +264,7 @@ def export_to_excel(filename):
     excel_data = {
         'Completed Auctions': [],
         'Kill Times': [],
+        'Creditt & Gratss': [],
     }
 
     # Prepare Completed Auctions
@@ -278,7 +279,7 @@ def export_to_excel(filename):
         }
         excel_data['Completed Auctions'].append(auc_data)
 
-    # Prepare KilL Times
+    # Prepare Kill Times
     for killtime in config.KILL_TIMERS:
         killtime_data = {
             'time': dateutil.parser.parse(killtime.time),
@@ -286,6 +287,15 @@ def export_to_excel(filename):
             'island': killtime.island(),
         }
         excel_data['Kill Times'].append(killtime_data)
+
+    # Get all raw creditt/gratss messages
+    for creditt in config.CREDITT_LOG:
+        creditt_data = {'creditt/gratss': creditt.raw_message}
+        excel_data['Creditt & Gratss'].append(creditt_data)
+    # Get all raw creditt/gratss messages
+    for gratss in config.GRATSS_LOG:
+        gratss_data = {'creditt/gratss': gratss.raw_message}
+        excel_data['Creditt & Gratss'].append(gratss_data)
 
     # Set up the workbook
     workbook = xlsxwriter.Workbook(
