@@ -1,3 +1,4 @@
+import datetime
 from unittest import mock
 
 from ninjalooter import config
@@ -235,39 +236,62 @@ class TestMessageHandlers(base.NLTestBase):
 
         # Bid message doesn't register as a drop
         config.ACTIVE_AUCTIONS.clear()
-        auction1 = utils.start_auction_dkp(jim_disc_1, 'VCR')
-        self.assertEqual(config.ACTIVE_AUCTIONS.get(jim_disc_1_uuid), auction1)
+        jerkin_1 = models.ItemDrop(
+            'Shiverback-hide Jerkin', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(jerkin_1)
+        auction1 = utils.start_auction_dkp(jerkin_1, 'VCR')
+        self.assertEqual(
+            config.ACTIVE_AUCTIONS.get(auction1.item.uuid), auction1)
         config.PENDING_AUCTIONS.clear()
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Copper Disc'")
+                "'Shiverback-hide Jerkin'")
         match = config.MATCH_DROP.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         # One item should be found
-        self.assertListEqual(['Copper Disc'], items)
+        self.assertListEqual(['Shiverback-hide Jerkin'], items)
         self.assertListEqual([], config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
 
-        # A gratss message from another app should not register
+        # A gratss message from another app should not register as a drop
         bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
-                    "'Copper Disc 1 main'")
+                    "'Shiverback-hide Jerkin 1 main'")
         config.RESTRICT_BIDS = False
         bid_match = config.MATCH_BID.match(bid_line)
         message_handlers.handle_bid(bid_match, 'window')
-        config.HISTORICAL_AUCTIONS[jim_disc_1_uuid] = (
-            auction1)
-        config.ACTIVE_AUCTIONS.pop(auction1.item.uuid)
+        config.HISTORICAL_AUCTIONS[auction1.item.uuid] = (
+            config.ACTIVE_AUCTIONS.pop(auction1.item.uuid))
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Gratss Toald on [Copper Disc] (1 DKP)!'")
+                "'Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
         match = config.MATCH_DROP.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
-        match = config.MATCH_GRATSS.match(line)
-        self.assertFalse(message_handlers.handle_gratss(match, 'window'))
         self.assertListEqual([], items)
 
         # Ignore items if a number is present, it's probably a bid
         match = config.MATCH_DROP.match(bid_line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([], items)
+
+        # second same drop shouldn't record if it is within cooldown time
+        jerkin_2 = models.ItemDrop(
+            'Shiverback-hide Jerkin', 'Jim',
+            utils.datetime_to_eq_format(datetime.datetime.now()))
+        config.PENDING_AUCTIONS.append(jerkin_2)
+        line = ("[{}] Jim tells the guild, 'Shiverback-hide Jerkin'".format(
+            utils.datetime_to_eq_format(datetime.datetime.now())))
+        match = config.MATCH_DROP.match(line)
+        self.assertEqual([jerkin_2], config.PENDING_AUCTIONS)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertListEqual([jerkin_2.name], items)
+        self.assertEqual([jerkin_2], config.PENDING_AUCTIONS)
+
+        # second same drop should record if it is past cooldown time
+        jerkin_2.timestamp = utils.datetime_to_eq_format(
+            datetime.datetime.now() -
+            datetime.timedelta(seconds=config.DROP_COOLDOWN))
+        self.assertEqual(1, len(config.PENDING_AUCTIONS))
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertListEqual([jerkin_2.name], items)
+        self.assertEqual(2, len(config.PENDING_AUCTIONS))
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
@@ -388,3 +412,52 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         config.ACTIVE_AUCTIONS = {}
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_gratss(self, mock_post_event, mock_store_state):
+        config.PENDING_AUCTIONS.clear()
+        config.ACTIVE_AUCTIONS.clear()
+
+        # Set up a historical auction with bids
+        jerkin_1 = models.ItemDrop(
+            'Shiverback-hide Jerkin', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(jerkin_1)
+        auction1 = utils.start_auction_dkp(jerkin_1, 'VCR')
+        self.assertEqual(
+            config.ACTIVE_AUCTIONS.get(auction1.item.uuid), auction1)
+        bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
+                    "'Shiverback-hide Jerkin 1 main'")
+        config.RESTRICT_BIDS = False
+        bid_match = config.MATCH_BID.match(bid_line)
+        message_handlers.handle_bid(bid_match, 'window')
+        config.HISTORICAL_AUCTIONS[auction1.item.uuid] = (
+            config.ACTIVE_AUCTIONS.pop(auction1.item.uuid))
+
+        # Set up a historical auction without bids (rot)
+        disc_1 = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(disc_1)
+        auction2 = utils.start_auction_dkp(disc_1, 'VCR')
+        self.assertEqual(
+            config.ACTIVE_AUCTIONS.get(auction2.item.uuid), auction2)
+        config.HISTORICAL_AUCTIONS[auction2.item.uuid] = (
+            config.ACTIVE_AUCTIONS.pop(auction2.item.uuid))
+
+        # A gratss message from auction history should not register (bids)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
+        match = config.MATCH_GRATSS.match(line)
+        self.assertFalse(message_handlers.handle_gratss(match, 'window'))
+
+        # A gratss message from auction history should not register (no bids)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Gratss ROT on [Copper Disc] (0 DKP)!'")
+        match = config.MATCH_GRATSS.match(line)
+        self.assertFalse(message_handlers.handle_gratss(match, 'window'))
+
+        # A gratss message that doesn't match auction history SHOULD register
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+        match = config.MATCH_GRATSS.match(line)
+        self.assertTrue(message_handlers.handle_gratss(match, 'window'))

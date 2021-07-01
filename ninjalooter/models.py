@@ -98,7 +98,7 @@ class WhoLog(DictEquals):
         self.log = log
         self.raidtick = raidtick
 
-    def eqtime(self) -> datetime.datetime:
+    def eqtime(self) -> str:
         return self.time.strftime("%a %b %d %H:%M:%S %Y")
 
     def raidtick_display(self):

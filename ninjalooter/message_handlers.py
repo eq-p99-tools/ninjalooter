@@ -16,7 +16,7 @@ from ninjalooter import utils
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
 AWARD_MESSAGE_MATCHER = re.compile(
-    r"Gratss (?P<name>\w+) on \[(?P<item>(\w+\s?)+)] \((?P<dkp>\d+) DKP\)!")
+    r"Gratss (?P<name>\w+) on \[(?P<item>.*?)] \((?P<dkp>\d+) DKP\)!")
 NUMBER_MATCHER = re.compile(r".*\d.*")
 
 
@@ -47,8 +47,14 @@ def handle_gratss(match: re.Match, window: wx.Frame) -> bool:
     award_match = AWARD_MESSAGE_MATCHER.match(message)
     if award_match:
         for old_auction in config.HISTORICAL_AUCTIONS.values():
+            # there were no bids on the auction, and this message is for ROT
+            if (not old_auction.highest() and
+                    award_match.group('name') == 'ROT' and
+                    int(award_match.group('dkp')) == 0):
+                # don't count this item
+                return False
             # there was a bid and it matches player/dkp and item name
-            if (old_auction.highest() and
+            elif (old_auction.highest() and
                     old_auction.highest()[0] == (  #
                             award_match.group('name'),
                             int(award_match.group('dkp'))) and
@@ -129,8 +135,19 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
     # Handle text to return a list of items linked
     found_items = utils.get_items_from_text(text)
     used_found_items = []
+    now = datetime.datetime.now()
+    skip = False
     for item in found_items:
         if item.lower() in utils.get_active_item_names():
+            continue
+        for pending in config.PENDING_AUCTIONS:
+            pending_time = dateutil.parser.parse(pending.timestamp)
+            if (item.lower() == pending.name.lower() and
+                    (now - pending_time).seconds < config.DROP_COOLDOWN):
+                skip = True
+                break
+        if skip:
+            skip = False
             continue
         drop = models.ItemDrop(item, name, timestamp)
         if (config.NODROP_ONLY and

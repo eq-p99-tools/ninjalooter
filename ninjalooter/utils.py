@@ -197,12 +197,24 @@ def get_items_from_text(text: str) -> list:
     return item_names
 
 
+def get_pending_item_names() -> list:
+    """Return all active item bids as a list of lowercase item names."""
+    pending_items = []
+    for item in config.PENDING_AUCTIONS:
+        pending_items.append(item.name().lower())
+    return pending_items
+
+
 def get_active_item_names() -> list:
     """Return all active item bids as a list of lowercase item names."""
     active_items = []
     for auc_item in config.ACTIVE_AUCTIONS.values():
         active_items.append(auc_item.name().lower())
     return active_items
+
+
+def datetime_to_eq_format(dt: datetime.datetime) -> str:
+    return dt.strftime("%a %b %d %H:%M:%S %Y")
 
 
 def get_timestamp(iterable_obj) -> datetime.datetime:

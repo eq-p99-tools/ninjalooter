@@ -213,14 +213,21 @@ class BiddingFrame(wx.Window):
         history_buttonspacer = wx.StaticLine(pane_3)
         history_button_gettext = wx.Button(pane_3, label="Copy Text")
         history_button_wiki = wx.Button(pane_3, label="Wiki?")
+        history_button_hiderot = wx.CheckBox(pane_3, label="Hide Rots")
         history_buttons_box.Add(history_button_undo, flag=wx.TOP)
         history_buttons_box.Add(history_buttonspacer, flag=wx.TOP, border=10)
         history_buttons_box.Add(history_button_gettext, flag=wx.TOP, border=10)
         history_buttons_box.Add(history_button_wiki, flag=wx.TOP, border=10)
+        history_buttons_box.Add(history_button_hiderot, flag=wx.TOP, border=10)
 
         history_button_undo.Bind(wx.EVT_BUTTON, self.UndoComplete)
         history_button_gettext.Bind(wx.EVT_BUTTON, self.CopyWinText)
         history_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiHistory)
+        history_button_hiderot.Bind(wx.EVT_CHECKBOX, self.OnHideRot)
+        self.history_button_hiderot = history_button_hiderot
+        history_button_hiderot.SetValue(config.HIDE_ROTS)
+        if config.HIDE_ROTS:
+            self.OnHideRot(None)
 
         # Finalize Tab
         pane_1.SetSizer(bidding_main_box1)
@@ -266,6 +273,20 @@ class BiddingFrame(wx.Window):
             config.ACTIVE_SASH_POS = new_pos
         elif index == 1:
             config.HISTORICAL_SASH_POS = new_pos
+
+    def OnHideRot(self, e: wx.Event):
+        config.HIDE_ROTS = self.history_button_hiderot.IsChecked()
+        config.CONF.set(
+            'default', 'hide_rots', str(config.HIDE_ROTS))
+        if config.HIDE_ROTS:
+            # Filter by hiding rots
+            awarded_auctions = [
+                x for x in config.HISTORICAL_AUCTIONS.values() if x.highest()]
+            self.history_list.SetObjects(awarded_auctions)
+        else:
+            self.history_list.SetObjects(
+                list(config.HISTORICAL_AUCTIONS.values()))
+        config.write()
 
     def UpdateMinDKP(self, e: wx.Event):
         selected_object = self.pending_list.GetSelectedObject()
