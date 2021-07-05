@@ -61,7 +61,8 @@ SAMPLE_WHO_LOG = """
 [Sun Aug 16 22:46:32 2020] [50 Wizard] Loltest (High Elf) <Venerate> LFG
 [Sun Aug 16 22:46:32 2020] [50 Druid] Wad (Dark Elf) <Black Lotus> LFG
 [Sun Aug 16 22:46:32 2020] [50 Wizard] Pad (Dark Elf) <Castle> LFG
-[Sun Aug 16 22:46:32 2020] There are 24 players in Plane of Sky.
+[Sun Aug 16 22:46:32 2020]  <LINKDEAD>[60 Arch Mage] Ogey (Gnome) <Venerate>
+[Sun Aug 16 22:46:32 2020] There are 25 players in Plane of Sky.
 """
 
 SAMPLE_OOC_DROP = """

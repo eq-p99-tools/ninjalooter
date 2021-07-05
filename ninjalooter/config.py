@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.10.6"
+VERSION = "1.10.7"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -102,7 +102,7 @@ MATCH_START_WHO = re.compile(
     TIMESTAMP + r"Players on EverQuest:")
 MATCH_WHO = re.compile(
     TIMESTAMP +
-    r"(?:AFK +)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
+    r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
     r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w ]+)>)?")
 MATCH_END_WHO = re.compile(
     TIMESTAMP +

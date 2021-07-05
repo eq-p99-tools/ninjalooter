@@ -61,8 +61,8 @@ class TestMessageHandlers(base.NLTestBase):
             match = config.MATCH_WHO.match(line)
             if match:
                 message_handlers.handle_who(match, 'window')
-        self.assertEqual(24, len(config.PLAYER_AFFILIATIONS))
-        self.assertEqual(24, mock_post_event.call_count)
+        self.assertEqual(25, len(config.PLAYER_AFFILIATIONS))
+        self.assertEqual(25, mock_post_event.call_count)
         mock_post_event.reset_mock()
 
         # Member changed from ANONYMOUS/Unguilded to Guilded
