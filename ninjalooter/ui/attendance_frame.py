@@ -239,7 +239,7 @@ class AttendanceDetailWindow(wx.Frame):
 
         attendance_record = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(405, 1080))
+            size=wx.Size(405, 1080), useExpansionColumn=True)
         main_box.Add(attendance_record, flag=wx.EXPAND | wx.ALL)
 
         def attendanceGroupKey(player):

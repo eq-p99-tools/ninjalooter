@@ -1,5 +1,6 @@
 # pylint: disable=no-member,invalid-name,unused-argument
 
+import datetime
 import os.path
 
 import wx
@@ -8,6 +9,7 @@ import wx.adv
 from ninjalooter import config
 from ninjalooter import logging
 from ninjalooter import logparse
+from ninjalooter import logreplay
 from ninjalooter import models
 from ninjalooter.ui import bidding_frame
 from ninjalooter import utils
@@ -61,7 +63,7 @@ class MenuBar(wx.MenuBar):
         file_menu.AppendSeparator()
 
         replay_mi = wx.MenuItem(file_menu, wx.ID_OPEN, '&Replay Log File')
-        replay_mi.Enable(False)
+        # replay_mi.Enable(False)
         replay_bitmap = wx.Bitmap(os.path.join(
             utils.PROJECT_DIR, "data", "icons", "reload.png"))
         replay_mi.SetBitmap(replay_bitmap)
@@ -128,16 +130,16 @@ class MenuBar(wx.MenuBar):
 
     def OnReplayLog(self, e: wx.MenuEvent):
         LOG.info("Attempting to replay an eqlog...")
-        # openFileDialog = wx.FileDialog(
-        #     self.Parent, "Open EQ Logfile", "D:\\EverQuest\\Logs\\", "",
-        #     "EQ Logfile (eqlog_*.txt)|eqlog_*.txt", wx.FD_OPEN)
+        openFileDialog = wx.FileDialog(
+            self.Parent, "Open EQ Logfile", "D:\\EverQuest\\Logs\\", "",
+            "EQ Logfile (eqlog_*.txt)|eqlog_*.txt", wx.FD_OPEN)
 
-        # result = openFileDialog.ShowModal()
-        # filename = openFileDialog.GetPath()
-        # openFileDialog.Destroy()
-        # if result != wx.ID_OK:
-        #     return
-        filename = "D:\\EverQuest\\Logs\\eqlog_Allstar_P1999Green.txt"
+        result = openFileDialog.ShowModal()
+        filename = openFileDialog.GetPath()
+        openFileDialog.Destroy()
+        if result != wx.ID_OK:
+            return
+        config.PLAYER_NAME = utils.get_character_name_from_logfile(filename)
 
         # Load the lines from the logfile
         with open(filename, 'r') as logfile:
@@ -145,14 +147,14 @@ class MenuBar(wx.MenuBar):
 
         # Get the timestamp bounds
         try:
-            first_time = utils.get_timestamp(loglines)
-            last_time = utils.get_timestamp(reversed(loglines))
+            first_time = utils.get_first_timestamp(loglines)
+            last_time = utils.get_first_timestamp(reversed(loglines))
+            LOG.info("%s -> %s", first_time, last_time)
+            if not first_time and last_time:
+                raise ValueError()
         except (TypeError, ValueError):
             LOG.exception("Failed to find a first/last timestamp")
-            return
-        LOG.info("%s -> %s", first_time, last_time)
-
-        if not first_time and last_time:
+            self.DialogParseFail()
             return
 
         time_select_dialog = wx.Dialog(self.Parent, title="Select Time Bounds")
@@ -165,12 +167,14 @@ class MenuBar(wx.MenuBar):
         from_label.SetFont(bold_font)
         date_chooser_from = wx.adv.DatePickerCtrl(time_select_dialog)
         date_chooser_from.SetValue(first_time)
+        date_chooser_from.SetRange(first_time, last_time)
         time_chooser_from = wx.adv.TimePickerCtrl(time_select_dialog)
         time_chooser_from.SetValue(first_time)
         to_label = wx.StaticText(time_select_dialog, label="To")
         to_label.SetFont(bold_font)
         date_chooser_to = wx.adv.DatePickerCtrl(time_select_dialog)
         date_chooser_to.SetValue(last_time)
+        date_chooser_to.SetRange(first_time, last_time)
         time_chooser_to = wx.adv.TimePickerCtrl(time_select_dialog)
         time_chooser_to.SetValue(last_time)
         time_select_bounds_box.Add(
@@ -205,12 +209,53 @@ class MenuBar(wx.MenuBar):
 
         # Show the modal
         if time_select_dialog.ShowModal() != wx.ID_OK:
-            print("cancel pressed")
             time_select_dialog.Destroy()
             return
 
-        print("ok pressed")
         time_select_dialog.Destroy()
+
+        fd, ft = date_chooser_from.GetValue(), time_chooser_from.GetValue()
+        fdt = datetime.datetime(*map(int, fd.FormatISODate().split('-')),
+                                *map(int, ft.FormatISOTime().split(':')))
+        td, tt = date_chooser_to.GetValue(), time_chooser_to.GetValue()
+        tdt = datetime.datetime(*map(int, td.FormatISODate().split('-')),
+                                *map(int, tt.FormatISOTime().split(':')))
+        first_index = utils.find_timestamp(loglines, fdt)
+        last_index = utils.find_timestamp(loglines, tdt)
+        if first_index is None or last_index is None:
+            # can't parse those times
+            LOG.error(
+                "Couldn't find the first (%s) or last (%s) log line index.",
+                first_index, last_index
+            )
+            self.DialogParseFail()
+            return
+        LOG.debug("Times: %s -> %s", fdt, tdt)
+        LOG.debug("First line: %s", loglines[first_index])
+        LOG.debug("Last line: %s", loglines[max(last_index - 1, 0)])
+        picked_lines = loglines[first_index:last_index]
+        total_picked_lines = len(picked_lines)
+        parse_progress_dialog = wx.ProgressDialog(
+            title="Parsing Logs...",
+            message="Please wait while your logfile is parsed.",
+            maximum=total_picked_lines,
+            parent=self.Parent,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT |
+                  wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME
+        )
+
+        logreplay.replay_logs(picked_lines, parse_progress_dialog)
+        self.Parent.bidding_frame.OnHideRot(None)
+        parse_progress_dialog.Destroy()
+
+    def DialogParseFail(self):
+        dlg = wx.MessageDialog(
+            self,
+            "Failed to parse the selected file.\n"
+            "Are you certain it is a valid EverQuest log file?",
+            "Log Parse Error", wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     @staticmethod
     def OnSetAlliance(e: wx.MenuEvent):
@@ -308,6 +353,7 @@ class MenuBar(wx.MenuBar):
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_OK:
+            utils.store_state(backup=True)
             wx.PostEvent(self.Parent, models.AppClearEvent())
 
     def OnRestrict(self, e: wx.MenuEvent):

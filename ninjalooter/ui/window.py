@@ -41,16 +41,16 @@ class MainWindow(wx.Frame):
         notebook = wx.Notebook(self, style=wx.LEFT)
 
         # Bidding Frame
-        bidding_frame.BiddingFrame(notebook)
+        self.bidding_frame = bidding_frame.BiddingFrame(notebook)
 
         # Attendance Frame
-        attendance_frame.AttendanceFrame(notebook)
+        self.attendance_frame = attendance_frame.AttendanceFrame(notebook)
 
         # Population Frame
-        population_frame.PopulationFrame(notebook)
+        self.population_frame = population_frame.PopulationFrame(notebook)
 
         # Kill Times Frame
-        killtimes_frame.KillTimesFrame(notebook)
+        self.killtimes_frame = killtimes_frame.KillTimesFrame(notebook)
 
         self.Show(True)
         if config.ALWAYS_ON_TOP:

@@ -20,13 +20,15 @@ AWARD_MESSAGE_MATCHER = re.compile(
 NUMBER_MATCHER = re.compile(r".*\d.*")
 
 
-def handle_raidtick(match: re.Match, window: wx.Frame) -> bool:
+def handle_raidtick(match: re.Match, window: wx.Frame,
+                    skip_store=False) -> bool:
     tick_time = match.group('time')
     config.LAST_RAIDTICK = dateutil.parser.parse(tick_time)
     return True
 
 
-def handle_creditt(match: re.Match, window: wx.Frame) -> bool:
+def handle_creditt(match: re.Match, window: wx.Frame,
+                   skip_store=False) -> bool:
     time = match.group('time')
     user = match.group('from')
     message = match.group('message')
@@ -37,7 +39,8 @@ def handle_creditt(match: re.Match, window: wx.Frame) -> bool:
     return True
 
 
-def handle_gratss(match: re.Match, window: wx.Frame) -> bool:
+def handle_gratss(match: re.Match, window: wx.Frame,
+                  skip_store=False) -> bool:
     time = match.group('time')
     user = match.group('from')
     message = match.group('message')
@@ -68,13 +71,15 @@ def handle_gratss(match: re.Match, window: wx.Frame) -> bool:
 
 
 # pylint: disable=unused-argument
-def handle_start_who(match: re.Match, window: wx.Frame) -> bool:
+def handle_start_who(match: re.Match, window: wx.Frame,
+                     skip_store=False) -> bool:
     config.PLAYER_AFFILIATIONS.clear()
     wx.PostEvent(window, models.ClearWhoEvent())
     return True
 
 
-def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
+def handle_end_who(match: re.Match, window: wx.Frame,
+                   skip_store=False) -> bool:
     who_time = match.group('time')
     parsed_time = dateutil.parser.parse(who_time)
     raidtick_was = datetime.datetime.now() - config.LAST_RAIDTICK
@@ -86,11 +91,12 @@ def handle_end_who(match: re.Match, window: wx.Frame) -> bool:
     config.WHO_LOG.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
     wx.PostEvent(window, models.WhoEndEvent())
-    utils.store_state()
+    if not skip_store:
+        utils.store_state()
     return True
 
 
-def handle_who(match: re.Match, window: wx.Frame) -> bool:
+def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group("name")
     guild = match.group("guild")
     pclass = match.group("class") or ""
@@ -112,7 +118,7 @@ def handle_who(match: re.Match, window: wx.Frame) -> bool:
     return True
 
 
-def handle_drop(match: re.Match, window: wx.Frame) -> list:
+def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
@@ -163,11 +169,12 @@ def handle_drop(match: re.Match, window: wx.Frame) -> list:
         return list()
     if used_found_items:
         wx.PostEvent(window, models.DropEvent())
-    utils.store_state()
+    if not skip_store:
+        utils.store_state()
     return found_items
 
 
-def handle_bid(match: re.Match, window: wx.Frame) -> bool:
+def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME
@@ -206,17 +213,112 @@ def handle_bid(match: re.Match, window: wx.Frame) -> bool:
                 return False
             result = auc_item.add(bid, name)
             wx.PostEvent(window, models.BidEvent(auc_item))
-            utils.store_state()
+            if not skip_store:
+                utils.store_state()
             return result
     LOG.info("%s attempted to bid for %s but it isn't active", name, item)
     return False
 
 
-def handle_rand1(match: re.Match, window: wx.Frame) -> str:
+def handle_auc_start(match: re.Match, window: wx.Frame,
+                     skip_store=False) -> bool:
+    LOG.warning('AUCTION START for %s' % match.groupdict())
+    message_time = dateutil.parser.parse(match.group('time'))
+    item_name = match.group('item')
+    utils.complete_old_auctions(message_time - datetime.timedelta(minutes=30))
+    pending_item = None
+    for item in reversed(config.PENDING_AUCTIONS):
+        if item.name.lower() == item_name.lower():
+            pending_item = item
+            break
+    if 'bid' in match.groupdict() and match.group('bid') is not None:
+        active_items = utils.get_active_item_names()
+        if item_name.lower() in active_items:
+            LOG.debug("Not starting auction for %s, it is still in-progress.",
+                      item_name)
+            return False
+        # check historical auctions to see if we closed one with this exact bid
+        historical_auc = None
+        item_bidder = [(match.group('player'), int(match.group('bid')))]
+        for item in config.HISTORICAL_AUCTIONS.values():
+            highest = item.highest()
+            if (item.name().lower() == item_name.lower() and
+                    highest == item_bidder):
+                historical_auc = item
+                break
+        if historical_auc:
+            LOG.debug("Found historical auction for %s/%s/%s, restarting it.",
+                      item_name, item_bidder[0][0], item_bidder[0][1])
+            config.HISTORICAL_AUCTIONS.pop(historical_auc.item.uuid)
+            config.ACTIVE_AUCTIONS[historical_auc.item.uuid] = historical_auc
+            return True
+        LOG.debug("Failed to find historical auction for %s/%s/%s.",
+                  item_name, item_bidder[0][0], item_bidder[0][1])
+
+    if not pending_item:
+        LOG.debug("Tried to start auction for %s but one was not pending.",
+                  item_name)
+        return False
+
+    if 'min_dkp' in match.groupdict() :
+        start_auction = utils.start_auction_dkp
+        if match.group('min_dkp') is not None:
+            pending_item.min_dkp_override = int(match.group('min_dkp'))
+        number = None
+    else:
+        start_auction = utils.start_auction_random
+        number = int(match.group('number'))
+
+    auc = start_auction(pending_item)
+    if not auc:
+        LOG.warning("Failed to start auction for %s, old auction pending.",
+                    item_name)
+        return False
+    if number:
+        auc.number = number
+    auc.start_time = message_time
+    if ('player' in match.groupdict() and
+            match.group('player') is not None and
+            match.group('bid') is not None):
+        auc.bids[int(match.group('bid'))] = match.group('player')
+
+    window.bidding_frame.pending_list.SetObjects(config.PENDING_AUCTIONS)
+    window.bidding_frame.active_list.SetObjects(
+        list(config.ACTIVE_AUCTIONS.values()))
+    window.bidding_frame.active_list.SelectObject(auc)
+    return True
+
+
+def handle_auc_end(match: re.Match, window: wx.Frame,
+                   skip_store=False) -> bool:
+    LOG.warning('AUCTION END for %s' % match.groupdict())
+    item_name = match.group('item')
+    active_item = None
+    for auc_item in config.ACTIVE_AUCTIONS.values():
+        if auc_item.name().lower() == item_name.lower():
+            active_item = auc_item
+            break
+    if not active_item:
+        LOG.debug("Tried to stop auction for %s but one was not active.",
+                  item_name)
+        return False
+
+    config.HISTORICAL_AUCTIONS[active_item.item.uuid] = (
+        active_item)
+    config.ACTIVE_AUCTIONS.pop(active_item.item.uuid)
+    window.bidding_frame.active_list.SetObjects(
+        list(config.ACTIVE_AUCTIONS.values()))
+    window.bidding_frame.history_list.SetObjects(
+        list(config.HISTORICAL_AUCTIONS.values()))
+    window.bidding_frame.history_list.SelectObject(active_item)
+    return True
+
+
+def handle_rand1(match: re.Match, window: wx.Frame, skip_store=False) -> str:
     return match.group('name')
 
 
-def handle_rand2(match: re.Match, window: wx.Frame) -> bool:
+def handle_rand2(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group('name')
     rand_from = int(match.group('from'))
     rand_to = int(match.group('to'))
@@ -231,20 +333,21 @@ def handle_rand2(match: re.Match, window: wx.Frame) -> bool:
                 return False
             item_obj.add(rand_result, name)
             wx.PostEvent(window, models.BidEvent(item_obj))
-            utils.store_state()
+            if not skip_store:
+                utils.store_state()
             return True
     LOG.info("%s rolled %d-%d but that doesn't apply to an active auction.",
              name, rand_from, rand_to)
     return False
 
 
-def handle_kill(match: re.Match, window: wx.Frame) -> bool:
+def handle_kill(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     time = match.group('time')
     victim = match.group('victim')
     # if victim in extra_data.TIMER_MOBS:
     kt_obj = models.KillTimer(time, victim)
     config.KILL_TIMERS.append(kt_obj)
     wx.PostEvent(window, models.KillEvent())
-    utils.store_state()
+    if not skip_store:
+        utils.store_state()
     return True
-    # return False

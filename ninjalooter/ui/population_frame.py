@@ -45,7 +45,7 @@ class PopulationFrame(wx.Window):
         # List
         population_list = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(625, 1200))
+            size=wx.Size(625, 1200), useExpansionColumn=True)
         population_box.Add(population_list, flag=wx.EXPAND | wx.ALL)
         self.population_list = population_list
 

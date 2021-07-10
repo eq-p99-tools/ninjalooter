@@ -21,7 +21,7 @@ class KillTimesFrame(wx.Window):
         # List
         killtimers_list = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(600, 1080))
+            size=wx.Size(600, 1080), useExpansionColumn=True)
         killtimers_main_box.Add(killtimers_list, flag=wx.EXPAND | wx.ALL)
         self.killtimers_list = killtimers_list
 

@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.10.7"
+VERSION = "1.11.0"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -38,6 +38,7 @@ SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
                                      fallback=False)
 HIDE_ROTS = CONF.getboolean("default", "hide_rots", fallback=False)
 DROP_COOLDOWN = CONF.getint("default", "drop_cooldown", fallback=120)
+BACKUP_ON_CLEAR = CONF.getboolean("default", "backup_on_clear", fallback=True)
 SAFE_COLOR = CONF.get("theme", "safe_color", fallback="#CCE2CB")
 WARN_COLOR = CONF.get("theme", "warn_color", fallback="#F6EAC2")
 DANGER_COLOR = CONF.get("theme", "danger_color", fallback="#FFAEA5")
@@ -115,7 +116,7 @@ MATCH_OOC_OR_SAY = re.compile(
     r"(?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
 MATCH_GU_OR_SAY = re.compile(
     TIMESTAMP +
-    r"(?P<name>\w+) (says?|tells the guild|say to your guild)?,"
+    r"(?P<name>\w+) (says?|tells the guild|say to your guild),"
     r" '(?P<text>.*)'")
 MATCH_AUC_ONLY = re.compile(
     TIMESTAMP +

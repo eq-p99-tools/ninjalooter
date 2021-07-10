@@ -145,7 +145,7 @@ class KillTimer(DictEquals):
         self.name = name
 
     def island(self):
-        return extra_data.TIMER_MOBS.get(self.name, "Other")
+        return str(extra_data.TIMER_MOBS.get(self.name, "Other"))
 
 
 class ItemDrop(DictEquals):
@@ -326,7 +326,7 @@ class DKPAuction(Auction):
                 "/gu [{item}]{classes} - BID IN /GU, "
                 "MIN {min} DKP. "
                 "You MUST include the item name in your bid! Closing in "
-                "{time_remaining}."
+                "{time_remaining}. "
             ).format(
                 item=self.item.name,
                 min=self.get_target_min(), classes=classes,
@@ -393,7 +393,7 @@ class RandomAuction(Auction):
 
     def win_text(self) -> str:
         player = self.highest_players()
-        if player == "None":
+        if player == "None" or player == '':
             player = "ROT"
         roll = self.highest_number()
         if roll == "None":

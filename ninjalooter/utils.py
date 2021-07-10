@@ -34,10 +34,11 @@ def ignore_pending_item(item: models.ItemDrop) -> None:
 
 
 def start_auction_dkp(item: models.ItemDrop,
-                      alliance: str) -> models.DKPAuction:
+                      alliance="") -> models.DKPAuction:
     names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
     if item.name in names:
-        LOG.warning("Item %s already pending bid, not starting another.")
+        LOG.warning("Item %s already pending bid, not starting another.",
+                    item.name)
         return None
     auc = models.DKPAuction(item, alliance)
     config.PENDING_AUCTIONS.remove(item)
@@ -49,13 +50,22 @@ def start_auction_dkp(item: models.ItemDrop,
 def start_auction_random(item: models.ItemDrop) -> models.RandomAuction:
     names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
     if item.name in names:
-        LOG.warning("Item %s already pending roll, not starting another.")
+        LOG.warning("Item %s already pending roll, not starting another.",
+                    item.name)
         return None
     auc = models.RandomAuction(item)
     config.PENDING_AUCTIONS.remove(item)
     config.ACTIVE_AUCTIONS[item.uuid] = auc
     LOG.info("Started random roll for item: %s", item)
     return auc
+
+
+def complete_old_auctions(cutoff_time: datetime.datetime):
+    for auc in list(config.ACTIVE_AUCTIONS.values()):
+        if auc.start_time < cutoff_time:
+            LOG.debug("Completing old auction")
+            config.ACTIVE_AUCTIONS.pop(auc.item.uuid)
+            config.HISTORICAL_AUCTIONS[auc.item.uuid] = auc
 
 
 def get_pop_numbers(source=None, extras=None) -> dict:
@@ -198,10 +208,10 @@ def get_items_from_text(text: str) -> list:
 
 
 def get_pending_item_names() -> list:
-    """Return all active item bids as a list of lowercase item names."""
+    """Return all pending item drops as a list of lowercase item names."""
     pending_items = []
     for item in config.PENDING_AUCTIONS:
-        pending_items.append(item.name().lower())
+        pending_items.append(item.name.lower())
     return pending_items
 
 
@@ -217,7 +227,68 @@ def datetime_to_eq_format(dt: datetime.datetime) -> str:
     return dt.strftime("%a %b %d %H:%M:%S %Y")
 
 
-def get_timestamp(iterable_obj) -> datetime.datetime:
+def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
+    # If the list is empty, return None
+    if not lines:
+        return
+
+    # find the first timestamp, with line number (return None if no timestamps)
+    for first_index, item in enumerate(lines):
+        first_ts = get_timestamp(item)
+        if first_ts:
+            break
+    else:
+        return
+    # if the first timestamp is equal or after the timestamp, return it
+    if first_ts >= timestamp:
+        return first_index
+
+    # find the last timestamp, with line number
+    for last_index, item in enumerate(reversed(lines)):
+        last_ts = get_timestamp(item)
+        if last_ts:
+            break
+    else:  # not really necessary, but make pylint happy
+        return
+    # if the last time is before the timestamp, return None
+    if last_ts < timestamp:
+        return
+
+    # if the list has 1 or less lines, return index 0
+    if len(lines) <= 1:
+        return 0
+
+    # find the middle timestamp
+    middle_index = int(len(lines)/2)
+    for middle_index_iter, item in enumerate(lines[middle_index:]):
+        middle_ts = get_timestamp(item)
+        if middle_ts:
+            break
+    else:
+        middle_ts = None
+    if middle_ts and middle_ts > timestamp:
+        # if the middle timestamp is after our goal, look at the first half
+        left = find_timestamp(lines[:middle_index], timestamp)
+        if left is not None:
+            return left
+        # if the middle timestamp was after our timestamp, but the stuff on the
+        # left is all before it, then the middle timestamp must be our target
+        return middle_index
+    else:
+        # the middle timestamp is equal or before our goal, so check the right
+        right = find_timestamp(lines[middle_index:], timestamp)
+        if right is not None:
+            return middle_index + right
+    LOG.error("Couldn't find a timestamp. How did we get here?")
+
+
+def get_timestamp(logline: str) -> datetime.datetime:
+    match = RE_TIMESTAMP.match(logline)
+    if match:
+        return dateutil.parser.parse(match.group("time"))
+
+
+def get_first_timestamp(iterable_obj) -> datetime.datetime:
     """Return the first parsed timestamp found.
 
     :param iterable_obj: an iterator or something otherwise iterable
@@ -225,9 +296,9 @@ def get_timestamp(iterable_obj) -> datetime.datetime:
     :raises TypeError, ValueError
     """
     for item in iterable_obj:
-        match = RE_TIMESTAMP.match(item)
-        if match:
-            return dateutil.parser.parse(match.group("time"))
+        timestamp = get_timestamp(item)
+        if timestamp:
+            return timestamp
     return datetime.datetime.fromtimestamp(0)
 
 
@@ -246,7 +317,13 @@ def load_state():
         LOG.exception("Failed to load state, unknown exception.")
 
 
-def store_state():
+def store_state(backup=False):
+    statefile_name = config.SAVE_STATE_FILE
+    if backup and config.BACKUP_ON_CLEAR:
+        now = datetime.datetime.now()
+        timestr = now.isoformat().replace(':', '-').split('.')[0]
+        statefile_name = "state_{}.json".format(timestr)
+
     json_state = {
         "PENDING_AUCTIONS": config.PENDING_AUCTIONS,
         "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
@@ -264,7 +341,7 @@ def store_state():
         "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
         "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
     }
-    with open(config.SAVE_STATE_FILE, 'w') as ssfp:
+    with open(statefile_name, 'w') as ssfp:
         json.dump(json_state, ssfp, cls=JSONEncoder)
 
 

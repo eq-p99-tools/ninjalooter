@@ -162,7 +162,7 @@ class TestModels(base.NLTestBase):
         # No bids
         self.assertEqual(
             "/gu [Copper Disc] (DRU, SHD) - BID IN /GU, MIN 3 DKP. "
-            "You MUST include the item name in your bid! Closing in {}."
+            "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())
 
@@ -186,7 +186,7 @@ class TestModels(base.NLTestBase):
         # No bids
         self.assertEqual(
             "/gu [Golden Jasper Earring] - BID IN /GU, MIN 3 DKP. "
-            "You MUST include the item name in your bid! Closing in {}."
+            "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())
 
