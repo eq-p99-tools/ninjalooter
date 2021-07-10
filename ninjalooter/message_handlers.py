@@ -82,7 +82,7 @@ def handle_end_who(match: re.Match, window: wx.Frame,
                    skip_store=False) -> bool:
     who_time = match.group('time')
     parsed_time = dateutil.parser.parse(who_time)
-    raidtick_was = datetime.datetime.now() - config.LAST_RAIDTICK
+    raidtick_was = parsed_time - config.LAST_RAIDTICK
     raidtick_who = False
     if raidtick_was <= datetime.timedelta(seconds=3):
         raidtick_who = True

@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.11.0"
+VERSION = "1.11.1"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -107,7 +107,7 @@ MATCH_WHO = re.compile(
     r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w ]+)>)?")
 MATCH_END_WHO = re.compile(
     TIMESTAMP +
-    r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w ]+)\.")
+    r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
 MATCH_OOC_ONLY = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
