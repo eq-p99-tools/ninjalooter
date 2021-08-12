@@ -499,23 +499,42 @@ def export_to_eqdkp(filename):
     if not sheets and closed_loots:
         sheets["Loot"] = workbook.add_worksheet("Loot")
         sheet_rows["Loot"] = -1
+    first_sheet = list(sheets.values())[0]
+    last_sheet = list(sheets.values())[-1]
 
+    # Loop through sheets and add creditts to them
     for sheet_timestamp in reversed(sheets):
         sheet = sheets[sheet_timestamp]
-        # Write loots after each tick, working backwards
+        # Write creditts after each tick, working backwards
+        for creditt in creditt_messages.copy():
+            cred_timestamp = re.match(config.TIMESTAMP, creditt).group('time')
+            parsed_time = dateutil.parser.parse(cred_timestamp)
+            if parsed_time > sheet_timestamp:
+                sheet_rows[sheet.name] += 1
+                sheet.write_string(sheet_rows[sheet.name], 0, creditt)
+                creditt_messages.remove(creditt)
+
+    # Write any remaining creditts to the first sheet -- do we want this?
+    for creditt in creditt_messages:
+        sheet_rows[first_sheet.name] += 1
+        first_sheet.write_string(sheet_rows[first_sheet.name], 0, creditt)
+
+    # Loop through sheets and add loots to them
+    for sheet_timestamp in sheets:
+        sheet = sheets[sheet_timestamp]
+        # Write loots to the current sheet
         for loot in closed_loots.copy():
             loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
             parsed_time = dateutil.parser.parse(loot_timestamp)
-            if sheet_timestamp == "Loot" or parsed_time > sheet_timestamp:
+            if sheet_timestamp == "Loot" or parsed_time < sheet_timestamp:
                 sheet_rows[sheet.name] += 1
                 sheet.write_string(sheet_rows[sheet.name], 0, loot)
                 closed_loots.remove(loot)
 
-    # Write any remaining loots to the earliest sheet
-    first_sheet = list(sheets.values())[0]
+    # Write any remaining loots to the last sheet
     for loot in closed_loots:
-        sheet_rows[first_sheet.name] += 1
-        first_sheet.write_string(sheet_rows[first_sheet.name], 0, loot)
+        sheet_rows[last_sheet.name] += 1
+        last_sheet.write_string(sheet_rows[last_sheet.name], 0, loot)
 
     # Save the workbook
     try:

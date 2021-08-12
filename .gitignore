@@ -17,3 +17,4 @@ dist/
 state.json
 *.zip
 *.xlsx
+*.json

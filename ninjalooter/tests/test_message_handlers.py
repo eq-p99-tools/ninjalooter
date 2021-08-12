@@ -461,3 +461,33 @@ class TestMessageHandlers(base.NLTestBase):
                 "'Gratss Jim on [Bladestopper] (100 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertTrue(message_handlers.handle_gratss(match, 'window'))
+
+        # A gratss message direct to /tell should register (no tell windows)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells you, "
+                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+        match = config.MATCH_GRATSS.match(line)
+        self.assertTrue(message_handlers.handle_gratss(match, 'window'))
+
+        # A gratss message direct to /tell should register (tell windows)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim -> You, "
+                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+        match = config.MATCH_GRATSS.match(line)
+        self.assertTrue(message_handlers.handle_gratss(match, 'window'))
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_creditt(self, mock_post_event, mock_store_state):
+        config.PLAYER_NAME = "PlayerName"
+        # A creditt message direct to /tell should register (no tell windows)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells you, "
+                "'Creditt Bill'")
+        match = config.MATCH_CREDITT.match(line)
+        self.assertTrue(message_handlers.handle_creditt(match, 'window'))
+
+        # A creditt message direct to /tell should register (tell windows)
+        line = ("[Sun Aug 16 22:47:31 2020] Jim -> PlayerName: "
+                "Creditt Tony")
+        match = config.MATCH_CREDITT.match(line)
+        self.assertTrue(message_handlers.handle_creditt(match, 'window'))
+
+        config.PLAYER_NAME = ""

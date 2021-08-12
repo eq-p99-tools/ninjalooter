@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.11.1"
+VERSION = "1.12.0"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -144,7 +144,7 @@ MATCH_RAIDTICK = re.compile(
 )
 MATCH_CREDITT = re.compile(
     TIMESTAMP +
-    r"(?P<from>.*) (-> {}: |tells you, ')".format(PLAYER_NAME) +
+    r"(?P<from>.*) (-> (?P<name>\w+): |tells you, ')".format(PLAYER_NAME) +
     r"(?P<message>.*creditt.*?)'?$",
     flags=re.IGNORECASE
 )

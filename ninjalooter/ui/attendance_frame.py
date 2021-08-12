@@ -230,17 +230,29 @@ class AttendanceDetailWindow(wx.Frame):
         self.item = item
 
         main_box = wx.BoxSizer(wx.VERTICAL)
+        button_box = wx.BoxSizer(wx.HORIZONTAL)
+        main_box.Add(button_box, border=5)
+
+        add_button = wx.Button(self, label="Add Player")
+        add_button.Bind(wx.EVT_BUTTON, self.OnAddPlayer)
+        button_box.Add(add_button, border=5, flag=wx.ALL)
+
+        remove_button = wx.Button(self, label="Remove Player")
+        remove_button.Bind(wx.EVT_BUTTON, self.OnRemovePlayer)
+        button_box.Add(remove_button, border=5, flag=wx.ALL)
 
         raidtick_checkbox = wx.CheckBox(self, label="Raidtick")
         raidtick_checkbox.SetValue(item.raidtick)
         raidtick_checkbox.Bind(wx.EVT_CHECKBOX, self.OnRaidtickCheck)
-        main_box.Add(raidtick_checkbox, border=10)
+        bs = wx.SizerFlags().Border(wx.LEFT, 140).CenterVertical()
+        button_box.Add(raidtick_checkbox, bs)
         self.raidtick_checkbox = raidtick_checkbox
 
         attendance_record = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
             size=wx.Size(405, 1080), useExpansionColumn=True)
         main_box.Add(attendance_record, flag=wx.EXPAND | wx.ALL)
+        self.attendance_record = attendance_record
 
         def attendanceGroupKey(player):
             return config.ALLIANCE_MAP.get(player.guild, "None")
@@ -264,3 +276,28 @@ class AttendanceDetailWindow(wx.Frame):
     def OnRaidtickCheck(self, e: wx.EVT_CHECKBOX):
         self.item.raidtick = self.raidtick_checkbox.IsChecked()
         self.GetParent().OnRaidtickOnly(e)
+
+    def OnRemovePlayer(self, e: wx.EVT_BUTTON):
+        selected_player = self.attendance_record.GetSelectedObject()
+        if not selected_player:
+            return
+
+        self.item.log.pop(selected_player.name)
+        self.attendance_record.RemoveObject(selected_player)
+        self.Update()
+
+    def OnAddPlayer(self, e: wx.EVT_BUTTON):
+        name_dialog = wx.TextEntryDialog(self, "Player name:", "Add Player")
+        result = name_dialog.ShowModal()
+        player_name = name_dialog.GetValue().capitalize()
+        name_dialog.Destroy()
+        if result != wx.ID_OK or not player_name:
+            return
+
+        player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
+        if player_name in config.HISTORICAL_AFFILIATIONS:
+            player_guild = config.HISTORICAL_AFFILIATIONS[player_name]
+        self.item.log[player_name] = player_guild
+        self.attendance_record.AddObject(
+            models.Player(player_name, None, None, player_guild))
+        self.attendance_record.Update()
