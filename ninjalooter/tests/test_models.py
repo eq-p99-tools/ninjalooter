@@ -160,8 +160,9 @@ class TestModels(base.NLTestBase):
         auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
 
         # No bids
+        config.PRIMARY_BID_CHANNEL = 'auc'
         self.assertEqual(
-            "/gu [Copper Disc] (DRU, SHD) - BID IN /GU, MIN 3 DKP. "
+            "/AUC [Copper Disc] (DRU, SHD) - BID IN /AUC, MIN 3 DKP. "
             "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())
@@ -172,8 +173,9 @@ class TestModels(base.NLTestBase):
         self.assertListEqual([('Peter', 3)], auc.highest())
 
         # Bid exists
+        config.PRIMARY_BID_CHANNEL = 'shout'
         self.assertEqual(
-            "/gu [Copper Disc] (DRU, SHD) - BID IN /GU. "
+            "/SHOUT [Copper Disc] (DRU, SHD) - BID IN /SHOUT. "
             "You MUST include the item name in your bid! Currently: "
             "`Peter` with 3 DKP - Closing in {}! "
             .format(auc.time_remaining_text()),
@@ -184,8 +186,9 @@ class TestModels(base.NLTestBase):
         auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
 
         # No bids
+        config.PRIMARY_BID_CHANNEL = 'gu'
         self.assertEqual(
-            "/gu [Golden Jasper Earring] - BID IN /GU, MIN 3 DKP. "
+            "/GU [Golden Jasper Earring] - BID IN /GU, MIN 3 DKP. "
             "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())

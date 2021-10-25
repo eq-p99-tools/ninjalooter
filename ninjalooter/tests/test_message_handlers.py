@@ -134,13 +134,13 @@ class TestMessageHandlers(base.NLTestBase):
 
         # NODROP filter on, droppable item
         config.NODROP_ONLY = True
-        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
                 "'Copper Disc'")
         jim_disc_1_uuid = "jim_disc_1_uuid"
         jim_disc_1 = models.ItemDrop(
             'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020',
             uuid=jim_disc_1_uuid)
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_OOC.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
         self.assertIn('Copper Disc', items)
@@ -149,13 +149,13 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # NODROP filter on, NODROP item
-        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says, "
                 "'Belt of Iniquity'")
         jim_belt_1_uuid = "jim_belt_1_uuid"
         jim_belt_1 = models.ItemDrop(
             'Belt of Iniquity', 'Jim', 'Sun Aug 16 22:47:31 2020',
             uuid=jim_belt_1_uuid)
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_SAY.match(line)
         with mock.patch('uuid.uuid4') as mock_uuid4:
             mock_uuid4.return_value = jim_belt_1_uuid
             items = list(message_handlers.handle_drop(match, 'window'))
@@ -173,7 +173,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.NODROP_ONLY = False
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Copper Disc'")
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         with mock.patch('uuid.uuid4') as mock_uuid4:
             mock_uuid4.return_value = jim_disc_1_uuid
             items = list(message_handlers.handle_drop(match, 'window'))
@@ -198,7 +198,7 @@ class TestMessageHandlers(base.NLTestBase):
         james_earring = models.ItemDrop(
             'Golden Amber Earring', 'James', 'Sun Aug 16 22:47:41 2020',
             uuid=james_earring_uuid)
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         with mock.patch('uuid.uuid4') as mock_uuid4:
             mock_uuid4.side_effect = [james_disc_uuid, james_earring_uuid]
             items = list(message_handlers.handle_drop(match, 'window'))
@@ -215,7 +215,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Random chatter by federation guild member
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'four score and seven years ago, we wanted pixels'")
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
@@ -226,7 +226,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone reports they looted an item
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'looted Belt of Iniquity'")
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(0, len(items))
         self.assertListEqual(
@@ -245,7 +245,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.PENDING_AUCTIONS.clear()
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Shiverback-hide Jerkin'")
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         # One item should be found
         self.assertListEqual(['Shiverback-hide Jerkin'], items)
@@ -256,18 +256,18 @@ class TestMessageHandlers(base.NLTestBase):
         bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
                     "'Shiverback-hide Jerkin 1 main'")
         config.RESTRICT_BIDS = False
-        bid_match = config.MATCH_BID.match(bid_line)
+        bid_match = config.MATCH_BID_GU.match(bid_line)
         message_handlers.handle_bid(bid_match, 'window')
         config.HISTORICAL_AUCTIONS[auction1.item.uuid] = (
             config.ACTIVE_AUCTIONS.pop(auction1.item.uuid))
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([], items)
 
         # Ignore items if a number is present, it's probably a bid
-        match = config.MATCH_DROP.match(bid_line)
+        match = config.MATCH_DROP_GU.match(bid_line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([], items)
 
@@ -278,7 +278,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.PENDING_AUCTIONS.append(jerkin_2)
         line = ("[{}] Jim tells the guild, 'Shiverback-hide Jerkin'".format(
             utils.datetime_to_eq_format(datetime.datetime.now())))
-        match = config.MATCH_DROP.match(line)
+        match = config.MATCH_DROP_GU.match(line)
         self.assertEqual([jerkin_2], config.PENDING_AUCTIONS)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([jerkin_2.name], items)
@@ -313,7 +313,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -323,7 +323,7 @@ class TestMessageHandlers(base.NLTestBase):
         # FILTER ON - Someone outside the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertEqual([], disc_auction.highest())
@@ -333,7 +333,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = False
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -344,7 +344,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertEqual([], disc_auction.highest())
@@ -353,7 +353,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone we haven't seen bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Paul auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -362,7 +362,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance says random stuff with a number
         line = ("[Sun Aug 16 22:47:31 2020] Tim auctions, "
                 "'I am 12 and what channel is this'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -371,7 +371,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on two items at once
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP Platinum Disc'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -380,7 +380,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 10), disc_auction.highest())
@@ -391,7 +391,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an active item with wrong case
         line = ("[Sun Aug 16 22:47:31 2020] Pim auctions, "
                 "'copper DISC 11 DKP'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Pim', 11), disc_auction.highest())
@@ -403,7 +403,7 @@ class TestMessageHandlers(base.NLTestBase):
         # This would trigger a bug with "2nd" being read as "2 DKP"
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 2nd main 12dkp'")
-        match = config.MATCH_BID.match(line)
+        match = config.MATCH_BID[0].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 12), disc_auction.highest())
@@ -429,7 +429,7 @@ class TestMessageHandlers(base.NLTestBase):
         bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
                     "'Shiverback-hide Jerkin 1 main'")
         config.RESTRICT_BIDS = False
-        bid_match = config.MATCH_BID.match(bid_line)
+        bid_match = config.MATCH_BID_GU.match(bid_line)
         message_handlers.handle_bid(bid_match, 'window')
         config.HISTORICAL_AUCTIONS[auction1.item.uuid] = (
             config.ACTIVE_AUCTIONS.pop(auction1.item.uuid))

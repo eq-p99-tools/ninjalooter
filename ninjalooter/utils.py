@@ -445,6 +445,9 @@ def export_to_eqdkp(filename):
             tick_time = wholog.eqtime()
             tick_lines = []
             for member, guild in wholog.log.items():
+                if config.RESTRICT_BIDS and guild not in \
+                        config.ALLIANCES[config.DEFAULT_ALLIANCE]:
+                    continue
                 tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
                 tick_lines.append(tick_line)
             if tick_lines:
@@ -499,8 +502,11 @@ def export_to_eqdkp(filename):
     if not sheets and closed_loots:
         sheets["Loot"] = workbook.add_worksheet("Loot")
         sheet_rows["Loot"] = -1
-    first_sheet = list(sheets.values())[0]
-    last_sheet = list(sheets.values())[-1]
+    try:
+        first_sheet = list(sheets.values())[0]
+        last_sheet = list(sheets.values())[-1]
+    except IndexError:
+        first_sheet = last_sheet = creditt_sheet
 
     # Loop through sheets and add creditts to them
     for sheet_timestamp in reversed(sheets):

@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.12.0"
+VERSION = "1.13.0"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -53,7 +53,7 @@ if not CONF.has_section("theme"):
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
-             "Castle:Castle;"
+             "Castle:Castle,Ancient Blood,Gathered Might;"
              "Kingdom:Kingdom,Karens of Karana;"
              "Seal Team:Seal Team"
 )
@@ -99,6 +99,41 @@ SAVE_STATE_FILE = 'state.json'
 
 # Regexes
 TIMESTAMP = r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] +"
+
+# Drop Matchers
+MATCH_DROP_OOC = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
+MATCH_DROP_SAY = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) says?, '(?P<text>.*)'")
+MATCH_DROP_GU = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) (tells the guild|say to your guild),"
+    r" '(?P<text>.*)'")
+
+# Bid Matchers
+MATCH_BID_AUC = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID_SHOUT = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) shouts?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID_GU = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) (tells the guild|say to your guild),"
+    r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+
+# Random Matchers
+MATCH_RAND1 = re.compile(
+    TIMESTAMP +
+    r"\*\*A Magic Die is rolled by (?P<name>\w+)\.")
+MATCH_RAND2 = re.compile(
+    TIMESTAMP +
+    r"\*\*It could have been any number from (?P<from>\d+) to (?P<to>\d+), "
+    r"but this time it turned up a (?P<result>\d+)\.(?P<name>\w+)")
+
+# Other Matchers
 MATCH_START_WHO = re.compile(
     TIMESTAMP + r"Players on EverQuest:")
 MATCH_WHO = re.compile(
@@ -108,33 +143,6 @@ MATCH_WHO = re.compile(
 MATCH_END_WHO = re.compile(
     TIMESTAMP +
     r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
-MATCH_OOC_ONLY = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
-MATCH_OOC_OR_SAY = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) says?( out of character)?, '(?P<text>.*)'")
-MATCH_GU_OR_SAY = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) (says?|tells the guild|say to your guild),"
-    r" '(?P<text>.*)'")
-MATCH_AUC_ONLY = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+).*)'")
-MATCH_AUC_OR_SHOUT = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) (shout|auction)s?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
-MATCH_GU_AUC_OR_SHOUT = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) (shouts?|auctions?|tells the guild|say to your guild),"
-    r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
-MATCH_RAND1 = re.compile(
-    TIMESTAMP +
-    r"\*\*A Magic Die is rolled by (?P<name>\w+)\.")
-MATCH_RAND2 = re.compile(
-    TIMESTAMP +
-    r"\*\*It could have been any number from (?P<from>\d+) to (?P<to>\d+), "
-    r"but this time it turned up a (?P<result>\d+)\.(?P<name>\w+)")
 MATCH_KILL = re.compile(
     TIMESTAMP +
     r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
@@ -154,5 +162,28 @@ MATCH_GRATSS = re.compile(
     flags=re.IGNORECASE
 )
 
-MATCH_DROP = MATCH_GU_OR_SAY
-MATCH_BID = MATCH_GU_AUC_OR_SHOUT
+DROP_CHANNEL_OPTIONS = {
+    "ooc": MATCH_DROP_OOC,
+    "say": MATCH_DROP_SAY,
+    "gu": MATCH_DROP_GU
+}
+BID_CHANNEL_OPTIONS = {
+    "auc": MATCH_BID_AUC,
+    "shout": MATCH_BID_SHOUT,
+    "gu": MATCH_BID_GU
+}
+
+MATCH_DROP = CONF.get(
+    "default", "drop_channels",
+    fallback="ooc, say")
+MATCH_DROP = [DROP_CHANNEL_OPTIONS[chan.strip().lower()]
+              for chan in MATCH_DROP.split(',')
+              if chan.strip().lower() in DROP_CHANNEL_OPTIONS]
+MATCH_BID = CONF.get(
+    "default", "bid_channels",
+    fallback="auc, shout, gu")
+MATCH_BID = [BID_CHANNEL_OPTIONS[chan.strip().lower()]
+             for chan in MATCH_BID.split(',')
+             if chan.strip().lower() in BID_CHANNEL_OPTIONS]
+PRIMARY_BID_CHANNEL = CONF.get("default", "primary_bid_channel",
+                               fallback="unset")

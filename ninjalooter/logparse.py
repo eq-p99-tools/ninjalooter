@@ -12,19 +12,29 @@ from ninjalooter import utils
 # This is the app logger, not related to EQ logs
 LOG = logging.getLogger(__name__)
 
-LOG_MATCHERS = {
-    config.MATCH_START_WHO: message_handlers.handle_start_who,
-    config.MATCH_WHO: message_handlers.handle_who,
-    config.MATCH_END_WHO: message_handlers.handle_end_who,
-    config.MATCH_DROP: message_handlers.handle_drop,
-    config.MATCH_BID: message_handlers.handle_bid,
-    config.MATCH_RAND1: message_handlers.handle_rand1,
-    config.MATCH_RAND2: message_handlers.handle_rand2,
-    config.MATCH_KILL: message_handlers.handle_kill,
-    config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
-    config.MATCH_CREDITT: message_handlers.handle_creditt,
-    config.MATCH_GRATSS: message_handlers.handle_gratss,
-}
+LOG_MATCHERS = {}
+
+
+def reset_matchers():
+    LOG_MATCHERS.clear()
+    LOG_MATCHERS.update({
+        config.MATCH_START_WHO: message_handlers.handle_start_who,
+        config.MATCH_WHO: message_handlers.handle_who,
+        config.MATCH_END_WHO: message_handlers.handle_end_who,
+        config.MATCH_RAND1: message_handlers.handle_rand1,
+        config.MATCH_RAND2: message_handlers.handle_rand2,
+        config.MATCH_KILL: message_handlers.handle_kill,
+        config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
+        config.MATCH_CREDITT: message_handlers.handle_creditt,
+        config.MATCH_GRATSS: message_handlers.handle_gratss,
+    })
+    for matcher in config.MATCH_BID:
+        LOG_MATCHERS[matcher] = message_handlers.handle_bid
+    for matcher in config.MATCH_DROP:
+        LOG_MATCHERS[matcher] = message_handlers.handle_drop
+
+
+reset_matchers()
 
 
 # pylint: disable=no-member

@@ -312,10 +312,11 @@ class DKPAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         if current_bid != 'None':
             bid_message = (
-                "/gu [{item}]{classes} - BID IN /GU. "
+                "/{channel} [{item}]{classes} - BID IN /{channel}. "
                 "You MUST include the item name in your bid! Currently: "
                 "`{player}` with {number} DKP - Closing in {time_remaining}! "
             ).format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
                 player=self.highest_players(),
                 item=self.item.name,
                 number=current_bid, classes=classes,
@@ -323,11 +324,12 @@ class DKPAuction(Auction):
             )
         else:
             bid_message = (
-                "/gu [{item}]{classes} - BID IN /GU, "
+                "/{channel} [{item}]{classes} - BID IN /{channel}, "
                 "MIN {min} DKP. "
                 "You MUST include the item name in your bid! Closing in "
                 "{time_remaining}. "
             ).format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
                 item=self.item.name,
                 min=self.get_target_min(), classes=classes,
                 time_remaining=self.time_remaining_text()

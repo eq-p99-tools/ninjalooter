@@ -12,6 +12,9 @@ hide_rots = False
 drop_cooldown = 120
 always_on_top = False
 backup_on_clear = True
+primary_bid_channel = unset
+drop_channels = ooc,say
+bid_channels = auc,shout,gu
 
 [theme]
 safe_color = #CCE2CB

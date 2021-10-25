@@ -155,16 +155,23 @@ class BiddingFrame(wx.Window):
         active_button_gettext = wx.Button(pane_2, label="Copy Bid")
         active_button_complete = wx.Button(pane_2, label="Complete")
         active_button_wiki = wx.Button(pane_2, label="Wiki?")
+        active_cb_bid_target = wx.ComboBox(
+            pane_2, size=wx.Size(70, 22),
+            choices=list(config.DROP_CHANNEL_OPTIONS),
+            value=config.PRIMARY_BID_CHANNEL,
+            style=wx.CB_READONLY)
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
         active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=10)
         active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=10)
         active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=10)
         active_buttons_box.Add(active_button_wiki, flag=wx.TOP, border=10)
+        active_buttons_box.Add(active_cb_bid_target, flag=wx.TOP, border=10)
 
         active_button_undo.Bind(wx.EVT_BUTTON, self.UndoStart)
         active_button_gettext.Bind(wx.EVT_BUTTON, self.CopyBidText)
         active_button_complete.Bind(wx.EVT_BUTTON, self.CompleteAuction)
         active_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiActive)
+        active_cb_bid_target.Bind(wx.EVT_COMBOBOX, self.SelectBidTarget)
 
         # -------------------
         # Historical Loot Box
@@ -450,6 +457,12 @@ class BiddingFrame(wx.Window):
 
     def ShowActiveDetail(self, e: wx.EVT_LEFT_DCLICK):
         return self.ShowItemDetail(self.active_list)
+
+    def SelectBidTarget(self, e: wx.EVT_COMBOBOX):
+        config.PRIMARY_BID_CHANNEL = e.String
+        config.CONF.set(
+            'default', 'primary_bid_channel', config.PRIMARY_BID_CHANNEL)
+        config.write()
 
     def OnDrop(self, e: models.DropEvent):
         selected_object = self.pending_list.GetSelectedObject()

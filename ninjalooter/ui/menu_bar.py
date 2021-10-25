@@ -63,7 +63,7 @@ class MenuBar(wx.MenuBar):
         file_menu.AppendSeparator()
 
         replay_mi = wx.MenuItem(file_menu, wx.ID_OPEN, '&Replay Log File')
-        # replay_mi.Enable(False)
+        replay_mi.Enable(False)
         replay_bitmap = wx.Bitmap(os.path.join(
             utils.PROJECT_DIR, "data", "icons", "reload.png"))
         replay_mi.SetBitmap(replay_bitmap)
@@ -109,6 +109,26 @@ class MenuBar(wx.MenuBar):
                 alliance_item.Check()
             self.Bind(wx.EVT_MENU, self.OnSetAlliance, alliance_item)
         bidding_menu.AppendSubMenu(alliance_menu, '&Alliance')
+
+        drop_chan_menu = wx.Menu()
+        for channel in config.DROP_CHANNEL_OPTIONS:
+            channel_item = wx.MenuItem(
+                drop_chan_menu, wx.ID_ANY, channel, kind=wx.ITEM_CHECK)
+            drop_chan_menu.Append(channel_item)
+            if config.DROP_CHANNEL_OPTIONS[channel] in config.MATCH_DROP:
+                channel_item.Check()
+            self.Bind(wx.EVT_MENU, self.OnSetDropChannel, channel_item)
+        bidding_menu.AppendSubMenu(drop_chan_menu, '&Drop Channels')
+
+        bid_chan_menu = wx.Menu()
+        for channel in config.BID_CHANNEL_OPTIONS:
+            channel_item = wx.MenuItem(
+                bid_chan_menu, wx.ID_ANY, channel, kind=wx.ITEM_CHECK)
+            bid_chan_menu.Append(channel_item)
+            if config.BID_CHANNEL_OPTIONS[channel] in config.MATCH_BID:
+                channel_item.Check()
+            self.Bind(wx.EVT_MENU, self.OnSetBidChannel, channel_item)
+        bidding_menu.AppendSubMenu(bid_chan_menu, '&Bid Channels')
 
         self.restrict_mi = wx.MenuItem(
             bidding_menu, wx.ID_ANY, '&Restrict to Alliance',
@@ -263,6 +283,38 @@ class MenuBar(wx.MenuBar):
         config.DEFAULT_ALLIANCE = menu_item.ItemLabel
         config.CONF.set(
             'default', 'default_alliance', config.DEFAULT_ALLIANCE)
+        config.write()
+
+    @staticmethod
+    def OnSetDropChannel(e: wx.MenuEvent):
+        selected_channels = [
+            mi.ItemLabel
+            for mi in e.EventObject.MenuItems
+            if mi.IsChecked()
+        ]
+        config.MATCH_DROP = [
+            config.DROP_CHANNEL_OPTIONS[chan]
+            for chan in selected_channels
+        ]
+        logparse.reset_matchers()
+        config.CONF.set('default', 'drop_channels',
+                        ','.join(selected_channels))
+        config.write()
+
+    @staticmethod
+    def OnSetBidChannel(e: wx.MenuEvent):
+        selected_channels = [
+            mi.ItemLabel
+            for mi in e.EventObject.MenuItems
+            if mi.IsChecked()
+        ]
+        config.MATCH_BID = [
+            config.BID_CHANNEL_OPTIONS[chan]
+            for chan in selected_channels
+        ]
+        logparse.reset_matchers()
+        config.CONF.set('default', 'bid_channels',
+                        ','.join(selected_channels))
         config.write()
 
     def OnConfigure(self, e: wx.MenuEvent):
