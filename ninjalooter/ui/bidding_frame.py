@@ -157,7 +157,7 @@ class BiddingFrame(wx.Window):
         active_button_wiki = wx.Button(pane_2, label="Wiki?")
         active_cb_bid_target = wx.ComboBox(
             pane_2, size=wx.Size(70, 22),
-            choices=list(config.DROP_CHANNEL_OPTIONS),
+            choices=list(config.BID_CHANNEL_OPTIONS),
             value=config.PRIMARY_BID_CHANNEL,
             style=wx.CB_READONLY)
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
