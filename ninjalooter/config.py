@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.13.0-rc1"
+VERSION = "1.13.0-rc2"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]

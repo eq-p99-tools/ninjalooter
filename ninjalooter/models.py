@@ -343,7 +343,8 @@ class DKPAuction(Auction):
         dkp = self.highest_number()
         if dkp == "None":
             dkp = "0"
-        return "/gu Gratss {player} on [{item}] ({number} DKP)!".format(
+        return "/{channel} Gratss {player} on [{item}] ({number} DKP)!".format(
+            channel=config.PRIMARY_BID_CHANNEL.upper(),
             player=player, number=dkp,
             item=self.item.name)
 
@@ -400,9 +401,12 @@ class RandomAuction(Auction):
         roll = self.highest_number()
         if roll == "None":
             roll = "0"
-        return ("/gu Gratss {player} on [{item}] with {roll} / {target}!"
-                .format(player=player, item=self.item.name,
-                        roll=roll, target=self.number))
+        return (
+            "/{channel} Gratss {player} on [{item}] with {roll} / {target}!"
+            .format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                player=player, item=self.item.name,
+                roll=roll, target=self.number))
 
 
 EVT_DROP = wx.NewId()
