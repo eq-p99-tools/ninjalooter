@@ -149,11 +149,19 @@ def load_item_data():
         return json.load(item_file)
 
 
+def load_spell_data():
+    with open(os.path.join(PROJECT_DIR, 'data', 'spells.json')) as spell_file:
+        return json.load(spell_file)
+
+
 def setup_aho():
     config.TRIE = keywordtree.KeywordTree(case_insensitive=True)
     config.ITEMS = load_item_data()
+    config.SPELLS = load_spell_data()
     for item in config.ITEMS:
         config.TRIE.add(item)
+    for spell in config.SPELLS:
+        config.TRIE.add("SPELL: %s" % spell)
     config.TRIE.finalize()
 
 

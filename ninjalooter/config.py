@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.13.0-rc2"
+VERSION = "1.13.0"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -89,6 +89,7 @@ for alliance, guilds in ALLIANCES.items():
         ALLIANCE_MAP[guild] = alliance
 TRIE = None
 ITEMS = dict()
+SPELLS = dict()
 LAST_RAIDTICK = datetime.datetime.now()
 LAST_NUMBER = 0
 PLAYER_NAME = ""
