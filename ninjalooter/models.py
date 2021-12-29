@@ -7,6 +7,7 @@ import uuid as uuid_lib
 import dateutil.parser
 import wx
 
+
 from ninjalooter import config
 from ninjalooter import extra_data
 from ninjalooter import logging
