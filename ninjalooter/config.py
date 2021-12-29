@@ -4,7 +4,7 @@ import logging
 import re
 import sys
 
-VERSION = "1.13.0"
+VERSION = "1.13.1-rc1"
 
 if len(sys.argv) > 1:
     CONFIG_FILENAME = sys.argv[1]
@@ -29,6 +29,44 @@ NUMBERS = CONF.get(
     fallback="1111, 2222, 3333, 4444, 5555, 6666, "
              "7777, 8888, 9999")
 NUMBERS = [int(num.strip()) for num in NUMBERS.split(',')]
+DEFAULT_BID_MESSAGE_NEW = (
+    "[{item}]{classes} - BID IN /{channel}, MIN {min} DKP. "
+    "You MUST include the item name in your bid! Closing in "
+    "{time_remaining}. ")
+BID_MESSAGE_NEW = CONF.get(
+    "default", "bid_message_new",
+    fallback=DEFAULT_BID_MESSAGE_NEW
+)
+BID_MESSAGE_NEW = BID_MESSAGE_NEW.strip("\"\'")
+DEFAULT_BID_MESSAGE_REMINDER = (
+    "[{item}]{classes} - BID IN /{channel}. "
+    "You MUST include the item name in your bid! Currently: "
+    "`{player}` with {number} DKP - Closing in {time_remaining}! ")
+BID_MESSAGE_REMINDER = CONF.get(
+    "default", "bid_message_reminder",
+    fallback=DEFAULT_BID_MESSAGE_REMINDER
+)
+BID_MESSAGE_REMINDER = BID_MESSAGE_REMINDER.strip("\"\'")
+DEFAULT_ROLL_MESSAGE = "[{item}]{classes} ROLL {target} NOW!"
+ROLL_MESSAGE = CONF.get(
+    "default", "roll_message",
+    fallback=DEFAULT_ROLL_MESSAGE
+)
+ROLL_MESSAGE = ROLL_MESSAGE.strip("\"\'")
+DEFAULT_GRATS_MESSAGE_BID = (
+    "Gratss {player} on [{item}] ({number} DKP)!")
+GRATS_MESSAGE_BID = CONF.get(
+    "default", "grats_message_bid",
+    fallback=DEFAULT_GRATS_MESSAGE_BID
+)
+GRATS_MESSAGE_BID = GRATS_MESSAGE_BID.strip("\"\'")
+DEFAULT_GRATS_MESSAGE_ROLL = (
+    "Gratss {player} on [{item}] with {roll} / {target}!")
+GRATS_MESSAGE_ROLL = CONF.get(
+    "default", "grats_message_roll",
+    fallback=DEFAULT_GRATS_MESSAGE_ROLL
+)
+GRATS_MESSAGE_ROLL = GRATS_MESSAGE_ROLL.strip("\"\'")
 MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
 MIN_BID_TIME = CONF.getint("default", "min_bid_time", fallback=150) + 1
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)

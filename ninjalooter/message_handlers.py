@@ -183,7 +183,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     text = match.group("text")
     bid = int(match.group("bid"))
 
-    if 'BID IN /%s' % config.PRIMARY_BID_CHANNEL.upper() in text:
+    if text.startswith("~"):
         return False
 
     found_items = utils.get_items_from_text(text)

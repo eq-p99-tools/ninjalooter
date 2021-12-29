@@ -6,7 +6,7 @@ min_bid_time = 150
 restrict_bids = False
 nodrop_only = True
 raidtick_filter = False
-alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
+alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle,Ancient Blood,Gathered Might;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
 default_alliance = Force of Will
 hide_rots = False
 drop_cooldown = 120
@@ -15,6 +15,26 @@ backup_on_clear = True
 primary_bid_channel = unset
 drop_channels = ooc,say
 bid_channels = auc,shout,gu
+# For all bid messages, you can use the following variables:
+#  {item} = Name of item
+#  {classes} = Class restrictions on item (if any)
+#  {channel} = Primary bidding channel
+#  {min} = Minimum DKP for item
+#  {time_remaining} = Time remaining for bidding
+# Bid reminder message only:
+#  {player} = Player with the highest current bid
+#  {number} = Current high bid
+# For all roll messages, you can use the following variables:
+#  {item} = Name of item
+#  {classes} = Class restrictions on item (if any)
+#  {target} = Roll target
+# Roll grats message only:
+#  {roll} = Winning roll
+bid_message_new = "[{item}]{classes} - BID IN /{channel}, MIN {min} DKP. You MUST include the item name in your bid! Closing in {time_remaining}. "
+bid_message_reminder = "[{item}]{classes} - BID IN /{channel}. You MUST include the item name in your bid! Currently: `{player}` with {number} DKP - Closing in {time_remaining}! "
+roll_message = "[{item}]{classes} ROLL {target} NOW!"
+grats_message_bid = "Gratss {player} on [{item}] ({number} DKP)!"
+grats_message_roll = "Gratss {player} on [{item}] with {roll} / {target}!"
 
 [theme]
 safe_color = #CCE2CB

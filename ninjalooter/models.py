@@ -311,29 +311,47 @@ class DKPAuction(Auction):
         current_bid = self.highest_number()
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         if current_bid != 'None':
-            bid_message = (
-                "/{channel} [{item}]{classes} - BID IN /{channel}. "
-                "You MUST include the item name in your bid! Currently: "
-                "`{player}` with {number} DKP - Closing in {time_remaining}! "
-            ).format(
-                channel=config.PRIMARY_BID_CHANNEL.upper(),
-                player=self.highest_players(),
-                item=self.item.name,
-                number=current_bid, classes=classes,
-                time_remaining=self.time_remaining_text()
-            )
+            try:
+                bid_message = (
+                    "/{channel} ~" + config.BID_MESSAGE_REMINDER
+                ).format(
+                    channel=config.PRIMARY_BID_CHANNEL.upper(),
+                    player=self.highest_players(),
+                    item=self.item.name,
+                    number=current_bid,
+                    min=self.get_target_min(), classes=classes,
+                    time_remaining=self.time_remaining_text(),
+                )
+            except KeyError:
+                bid_message = config.DEFAULT_BID_MESSAGE_REMINDER.format(
+                    channel=config.PRIMARY_BID_CHANNEL.upper(),
+                    player=self.highest_players(),
+                    item=self.item.name,
+                    number=current_bid,
+                    min=self.get_target_min(), classes=classes,
+                    time_remaining=self.time_remaining_text(),
+                )
         else:
-            bid_message = (
-                "/{channel} [{item}]{classes} - BID IN /{channel}, "
-                "MIN {min} DKP. "
-                "You MUST include the item name in your bid! Closing in "
-                "{time_remaining}. "
-            ).format(
-                channel=config.PRIMARY_BID_CHANNEL.upper(),
-                item=self.item.name,
-                min=self.get_target_min(), classes=classes,
-                time_remaining=self.time_remaining_text()
-            )
+            try:
+                bid_message = (
+                    "/{channel} ~" + config.BID_MESSAGE_NEW
+                ).format(
+                    channel=config.PRIMARY_BID_CHANNEL.upper(),
+                    player=None,
+                    item=self.item.name,
+                    number=None,
+                    min=self.get_target_min(), classes=classes,
+                    time_remaining=self.time_remaining_text(),
+                )
+            except KeyError:
+                bid_message = config.DEFAULT_BID_MESSAGE_NEW.format(
+                    channel=config.PRIMARY_BID_CHANNEL.upper(),
+                    player=None,
+                    item=self.item.name,
+                    number=None,
+                    min=self.get_target_min(), classes=classes,
+                    time_remaining=self.time_remaining_text(),
+                )
         return bid_message
 
     def win_text(self) -> str:
@@ -343,10 +361,21 @@ class DKPAuction(Auction):
         dkp = self.highest_number()
         if dkp == "None":
             dkp = "0"
-        return "/{channel} Gratss {player} on [{item}] ({number} DKP)!".format(
-            channel=config.PRIMARY_BID_CHANNEL.upper(),
-            player=player, number=dkp,
-            item=self.item.name)
+        try:
+            grats_message = (
+                "/{channel} ~" + config.GRATS_MESSAGE_BID
+            ).format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                player=player, number=dkp,
+                item=self.item.name
+            )
+        except KeyError:
+            grats_message = config.DEFAULT_GRATS_MESSAGE_BID.format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                player=player, number=dkp,
+                item=self.item.name
+            )
+        return grats_message
 
 
 def get_next_number():
@@ -391,8 +420,19 @@ class RandomAuction(Auction):
 
     def bid_text(self) -> str:
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
-        return "/gu [{item}]{classes} ROLL {number} NOW!".format(
-            item=self.item.name, number=self.number, classes=classes)
+        try:
+            bid_text = (
+                "/{channel} " + config.ROLL_MESSAGE
+            ).format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                item=self.item.name, target=self.number, classes=classes
+            )
+        except KeyError:
+            bid_text = config.DEFAULT_ROLL_MESSAGE.format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                item=self.item.name, target=self.number, classes=classes
+            )
+        return bid_text
 
     def win_text(self) -> str:
         player = self.highest_players()
@@ -401,12 +441,21 @@ class RandomAuction(Auction):
         roll = self.highest_number()
         if roll == "None":
             roll = "0"
-        return (
-            "/{channel} Gratss {player} on [{item}] with {roll} / {target}!"
-            .format(
+        try:
+            win_text = (
+                "/{channel} " + config.GRATS_MESSAGE_ROLL
+            ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 player=player, item=self.item.name,
-                roll=roll, target=self.number))
+                roll=roll, target=self.number
+            )
+        except KeyError:
+            win_text = config.DEFAULT_GRATS_MESSAGE_ROLL.format(
+                channel=config.PRIMARY_BID_CHANNEL.upper(),
+                player=player, item=self.item.name,
+                roll=roll, target=self.number
+            )
+        return win_text
 
 
 EVT_DROP = wx.NewId()

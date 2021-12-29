@@ -162,7 +162,7 @@ class TestModels(base.NLTestBase):
         # No bids
         config.PRIMARY_BID_CHANNEL = 'auc'
         self.assertEqual(
-            "/AUC [Copper Disc] (DRU, SHD) - BID IN /AUC, MIN 3 DKP. "
+            "/AUC ~[Copper Disc] (DRU, SHD) - BID IN /AUC, MIN 3 DKP. "
             "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())
@@ -175,7 +175,7 @@ class TestModels(base.NLTestBase):
         # Bid exists
         config.PRIMARY_BID_CHANNEL = 'shout'
         self.assertEqual(
-            "/SHOUT [Copper Disc] (DRU, SHD) - BID IN /SHOUT. "
+            "/SHOUT ~[Copper Disc] (DRU, SHD) - BID IN /SHOUT. "
             "You MUST include the item name in your bid! Currently: "
             "`Peter` with 3 DKP - Closing in {}! "
             .format(auc.time_remaining_text()),
@@ -188,7 +188,7 @@ class TestModels(base.NLTestBase):
         # No bids
         config.PRIMARY_BID_CHANNEL = 'gu'
         self.assertEqual(
-            "/GU [Golden Jasper Earring] - BID IN /GU, MIN 3 DKP. "
+            "/GU ~[Golden Jasper Earring] - BID IN /GU, MIN 3 DKP. "
             "You MUST include the item name in your bid! Closing in {}. "
             .format(auc.time_remaining_text()),
             auc.bid_text())
@@ -248,16 +248,18 @@ class TestModels(base.NLTestBase):
         config.NUMBERS = ['12345']
         auc = models.RandomAuction(itemdrop)
 
+        config.PRIMARY_BID_CHANNEL = 'auc'
         self.assertEqual(
-            "/gu [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
+            "/AUC [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
             auc.bid_text())
 
         item_name = 'Golden Jasper Earring'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
         auc = models.RandomAuction(itemdrop)
 
+        config.PRIMARY_BID_CHANNEL = 'gu'
         self.assertEqual(
-            "/gu [Golden Jasper Earring] ROLL 12345 NOW!",
+            "/GU [Golden Jasper Earring] ROLL 12345 NOW!",
             auc.bid_text())
 
     def test_get_next_number(self):

@@ -411,7 +411,14 @@ class TestMessageHandlers(base.NLTestBase):
             'window', models.BidEvent(disc_auction))
         mock_post_event.reset_mock()
 
-        config.ACTIVE_AUCTIONS = {}
+        # Someone in the alliance avoids bidding using ~
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'~Copper Disc 14 DKP'")
+        match = config.MATCH_BID[0].match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertFalse(result)
+        self.assertListEqual([('Jim', 12)], disc_auction.highest())
+        mock_post_event.assert_not_called()
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
