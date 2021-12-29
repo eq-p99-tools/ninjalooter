@@ -44,10 +44,10 @@ class Player(DictEquals):
         self.level = level
         self.guild = guild or ""
 
-    def has_torpor():
+    def has_torpor(self):
         return False
 
-    def has_coth():
+    def has_coth(self):
         return False
 
 
