@@ -106,13 +106,21 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     if name not in config.HISTORICAL_AFFILIATIONS:
         LOG.info("Adding player history for %s as guild %s",
                  name, guild)
-        config.HISTORICAL_AFFILIATIONS[name] = guild
-    elif guild or (not guild and pclass != "ANONYMOUS"):
+        config.HISTORICAL_AFFILIATIONS[name] = models.Player(name, pclass,
+                                                             level, guild)
+    elif pclass != "ANONYMOUS":
         LOG.info("Updating player history for %s from %s to %s",
-                 name, config.HISTORICAL_AFFILIATIONS[name], guild)
-        config.HISTORICAL_AFFILIATIONS[name] = guild
+                 name, config.HISTORICAL_AFFILIATIONS[name].guild, guild)
+        config.HISTORICAL_AFFILIATIONS[name].pclass = pclass
+        config.HISTORICAL_AFFILIATIONS[name].level = level
+        config.HISTORICAL_AFFILIATIONS[name].guild = guild
+    elif guild:
+        LOG.info("Updating player history for RP %s from %s to %s",
+                 name, config.HISTORICAL_AFFILIATIONS[name].guild, guild)
+        config.HISTORICAL_AFFILIATIONS[name].guild = guild
+
     LOG.info("Adding player record for %s as guild %s",
-             name, config.HISTORICAL_AFFILIATIONS[name])
+             name, config.HISTORICAL_AFFILIATIONS[name].guild)
     config.PLAYER_AFFILIATIONS[name] = config.HISTORICAL_AFFILIATIONS[name]
     wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
     return True
@@ -122,7 +130,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
-    guild = config.PLAYER_AFFILIATIONS.get(name)
+    guild = config.PLAYER_AFFILIATIONS.get(name, models.Player(name)).guild
     if text.lower().startswith("looted"):
         LOG.info("Ignoring drop message starting with 'looted'")
         return list()
@@ -178,7 +186,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME
-    guild = config.PLAYER_AFFILIATIONS.get(name)
+    guild = config.PLAYER_AFFILIATIONS.get(name, models.Player(name)).guild
     alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
     bid = int(match.group("bid"))

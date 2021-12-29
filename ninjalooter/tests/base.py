@@ -1,10 +1,12 @@
 import unittest
 
+from ninjalooter import models
+
 SAMPLE_ALLIANCES = {
     'BL': ('Black Lotus',),
     'Kingdom': ('Kingdom', 'Karens of Karana'),
     'Seal Team': ('Seal Team',),
-    'VCR': ('Venerate', 'Castle', 'Reconstructed'),
+    'VCR': ('Venerate', 'Castle', 'Reconstructed', 'Force of Will'),
 }
 SAMPLE_ALLIANCE_MAP = dict()
 for alliance, guilds in SAMPLE_ALLIANCES.items():
@@ -13,25 +15,25 @@ for alliance, guilds in SAMPLE_ALLIANCES.items():
 
 SAMPLE_PLAYER_AFFILIATIONS = {
     # 6 VC
-    'Bill': 'Reconstructed',
-    'Ted': 'Castle',
-    'James': 'Castle',
-    'John': 'Venerate',
-    'Fred': 'Venerate',
-    'Gail': 'Venerate',
+    'Bill': models.Player('Bill', None, None, 'Reconstructed'),
+    'Ted': models.Player('Ted', None, None, 'Castle'),
+    'James': models.Player('James', None, None, 'Castle'),
+    'John': models.Player('John', None, None, 'Venerate'),
+    'Fred': models.Player('Fred', None, None, 'Venerate'),
+    'Gail': models.Player('Gail', None, None, 'Venerate'),
     # 4 BL
-    'Tim': 'Black Lotus',
-    'Tom': 'Black Lotus',
-    'Jim': 'Black Lotus',
-    'Han': 'Black Lotus',
+    'Tim': models.Player('Tim', None, None, 'Black Lotus'),
+    'Tom': models.Player('Tom', None, None, 'Black Lotus'),
+    'Jim': models.Player('Jim', None, None, 'Black Lotus'),
+    'Han': models.Player('Han', None, None, 'Black Lotus'),
     # 5 Kingdom
-    'Joe': 'Kingdom',
-    'Jill': 'Kingdom',
-    'Peter': 'Kingdom',
-    'Paul': 'Kingdom',
-    'Mary': 'Kingdom',
+    'Joe': models.Player('Joe', None, None, 'Kingdom'),
+    'Jill': models.Player('Jill', None, None, 'Kingdom'),
+    'Peter': models.Player('Peter', None, None, 'Kingdom'),
+    'Paul': models.Player('Paul', None, None, 'Kingdom'),
+    'Mary': models.Player('Mary', None, None, 'Kingdom'),
     # 1 Daniel (but WHY?)
-    'Dan': 'Dial a Daniel',
+    'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
 }
 
 SAMPLE_WHO_LOG = """
