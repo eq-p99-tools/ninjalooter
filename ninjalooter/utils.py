@@ -74,7 +74,7 @@ def get_pop_numbers(source=None, extras=None) -> dict:
     extras = extras or dict()
     pops = {alliance: 0 for alliance in config.ALLIANCES}
     pops.update(extras)
-    for guild in source.values():
+    for guild in [p.guild for p in source.values()]:
         alliance = config.ALLIANCE_MAP.get(guild)
         if alliance:
             pops[alliance] += 1
@@ -315,7 +315,21 @@ def load_state():
         with open(config.SAVE_STATE_FILE, 'r') as ssfp:
             json_state = json.load(ssfp, cls=JSONDecoder)
         for key, value in json_state.items():
-            setattr(config, key, value)
+            # Handle conversion of history data prior to v1.14
+            if (key in ('PLAYER_AFFILIATIONS', 'HISTORICAL_AFFILIATIONS') and
+                    value and
+                    type(value.values().__iter__().__next__()) == str):
+                players = {name: models.Player(name, guild=guild)
+                           for name, guild in value.items()}
+                setattr(config, key, players)
+            elif (key == 'WHO_LOG' and value and
+                    type(value[0].log.values().__iter__().__next__()) == str):
+                for entry in value:
+                    entry.log = {name: models.Player(name, guild=guild)
+                                 for name, guild in entry.log.items()}
+                setattr(config, key, value)
+            else:
+                setattr(config, key, value)
         LOG.info("Loaded state.")
     except FileNotFoundError:
         LOG.info("Failed to load state, no state file found.")

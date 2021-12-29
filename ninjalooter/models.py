@@ -39,11 +39,22 @@ class Player(DictEquals):
     level = None
     guild = None
 
-    def __init__(self, name, pclass, level, guild):
+    def __init__(self, name, pclass=None, level=None, guild=""):
         self.name = name
         self.pclass = pclass
         self.level = level
-        self.guild = guild or ""
+        self.guild = guild
+
+    def __repr__(self):
+        return (
+            "Player({name}, pclass={pclass}, level={level}, guild={guild})"
+            .format(name=f"'{self.name}'",
+                    pclass=f"'{self.pclass}'" if self.pclass else "None",
+                    level=f"'{self.level}'" if self.level else "None",
+                    guild=f"'{self.guild}'" if self.guild else "None"))
+
+    def __str__(self):
+        return self.__repr__()
 
     def has_torpor(self):
         return False
@@ -131,8 +142,8 @@ class WhoLog(DictEquals):
 
     def populations(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
-        for guild in self.log.values():
-            alliance = config.ALLIANCE_MAP.get(guild)
+        for player in self.log.values():
+            alliance = config.ALLIANCE_MAP.get(player.guild)
             if alliance:
                 pops[alliance] += 1
         pop_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'

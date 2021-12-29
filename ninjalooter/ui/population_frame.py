@@ -50,7 +50,7 @@ class PopulationFrame(wx.Window):
         self.population_list = population_list
 
         def popGroupKey(player):
-            return config.ALLIANCE_MAP.get(player.guild, player.guild)
+            return config.ALLIANCE_MAP.get(player.guild, player.guild or '')
 
         population_list.SetColumns([
             ObjectListView.ColumnDefn(

@@ -28,12 +28,14 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # Peter and Fred should be marked as guildless
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Peter'])
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'])
+        self.assertIsNone(config.PLAYER_AFFILIATIONS['Peter'].guild)
+        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'].guild)
 
         # Mark Peter and Fred as historically belonging to Kingdom
-        config.HISTORICAL_AFFILIATIONS['Peter'] = 'Kingdom'
-        config.HISTORICAL_AFFILIATIONS['Fred'] = 'Kingdom'
+        config.HISTORICAL_AFFILIATIONS['Peter'] = models.Player(
+            'Peter', None, None, 'Kingdom')
+        config.HISTORICAL_AFFILIATIONS['Fred'] = models.Player(
+            'Fred', None, None, 'Kingdom')
 
         # Trigger New Who
         message_handlers.handle_start_who(None, 'window')
@@ -49,8 +51,8 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(25, len(config.PLAYER_AFFILIATIONS))
 
         # Peter should be marked as Kingdom, and Fred as guildless
-        self.assertEqual('Kingdom', config.PLAYER_AFFILIATIONS['Peter'])
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'])
+        self.assertEqual('Kingdom', config.PLAYER_AFFILIATIONS['Peter'].guild)
+        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'].guild)
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
@@ -66,34 +68,37 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # Member changed from ANONYMOUS/Unguilded to Guilded
-        config.PLAYER_AFFILIATIONS = {'Jim': None}
+        config.PLAYER_AFFILIATIONS = {
+            'Jim': models.Player('Jim', None, None, None)}
         line = '[Sun Aug 16 22:46:32 2020] [ANONYMOUS] Jim (Gnome) <Guild>'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
         self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertEqual('Guild', config.PLAYER_AFFILIATIONS['Jim'])
+        self.assertEqual('Guild', config.PLAYER_AFFILIATIONS['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'ANONYMOUS', '??', 'Guild'))
         mock_post_event.reset_mock()
 
         # Member changed guilds
-        config.PLAYER_AFFILIATIONS = {'Jim': 'Guild'}
+        config.PLAYER_AFFILIATIONS = {
+            'Jim': models.Player('Jim', None, None, 'Guild')}
         line = '[Sun Aug 16 22:46:32 2020] [ANONYMOUS] Jim (Gnome) <Other>'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
         self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertEqual('Other', config.PLAYER_AFFILIATIONS['Jim'])
+        self.assertEqual('Other', config.PLAYER_AFFILIATIONS['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'ANONYMOUS', '??', 'Other'))
         mock_post_event.reset_mock()
 
         # Member left their guild
-        config.PLAYER_AFFILIATIONS = {'Jim': 'Guild'}
+        config.PLAYER_AFFILIATIONS = {
+            'Jim': models.Player('Jim', None, None, 'Guild')}
         line = '[Sun Aug 16 22:46:32 2020] [50 Cleric] Jim (Gnome)'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
         self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Jim'])
+        self.assertIsNone(config.PLAYER_AFFILIATIONS['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'Cleric', '50', None))
         mock_post_event.reset_mock()
@@ -102,9 +107,9 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('wx.PostEvent')
     def test_handle_drop(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
-            'Jim': 'Venerate',
-            'James': 'Kingdom',
-            'Dan': 'Dial a Daniel',
+            'Jim': models.Player('Jim', None, None, 'Force of Will'),
+            'James': models.Player('James', None, None, 'Kingdom'),
+            'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
         }
         config.PENDING_AUCTIONS = list()
         # # FILTER OFF - Item linked by a non-federation guild member
@@ -297,10 +302,10 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('wx.PostEvent')
     def test_handle_bid(self, mock_post_event, mock_store_state):
         config.PLAYER_AFFILIATIONS = {
-            'Jim': 'Venerate',
-            'Pim': 'Castle',
-            'Tim': 'Kingdom',
-            'Dan': 'Dial a Daniel',
+            'Jim': models.Player('Jim', None, None, 'Venerate'),
+            'Pim': models.Player('Pim', None, None, 'Castle'),
+            'Tim': models.Player('Tim', None, None, 'Kingdom'),
+            'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
         }
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
@@ -419,6 +424,8 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertFalse(result)
         self.assertListEqual([('Jim', 12)], disc_auction.highest())
         mock_post_event.assert_not_called()
+
+        config.ACTIVE_AUCTIONS.clear()
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')

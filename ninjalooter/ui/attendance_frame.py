@@ -255,7 +255,7 @@ class AttendanceDetailWindow(wx.Frame):
         self.attendance_record = attendance_record
 
         def attendanceGroupKey(player):
-            return config.ALLIANCE_MAP.get(player.guild, "None")
+            return config.ALLIANCE_MAP.get(player.guild, "No Alliance")
 
         attendance_record.SetColumns([
             ObjectListView.ColumnDefn(
@@ -265,8 +265,7 @@ class AttendanceDetailWindow(wx.Frame):
                 "Guild", "left", 180, "guild",
                 groupKeyGetter=attendanceGroupKey, fixedWidth=180),
         ])
-        attendance_list = [models.Player(name, None, None, guild)
-                           for name, guild in item.log.items()]
+        attendance_list = [p for p in item.log.values()]
         attendance_record.SetObjects(attendance_list)
         attendance_record.AlwaysShowScrollbars(False, True)
 
@@ -296,7 +295,7 @@ class AttendanceDetailWindow(wx.Frame):
 
         player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
         if player_name in config.HISTORICAL_AFFILIATIONS:
-            player_guild = config.HISTORICAL_AFFILIATIONS[player_name]
+            player_guild = config.HISTORICAL_AFFILIATIONS[player_name].guild
         self.item.log[player_name] = player_guild
         self.attendance_record.AddObject(
             models.Player(player_name, None, None, player_guild))
