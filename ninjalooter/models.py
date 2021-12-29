@@ -44,6 +44,30 @@ class Player(DictEquals):
         self.level = level
         self.guild = guild or ""
 
+    def has_torpor():
+        return False
+
+    def has_coth():
+        return False
+
+
+class Shaman(Player):
+    def __init__(self, name, pclass, level, guild):
+        Player.__init__(self, name, pclass, level, guild)
+        self._has_torpor = False
+
+    def has_torpor(self):
+        return _has_torpor
+
+class Magician(Player):
+    def __init__(self, name, pclass, level, guild):
+        Player.__init__(self, name, pclass, level, guild)
+        self._has_coth = False
+
+    def has_coth(self):
+        return _has_coth
+
+
 
 class CredittLog(DictEquals):
     time = None
