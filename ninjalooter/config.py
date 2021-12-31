@@ -108,9 +108,9 @@ PENDING_AUCTIONS = list()
 IGNORED_AUCTIONS = list()
 ACTIVE_AUCTIONS = dict()
 HISTORICAL_AUCTIONS = dict()
-PLAYER_AFFILIATIONS = dict()
-HISTORICAL_AFFILIATIONS = dict()
-WHO_LOG = list()
+LAST_WHO_SNAPSHOT = dict()
+PLAYER_DB = dict()
+ATTENDANCE_LOGS = list()
 CREDITT_LOG = list()
 GRATSS_LOG = list()
 KILL_TIMERS = list()
@@ -120,7 +120,7 @@ ACTIVE_SASH_POS = 215
 HISTORICAL_SASH_POS = 215
 
 # Calculated variables
-WX_PLAYER_AFFILIATIONS = None
+WX_LAST_WHO_SNAPSHOT = None
 ALLIANCE_MAP = dict()
 for alliance, guilds in ALLIANCES.items():
     for guild in guilds:
@@ -191,7 +191,7 @@ MATCH_RAIDTICK = re.compile(
 )
 MATCH_CREDITT = re.compile(
     TIMESTAMP +
-    r"(?P<from>.*) (-> (?P<name>\w+): |tells you, ')".format(PLAYER_NAME) +
+    r"(?P<from>.*) (-> (?P<name>\w+): |tells you, ')"
     r"(?P<message>.*creditt.*?)'?$",
     flags=re.IGNORECASE
 )

@@ -18,23 +18,23 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('wx.PostEvent')
     def test_handle_start_who(self, mock_post_event, mock_store_state):
         # Empty List, full /who
-        config.PLAYER_AFFILIATIONS = {}
-        for line in base.SAMPLE_WHO_LOG.splitlines():
+        config.LAST_WHO_SNAPSHOT = {}
+        for line in base.SAMPLE_ATTENDANCE_LOGS.splitlines():
             match = config.MATCH_WHO.match(line)
             if match:
                 message_handlers.handle_who(match, 'window')
-        self.assertEqual(25, len(config.PLAYER_AFFILIATIONS))
+        self.assertEqual(25, len(config.LAST_WHO_SNAPSHOT))
         self.assertEqual(25, mock_post_event.call_count)
         mock_post_event.reset_mock()
 
         # Peter and Fred should be marked as guildless
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Peter'].guild)
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'].guild)
+        self.assertIsNone(config.LAST_WHO_SNAPSHOT['Peter'].guild)
+        self.assertIsNone(config.LAST_WHO_SNAPSHOT['Fred'].guild)
 
         # Mark Peter and Fred as historically belonging to Kingdom
-        config.HISTORICAL_AFFILIATIONS['Peter'] = models.Player(
+        config.PLAYER_DB['Peter'] = models.Player(
             'Peter', None, None, 'Kingdom')
-        config.HISTORICAL_AFFILIATIONS['Fred'] = models.Player(
+        config.PLAYER_DB['Fred'] = models.Player(
             'Fred', None, None, 'Kingdom')
 
         # Trigger New Who
@@ -44,61 +44,61 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.reset_mock()
 
         # Run the full who-list again
-        for line in base.SAMPLE_WHO_LOG.splitlines():
+        for line in base.SAMPLE_ATTENDANCE_LOGS.splitlines():
             match = config.MATCH_WHO.match(line)
             if match:
                 message_handlers.handle_who(match, 'window')
-        self.assertEqual(25, len(config.PLAYER_AFFILIATIONS))
+        self.assertEqual(25, len(config.LAST_WHO_SNAPSHOT))
 
         # Peter should be marked as Kingdom, and Fred as guildless
-        self.assertEqual('Kingdom', config.PLAYER_AFFILIATIONS['Peter'].guild)
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Fred'].guild)
+        self.assertEqual('Kingdom', config.LAST_WHO_SNAPSHOT['Peter'].guild)
+        self.assertIsNone(config.LAST_WHO_SNAPSHOT['Fred'].guild)
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_who(self, mock_post_event, mock_store_state):
         # Empty List, full /who
-        config.PLAYER_AFFILIATIONS = {}
-        for line in base.SAMPLE_WHO_LOG.splitlines():
+        config.LAST_WHO_SNAPSHOT = {}
+        for line in base.SAMPLE_ATTENDANCE_LOGS.splitlines():
             match = config.MATCH_WHO.match(line)
             if match:
                 message_handlers.handle_who(match, 'window')
-        self.assertEqual(25, len(config.PLAYER_AFFILIATIONS))
+        self.assertEqual(25, len(config.LAST_WHO_SNAPSHOT))
         self.assertEqual(25, mock_post_event.call_count)
         mock_post_event.reset_mock()
 
         # Member changed from ANONYMOUS/Unguilded to Guilded
-        config.PLAYER_AFFILIATIONS = {
+        config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, None)}
         line = '[Sun Aug 16 22:46:32 2020] [ANONYMOUS] Jim (Gnome) <Guild>'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
-        self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertEqual('Guild', config.PLAYER_AFFILIATIONS['Jim'].guild)
+        self.assertEqual(1, len(config.LAST_WHO_SNAPSHOT))
+        self.assertEqual('Guild', config.LAST_WHO_SNAPSHOT['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'ANONYMOUS', '??', 'Guild'))
         mock_post_event.reset_mock()
 
         # Member changed guilds
-        config.PLAYER_AFFILIATIONS = {
+        config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, 'Guild')}
         line = '[Sun Aug 16 22:46:32 2020] [ANONYMOUS] Jim (Gnome) <Other>'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
-        self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertEqual('Other', config.PLAYER_AFFILIATIONS['Jim'].guild)
+        self.assertEqual(1, len(config.LAST_WHO_SNAPSHOT))
+        self.assertEqual('Other', config.LAST_WHO_SNAPSHOT['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'ANONYMOUS', '??', 'Other'))
         mock_post_event.reset_mock()
 
         # Member left their guild
-        config.PLAYER_AFFILIATIONS = {
+        config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, 'Guild')}
         line = '[Sun Aug 16 22:46:32 2020] [50 Cleric] Jim (Gnome)'
         match = config.MATCH_WHO.match(line)
         message_handlers.handle_who(match, 'window')
-        self.assertEqual(1, len(config.PLAYER_AFFILIATIONS))
-        self.assertIsNone(config.PLAYER_AFFILIATIONS['Jim'].guild)
+        self.assertEqual(1, len(config.LAST_WHO_SNAPSHOT))
+        self.assertIsNone(config.LAST_WHO_SNAPSHOT['Jim'].guild)
         mock_post_event.assert_called_once_with(
             'window', models.WhoEvent('Jim', 'Cleric', '50', None))
         mock_post_event.reset_mock()
@@ -106,7 +106,7 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_drop(self, mock_post_event, mock_store_state):
-        config.PLAYER_AFFILIATIONS = {
+        config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, 'Force of Will'),
             'James': models.Player('James', None, None, 'Kingdom'),
             'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
@@ -301,7 +301,7 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_bid(self, mock_post_event, mock_store_state):
-        config.PLAYER_AFFILIATIONS = {
+        config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, 'Venerate'),
             'Pim': models.Player('Pim', None, None, 'Castle'),
             'Tim': models.Player('Tim', None, None, 'Kingdom'),

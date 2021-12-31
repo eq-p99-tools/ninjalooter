@@ -21,8 +21,8 @@ class PopulationFrame(wx.Window):
                                    self.ResetPopPreview)
         parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
                                    self.OnClearApp)
-        self.player_affiliations = config.WX_PLAYER_AFFILIATIONS or list()
-        config.WX_PLAYER_AFFILIATIONS = self.player_affiliations
+        self.player_affiliations = config.WX_LAST_WHO_SNAPSHOT or list()
+        config.WX_LAST_WHO_SNAPSHOT = self.player_affiliations
         self.pop_adjustments = dict()
         self.pop_preview = list()
 
@@ -164,7 +164,7 @@ class PopulationFrame(wx.Window):
 
     def OnClearApp(self, e: models.AppClearEvent):
         self.player_affiliations.clear()
-        config.PLAYER_AFFILIATIONS.clear()
+        config.LAST_WHO_SNAPSHOT.clear()
         self.population_list.SetObjects(self.player_affiliations)
         self._reset_spinner_pops()
         self.ResetPopPreview(e)
