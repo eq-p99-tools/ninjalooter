@@ -73,7 +73,7 @@ def handle_gratss(match: re.Match, window: wx.Frame,
 # pylint: disable=unused-argument
 def handle_start_who(match: re.Match, window: wx.Frame,
                      skip_store=False) -> bool:
-    config.PLAYER_AFFILIATIONS.clear()
+    config.LAST_WHO_SNAPSHOT.clear()
     wx.PostEvent(window, models.ClearWhoEvent())
     return True
 
@@ -87,8 +87,8 @@ def handle_end_who(match: re.Match, window: wx.Frame,
     if raidtick_was <= datetime.timedelta(seconds=3):
         raidtick_who = True
     log_entry = models.WhoLog(
-        parsed_time, copy.copy(config.PLAYER_AFFILIATIONS), raidtick_who)
-    config.WHO_LOG.append(log_entry)
+        parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who)
+    config.ATTENDANCE_LOGS.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
     wx.PostEvent(window, models.WhoEndEvent())
     if not skip_store:
@@ -103,25 +103,25 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     if pclass in extra_data.CLASS_TITLES:
         pclass = extra_data.CLASS_TITLES[pclass]
     level = (match.group("level") or "??").strip()
-    if name not in config.HISTORICAL_AFFILIATIONS:
+    if name not in config.PLAYER_DB:
         LOG.info("Adding player history for %s as guild %s",
                  name, guild)
-        config.HISTORICAL_AFFILIATIONS[name] = models.Player(name, pclass,
-                                                             level, guild)
+        config.PLAYER_DB[name] = models.Player(name, pclass,
+                                               level, guild)
     elif pclass != "ANONYMOUS":
         LOG.info("Updating player history for %s from %s to %s",
-                 name, config.HISTORICAL_AFFILIATIONS[name].guild, guild)
-        config.HISTORICAL_AFFILIATIONS[name].pclass = pclass
-        config.HISTORICAL_AFFILIATIONS[name].level = level
-        config.HISTORICAL_AFFILIATIONS[name].guild = guild
+                 name, config.PLAYER_DB[name].guild, guild)
+        config.PLAYER_DB[name].pclass = pclass
+        config.PLAYER_DB[name].level = level
+        config.PLAYER_DB[name].guild = guild
     elif guild:
         LOG.info("Updating player history for RP %s from %s to %s",
-                 name, config.HISTORICAL_AFFILIATIONS[name].guild, guild)
-        config.HISTORICAL_AFFILIATIONS[name].guild = guild
+                 name, config.PLAYER_DB[name].guild, guild)
+        config.PLAYER_DB[name].guild = guild
 
     LOG.info("Adding player record for %s as guild %s",
-             name, config.HISTORICAL_AFFILIATIONS[name].guild)
-    config.PLAYER_AFFILIATIONS[name] = config.HISTORICAL_AFFILIATIONS[name]
+             name, config.PLAYER_DB[name].guild)
+    config.LAST_WHO_SNAPSHOT[name] = config.PLAYER_DB[name]
     wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
     return True
 
@@ -130,7 +130,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
-    guild = config.PLAYER_AFFILIATIONS.get(name, models.Player(name)).guild
+    guild = config.LAST_WHO_SNAPSHOT.get(name, models.Player(name)).guild
     if text.lower().startswith("looted"):
         LOG.info("Ignoring drop message starting with 'looted'")
         return list()
@@ -186,7 +186,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME
-    guild = config.PLAYER_AFFILIATIONS.get(name, models.Player(name)).guild
+    guild = config.LAST_WHO_SNAPSHOT.get(name, models.Player(name)).guild
     alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
     bid = int(match.group("bid"))
@@ -268,7 +268,7 @@ def handle_auc_start(match: re.Match, window: wx.Frame,
                   item_name)
         return False
 
-    if 'min_dkp' in match.groupdict() :
+    if 'min_dkp' in match.groupdict():
         start_auction = utils.start_auction_dkp
         if match.group('min_dkp') is not None:
             pending_item.min_dkp_override = int(match.group('min_dkp'))

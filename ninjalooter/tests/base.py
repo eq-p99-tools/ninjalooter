@@ -13,7 +13,7 @@ for alliance, guilds in SAMPLE_ALLIANCES.items():
     for guild in guilds:
         SAMPLE_ALLIANCE_MAP[guild] = alliance
 
-SAMPLE_PLAYER_AFFILIATIONS = {
+SAMPLE_LAST_WHO_SNAPSHOT = {
     # 6 VC
     'Bill': models.Player('Bill', None, None, 'Reconstructed'),
     'Ted': models.Player('Ted', None, None, 'Castle'),
@@ -36,7 +36,7 @@ SAMPLE_PLAYER_AFFILIATIONS = {
     'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
 }
 
-SAMPLE_WHO_LOG = """
+SAMPLE_ATTENDANCE_LOGS = """
 [Sun Aug 16 22:46:32 2020] Players on EverQuest:
 [Sun Aug 16 22:46:32 2020] ---------------------------
 [Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
@@ -91,7 +91,7 @@ SAMPLE_KILL_TIMES = """
 [Sun Aug 16 17:42:44 2020] a soul carrier has been slain by Mary!
 """
 
-SAMPLE_FULL_TEST = SAMPLE_WHO_LOG + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
+SAMPLE_FULL_TEST = SAMPLE_ATTENDANCE_LOGS + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
 
 
 class NLTestBase(unittest.TestCase):

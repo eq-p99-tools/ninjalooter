@@ -70,7 +70,7 @@ def complete_old_auctions(cutoff_time: datetime.datetime):
 
 def get_pop_numbers(source=None, extras=None) -> dict:
     if source is None:
-        source = config.PLAYER_AFFILIATIONS
+        source = config.LAST_WHO_SNAPSHOT
     extras = extras or dict()
     pops = {alliance: 0 for alliance in config.ALLIANCES}
     pops.update(extras)
@@ -316,20 +316,21 @@ def load_state():
             json_state = json.load(ssfp, cls=JSONDecoder)
         for key, value in json_state.items():
             # Handle conversion of history data prior to v1.14
-            if (key in ('PLAYER_AFFILIATIONS', 'HISTORICAL_AFFILIATIONS') and
-                    value and
-                    type(value.values().__iter__().__next__()) == str):
-                players = {name: models.Player(name, guild=guild)
-                           for name, guild in value.items()}
-                setattr(config, key, players)
-            elif (key == 'WHO_LOG' and value and
-                    type(value[0].log.values().__iter__().__next__()) == str):
+            if key == 'PLAYER_AFFILIATIONS':
+                key = 'LAST_WHO_SNAPSHOT'
+                value = {name: models.Player(name, guild=guild)
+                         for name, guild in value.items()}
+            elif key == 'HISTORICAL_AFFILIATIONS':
+                key = 'PLAYER_DB'
+                value = {name: models.Player(name, guild=guild)
+                         for name, guild in value.items()}
+            elif key == 'WHO_LOG':
+                key = 'ATTENDANCE_LOGS'
                 for entry in value:
                     entry.log = {name: models.Player(name, guild=guild)
                                  for name, guild in entry.log.items()}
-                setattr(config, key, value)
-            else:
-                setattr(config, key, value)
+
+            setattr(config, key, value)
         LOG.info("Loaded state.")
     except FileNotFoundError:
         LOG.info("Failed to load state, no state file found.")
@@ -351,10 +352,10 @@ def store_state(backup=False):
         "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
         "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
         "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
-        "PLAYER_AFFILIATIONS": config.PLAYER_AFFILIATIONS,
-        "WX_PLAYER_AFFILIATIONS": config.WX_PLAYER_AFFILIATIONS,
-        "HISTORICAL_AFFILIATIONS": config.HISTORICAL_AFFILIATIONS,
-        "WHO_LOG": config.WHO_LOG,
+        "LAST_WHO_SNAPSHOT": config.LAST_WHO_SNAPSHOT,
+        "WX_LAST_WHO_SNAPSHOT": config.WX_LAST_WHO_SNAPSHOT,
+        "PLAYER_DB": config.PLAYER_DB,
+        "ATTENDANCE_LOGS": config.ATTENDANCE_LOGS,
         "KILL_TIMERS": config.KILL_TIMERS,
         "CREDITT_LOG": config.CREDITT_LOG,
         "GRATSS_LOG": config.GRATSS_LOG,
@@ -426,7 +427,7 @@ def export_to_excel(filename):
             worksheet.autofilter(0, 0, len(data[0]), len(data[0].keys()) - 1)
 
     # Write Attendance Logs
-    for entry in config.WHO_LOG:
+    for entry in config.ATTENDANCE_LOGS:
         if entry.log:
             time_str = entry.time.strftime('%Y.%m.%d %I.%M.%S %p')
             worksheet_name = time_str
@@ -462,7 +463,7 @@ def export_to_excel(filename):
 def export_to_eqdkp(filename):
     # Recreate /who lines for each recorded raidtick
     raidtick_logs = []
-    for wholog in config.WHO_LOG:
+    for wholog in config.ATTENDANCE_LOGS:
         if wholog.raidtick:
             tick_time = wholog.eqtime()
             tick_lines = []

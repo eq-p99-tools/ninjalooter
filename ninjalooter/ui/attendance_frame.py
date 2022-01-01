@@ -51,7 +51,7 @@ class AttendanceFrame(wx.Window):
                 "Populations", "left", 425, "populations",
                 fixedWidth=425),
         ])
-        attendance_list.SetObjects(config.WHO_LOG)
+        attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         attendance_list.SetEmptyListMsg(
             "No who log history.\nPlease type `/who` ingame.")
 
@@ -186,19 +186,19 @@ class AttendanceFrame(wx.Window):
             'default', 'raidtick_filter', str(config.SHOW_RAIDTICK_ONLY))
         if config.SHOW_RAIDTICK_ONLY:
             # Filter to raidtick only
-            raidticks = [x for x in config.WHO_LOG if x.raidtick]
+            raidticks = [x for x in config.ATTENDANCE_LOGS if x.raidtick]
             self.attendance_list.SetObjects(raidticks)
         else:
-            self.attendance_list.SetObjects(config.WHO_LOG)
+            self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         config.write()
 
     def OnWhoHistory(self, e: models.WhoHistoryEvent):
         if self.attendance_button_raidtick.GetValue():
             # Filter to raidtick only
-            raidticks = [x for x in config.WHO_LOG if x.raidtick]
+            raidticks = [x for x in config.ATTENDANCE_LOGS if x.raidtick]
             self.attendance_list.SetObjects(raidticks)
         else:
-            self.attendance_list.SetObjects(config.WHO_LOG)
+            self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
 
     def OnCreditt(self, e: models.CredittEvent):
         self.creditt_list.SetObjects(config.CREDITT_LOG)
@@ -207,10 +207,10 @@ class AttendanceFrame(wx.Window):
         self.gratss_list.SetObjects(config.GRATSS_LOG)
 
     def OnClearApp(self, e: models.AppClearEvent):
-        config.WHO_LOG.clear()
+        config.ATTENDANCE_LOGS.clear()
         config.CREDITT_LOG.clear()
         config.GRATSS_LOG.clear()
-        self.attendance_list.SetObjects(config.WHO_LOG)
+        self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         self.creditt_list.SetObjects(config.CREDITT_LOG)
         self.gratss_list.SetObjects(config.GRATSS_LOG)
         e.Skip()
@@ -294,9 +294,10 @@ class AttendanceDetailWindow(wx.Frame):
             return
 
         player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
-        if player_name in config.HISTORICAL_AFFILIATIONS:
-            player_guild = config.HISTORICAL_AFFILIATIONS[player_name].guild
-        self.item.log[player_name] = player_guild
-        self.attendance_record.AddObject(
-            models.Player(player_name, None, None, player_guild))
+        player_record = models.Player(player_name, None, None, player_guild)
+        if player_name in config.PLAYER_DB:
+            player_record = config.PLAYER_DB[player_name]
+
+        self.item.log[player_name] = player_record
+        self.attendance_record.AddObject(player_record)
         self.attendance_record.Update()

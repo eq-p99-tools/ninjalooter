@@ -37,7 +37,7 @@ class TestUtils(base.NLTestBase):
         self.assertIsInstance(active[copper_disc.uuid], models.RandomAuction)
 
     def test_generate_pop_roll(self):
-        utils.config.PLAYER_AFFILIATIONS = base.SAMPLE_PLAYER_AFFILIATIONS
+        utils.config.LAST_WHO_SNAPSHOT = base.SAMPLE_LAST_WHO_SNAPSHOT
 
         pop_roll_text, pop_rand_text = utils.generate_pop_roll()
 
