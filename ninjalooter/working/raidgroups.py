@@ -1,4 +1,5 @@
-
+import random
+import math
 
 
 
@@ -50,18 +51,21 @@ class Raid():
 
 
 #
-# Group Scores
+# Group Builder
 #
-# Assigned as follows:
 #
 
-class GroupScore:
+class GroupBuilder:
 
     def __init__(self):
-        self.MAX_SLOT           = 100   # score for having a slot filled with an exact match
-        self.MIN_SLOT           = 10    # score for having a slot filled with anyone
-        self.LEVEL_PENALTY      = 10    # per level less than 60
-        self.CLASS_PENALTY      = 50    # penalty if not an exact class match but using a substitute class
+        self.MAX_SLOT               = 100   # score for having a slot filled with an exact match
+        self.MIN_SLOT               = 10    # score for having a slot filled with anyone
+        self.LEVEL_PENALTY          = 10    # per level less than 60
+        self.CLASS_PENALTY          = 50    # penalty if not an exact class match but using a substitute class
+
+        self.INITIAL_ANNEAL_TEMP    = 1500.0
+        self.COOLING_RATE           = 0.95
+        self.INNER_LOOP_X           = 10
 
 
     # helper function - true if War, Pal, or SK
@@ -147,9 +151,6 @@ class GroupScore:
         # keep track of whether a player has been used/counted
         available_list = group.player_list.copy()
 
-#        print('---')
-#        print(available_list)
-
         #
         # find top 2 tanks
         #
@@ -169,11 +170,8 @@ class GroupScore:
                 # add to target list
                 target_list.append((player_score, p))
 
-#        print(target_list)
-
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list, key = lambda tuple:tuple[0], reverse = True)
-#        print(sorted_target_list)
 
         # add scores for top two tanks to group score, and remove top two tanks from available_list
         target_count = len(sorted_target_list)
@@ -185,11 +183,6 @@ class GroupScore:
             group_score += player_score
             available_list.remove(player)
             target_count -= 1
-
-#        print(sorted_target_list)
-#        print('---')
-#        print(available_list)
-
 
         #
         # find torp shaman
@@ -220,9 +213,6 @@ class GroupScore:
             group_score += player_score
             available_list.remove(player)
 
-#        print('---')
-#        print(available_list)
-
         #
         # find bard
         #
@@ -247,9 +237,6 @@ class GroupScore:
             (player_score, player) = sorted_target_list.pop(0)
             group_score += player_score
             available_list.remove(player)
-
-#        print('---')
-#        print(available_list)
 
         #
         # find ench
@@ -276,13 +263,11 @@ class GroupScore:
             group_score += player_score
             available_list.remove(player)
 
-#        print('---')
-#        print(available_list)
-#        print('---')
-#        print(group.player_list)
-
         # add scores for remaining group members - we get at least a few points for having someone in a slot, rather than an empty slot
-        group_score += len(available_list) * self.MIN_SLOT
+        # however, try to avoid duplicates of the classes already added
+        for p in available_list:
+            if (not self.is_tank(p)) and (not self.is_priest(p)) and (not self.is_bard(p)) and (not self.is_enchanter(p)):
+                group_score += self.MIN_SLOT
 
         # return the sum of the player scores, as matched against the ideal group
         return group_score
@@ -301,6 +286,111 @@ class GroupScore:
         pass
 
 
+    #
+    # use simulated annealing to generate groups from the passed list of Player objects
+    #
+    def build_groups_sa(self, master_player_list):
+
+
+        random.shuffle(master_player_list)
+        player_count = len(master_player_list)
+
+        temp = 1.0 * self.INITIAL_ANNEAL_TEMP
+
+        current_score = -999
+        converged = False
+
+        cur1 = 0
+        cur2 = 0
+
+        while not converged:
+
+
+            accepted_moves = 0
+
+            # do 'player_count' random moves and see how many result in improvements
+            loop_count = self.INNER_LOOP_X * player_count
+            while loop_count > 0:
+
+                # swap two random players
+                from_pos = random.randrange(player_count)
+                to_pos = from_pos
+                while to_pos == from_pos:
+                    to_pos = random.randrange(player_count)
+
+                pp = master_player_list[to_pos]
+                master_player_list[to_pos] = master_player_list[from_pos]
+                master_player_list[from_pos] = pp
+
+
+                # foo - figure out how to do multiple groups here
+
+                gg1 = Group()
+                gg1.player_list.append(master_player_list[0])
+                gg1.player_list.append(master_player_list[1])
+                gg1.player_list.append(master_player_list[2])
+                gg1.player_list.append(master_player_list[3])
+                gg1.player_list.append(master_player_list[4])
+                gg1.player_list.append(master_player_list[5])
+
+                gg2 = Group()
+                gg2.player_list.append(master_player_list[6])
+                gg2.player_list.append(master_player_list[7])
+                gg2.player_list.append(master_player_list[8])
+                gg2.player_list.append(master_player_list[9])
+                gg2.player_list.append(master_player_list[10])
+                gg2.player_list.append(master_player_list[11])
+
+
+
+
+                new1 = self.main_tank_group_score(gg1)
+                new2 = self.main_tank_group_score(gg2)
+                new_score = new1 + new2
+
+                # in this case, higher scores = better
+                deltascore = new_score - current_score
+                val = -1.0 * abs((new_score - current_score))/temp
+                chance = math.exp(val)
+                rv = random.random()
+
+                # always accept an improved score
+                if new_score > current_score:
+                    current_score = new_score
+                    accepted_moves += 1
+                    cur1 = new1
+                    cur2 = new2
+#                    print('++++ Better pattern ++++ delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
+                # maybe accept a degraded score, depending on simulated annealing tempterature
+                elif (new_score < current_score) and (rv < chance):
+                    current_score = new_score
+                    accepted_moves += 1
+                    cur1 = new1
+                    cur2 = new2
+#                    print('---- SA             ---- delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
+                # undo the move
+                else:
+                    pp = master_player_list[to_pos]
+                    master_player_list[to_pos] = master_player_list[from_pos]
+                    master_player_list[from_pos] = pp
+#                    print('.... Reject         .... delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
+
+                loop_count -= 1
+
+            # continue these loops until the inner loops of random moves generates no accepted moves
+            if accepted_moves == 0:
+                converged = True
+            else:
+                temp *= self.COOLING_RATE
+
+        # foo - figure out how to communicate results
+        print('----------------------------')
+        print('{}, {}'.format(gg1, cur1))
+        print('{}, {}'.format(gg2, cur2))
+        print('{}, {}, {}'.format(current_score, cur1, cur2))
+        return current_score
+
+
 
 def main():
 
@@ -312,11 +402,16 @@ def main():
     master_player_dict['War60b']    = Player('War60b', 'Warrior', 60, 'fow')
     master_player_dict['War59a']    = Player('War59a', 'Warrior', 59, 'fow')
     master_player_dict['War59b']    = Player('War59b', 'Warrior', 59, 'fow')
+#    master_player_dict['War60c']    = Player('War60c', 'Warrior', 60, 'fow')
+#    master_player_dict['War60d']    = Player('War60d', 'Warrior', 60, 'fow')
 
     master_player_dict['Pal60']     = Player('Pal60', 'Paladin', 60, 'fow')
     master_player_dict['Shd60']     = Player('Shd60', 'Shadow Knight', 60, 'fow')
 
     master_player_dict['Enc60']     = Player('Enc60', 'Enchanter', 60, 'fow')
+    master_player_dict['Enc59']     = Player('Enc59', 'Enchanter', 59, 'fow')
+    master_player_dict['Enc58']     = Player('Enc58', 'Enchanter', 58, 'fow')
+#    master_player_dict['Enc60b']     = Player('Enc60b', 'Enchanter', 60, 'fow')
     master_player_dict['Mag60']     = Player('Mag60', 'Magician', 60, 'fow')
     master_player_dict['Nec60']     = Player('Nec60', 'Necromancer', 60, 'fow')
     master_player_dict['Wiz60']     = Player('Wiz60', 'Wizard', 60, 'fow')
@@ -325,8 +420,12 @@ def main():
     master_player_dict['Dru60']     = Player('Dru60', 'Druid', 60, 'fow')
     master_player_dict['Shm60']     = Player('Shm60', 'Shaman', 60, 'fow')
     master_player_dict['Shm60torp'] = Player('Shm60torp', 'Shaman', 60, 'fow')    # foo - how do we show this shaman as having torpor
+    master_player_dict['Shm59']     = Player('Shm59', 'Shaman', 59, 'fow')
 
     master_player_dict['Brd60']     = Player('Brd60', 'Bard', 60, 'fow')
+    master_player_dict['Brd59']     = Player('Brd59', 'Bard', 59, 'fow')
+    master_player_dict['Brd57']     = Player('Brd57', 'Bard', 57, 'fow')
+#    master_player_dict['Brd60b']     = Player('Brd60b', 'Bard', 60, 'fow')
     master_player_dict['Mnk60']     = Player('Mnk60', 'Monk', 60, 'fow')
     master_player_dict['Rng60']     = Player('Rng60', 'Ranger', 60, 'fow')
     master_player_dict['Rog60']     = Player('Rog60', 'Rogue', 60, 'fow')
@@ -350,12 +449,30 @@ def main():
 
     print(gg)
 
-    # test groupScore
-    gs = GroupScore()
-    x = gs.main_tank_group_score(gg)
+    # test group builder
+    gb = GroupBuilder()
+    x = gb.main_tank_group_score(gg)
     print(x)
+    print(gg)
 
 
+
+    # list of all players
+    master_player_list = list(master_player_dict.values())
+    x = gb.build_groups_sa(master_player_list)
+
+#    gg3 = Group()
+#    gg3.player_list.append(master_player_dict['Brd59'])
+#    gg3.player_list.append(master_player_dict['Clr60'])
+#    gg3.player_list.append(master_player_dict['Shm60torp'])
+#    gg3.player_list.append(master_player_dict['War59b'])
+#    gg3.player_list.append(master_player_dict['Enc60'])
+#    gg3.player_list.append(master_player_dict['War59a'])
+#
+#    x = gs.main_tank_group_score(gg3)
+#    print(x)
+#    print(gg3)
+#
 
 
 

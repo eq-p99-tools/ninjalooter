@@ -27,4 +27,27 @@ Pull Group
 
 General
  - Priest
- - 5x other
+ - Tank
+ - Slower (Enc or Shm)
+ - 3x other
+
+
+
+Any partial groups:
+ - General
+
+1-2 groups:
+ - 2x General
+
+3 groups
+ - Tank, Cleric, Pull
+
+4 groups:
+ - Tank, Cleric, Pull, Tank
+
+5 groups:
+ - Tank, Cleric, Pull, Tank, Cleric
+
+6+ groups:
+ - Tank, Cleric, Pull, Tank, Cleric, (6 - n) General
+
