@@ -33,12 +33,13 @@ class Group():
     
     def __init__(self):
         self.player_list = []
+        self.max_group_score = 0
 
     def __repr__(self):
         rv = ''
         for p in self.player_list:
-            rv += '\''
-            rv += p.name + '\''
+            rv += p.name + '/'
+        rv += '{}'.format(self.max_group_score)
         return rv
 
 
@@ -60,12 +61,14 @@ class GroupBuilder:
     def __init__(self):
         self.MAX_SLOT               = 100   # score for having a slot filled with an exact match
         self.MIN_SLOT               = 10    # score for having a slot filled with anyone
-        self.LEVEL_PENALTY          = 10    # per level less than 60
+        self.LEVEL_PENALTY          = 15    # per level less than 60
         self.CLASS_PENALTY          = 50    # penalty if not an exact class match but using a substitute class
 
         self.INITIAL_ANNEAL_TEMP    = 1500.0
         self.COOLING_RATE           = 0.95
         self.INNER_LOOP_X           = 10
+
+        self.the_raid               = Raid()
 
 
     # helper function - true if War, Pal, or SK
@@ -94,7 +97,8 @@ class GroupBuilder:
     # foo - need to differentiate between has_torp and not have
     def is_torp_shaman(self, player):
         rv = False
-        if (player.pclass == 'Shaman'):
+        has_torpor = True   # foo - does this player have torpor spell
+        if (player.pclass == 'Shaman' and has_torpor):
             rv = True
         return rv
 
@@ -295,29 +299,37 @@ class GroupBuilder:
         random.shuffle(master_player_list)
         player_count = len(master_player_list)
 
+        groups_needed = math.ceil(player_count/6)
+
+
+
         temp = 1.0 * self.INITIAL_ANNEAL_TEMP
 
         current_score = -999
         converged = False
 
-        cur1 = 0
-        cur2 = 0
+        # get group storage set up - foo
+        self.the_raid.group_list.append(Group())
+        self.the_raid.group_list.append(Group())
 
         while not converged:
 
 
             accepted_moves = 0
 
-            # do 'player_count' random moves and see how many result in improvements
+            # do 'INNER_LOOP_X * player_count' random moves and see how many result in improvements
             loop_count = self.INNER_LOOP_X * player_count
             while loop_count > 0:
 
                 # swap two random players
                 from_pos = random.randrange(player_count)
+
+                # ensure from/to aren't the same position
                 to_pos = from_pos
                 while to_pos == from_pos:
                     to_pos = random.randrange(player_count)
 
+                # do the swap
                 pp = master_player_list[to_pos]
                 master_player_list[to_pos] = master_player_list[from_pos]
                 master_player_list[from_pos] = pp
@@ -325,55 +337,50 @@ class GroupBuilder:
 
                 # foo - figure out how to do multiple groups here
 
-                gg1 = Group()
-                gg1.player_list.append(master_player_list[0])
-                gg1.player_list.append(master_player_list[1])
-                gg1.player_list.append(master_player_list[2])
-                gg1.player_list.append(master_player_list[3])
-                gg1.player_list.append(master_player_list[4])
-                gg1.player_list.append(master_player_list[5])
+                ndx = 0
+                for gg in self.the_raid.group_list:
+                    gg.player_list.clear()
 
-                gg2 = Group()
-                gg2.player_list.append(master_player_list[6])
-                gg2.player_list.append(master_player_list[7])
-                gg2.player_list.append(master_player_list[8])
-                gg2.player_list.append(master_player_list[9])
-                gg2.player_list.append(master_player_list[10])
-                gg2.player_list.append(master_player_list[11])
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
+                    gg.player_list.append(master_player_list[ndx])
+                    ndx += 1
 
 
 
-
-                new1 = self.main_tank_group_score(gg1)
-                new2 = self.main_tank_group_score(gg2)
-                new_score = new1 + new2
+                g1_score = self.main_tank_group_score(self.the_raid.group_list[0])
+                g2_score = self.main_tank_group_score(self.the_raid.group_list[1])
+                new_score = g1_score + g2_score
 
                 # in this case, higher scores = better
-                deltascore = new_score - current_score
-                val = -1.0 * abs((new_score - current_score))/temp
-                chance = math.exp(val)
+                chance = math.exp(-1.0 * abs((new_score - current_score))/temp)
                 rv = random.random()
 
                 # always accept an improved score
                 if new_score > current_score:
                     current_score = new_score
                     accepted_moves += 1
-                    cur1 = new1
-                    cur2 = new2
-#                    print('++++ Better pattern ++++ delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
+                    self.the_raid.group_list[0].max_group_score = g1_score
+                    self.the_raid.group_list[1].max_group_score = g2_score
                 # maybe accept a degraded score, depending on simulated annealing tempterature
                 elif (new_score < current_score) and (rv < chance):
                     current_score = new_score
                     accepted_moves += 1
-                    cur1 = new1
-                    cur2 = new2
-#                    print('---- SA             ---- delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
-                # undo the move
+                    self.the_raid.group_list[0].max_group_score = g1_score
+                    self.the_raid.group_list[1].max_group_score = g2_score
+                # if we aren't going to accept the move, then undo it
                 else:
                     pp = master_player_list[to_pos]
                     master_player_list[to_pos] = master_player_list[from_pos]
                     master_player_list[from_pos] = pp
-#                    print('.... Reject         .... delta = {}, temp = {}, val = {}, chance = {}, rv = {}'.format(deltascore, temp, val, chance, rv))
 
                 loop_count -= 1
 
@@ -381,13 +388,14 @@ class GroupBuilder:
             if accepted_moves == 0:
                 converged = True
             else:
+                # cool the system a bit, then loop again
                 temp *= self.COOLING_RATE
 
         # foo - figure out how to communicate results
         print('----------------------------')
-        print('{}, {}'.format(gg1, cur1))
-        print('{}, {}'.format(gg2, cur2))
-        print('{}, {}, {}'.format(current_score, cur1, cur2))
+        print(self.the_raid.group_list[0])
+        print(self.the_raid.group_list[1])
+        print('{}, {}, {}'.format(current_score, self.the_raid.group_list[0].max_group_score, self.the_raid.group_list[1].max_group_score))
         return current_score
 
 
@@ -432,28 +440,31 @@ def main():
 
 
     print(len(master_player_dict))
+
+    # test the GroupBuilder
+    gb = GroupBuilder()
+
+
 #    print(master_player_dict)
 
-    # build a test group.  Just for testing, allow the list to exceed 6
-    gg = Group()
-    gg.player_list.append(master_player_dict['Brd60'])
-    gg.player_list.append(master_player_dict['Enc60'])
-    gg.player_list.append(master_player_dict['War59b'])
-    gg.player_list.append(master_player_dict['Pal60'])
-    gg.player_list.append(master_player_dict['War60a'])
-    gg.player_list.append(master_player_dict['Shd60'])
-    gg.player_list.append(master_player_dict['War59a'])
-    gg.player_list.append(master_player_dict['Shm60torp'])
+#    # build a test group.  Just for testing, allow the list to exceed 6
+#    gg = Group()
+#    gg.player_list.append(master_player_dict['Brd60'])
+#    gg.player_list.append(master_player_dict['Enc60'])
+#    gg.player_list.append(master_player_dict['War59b'])
+#    gg.player_list.append(master_player_dict['Pal60'])
+#    gg.player_list.append(master_player_dict['War60a'])
+#    gg.player_list.append(master_player_dict['Shd60'])
+#    gg.player_list.append(master_player_dict['War59a'])
+#    gg.player_list.append(master_player_dict['Shm60torp'])
 #    gg.player_list.append(master_player_dict['Dru60'])
-    gg.player_list.append(master_player_dict['War60b'])
-
-    print(gg)
-
-    # test group builder
-    gb = GroupBuilder()
-    x = gb.main_tank_group_score(gg)
-    print(x)
-    print(gg)
+#    gg.player_list.append(master_player_dict['War60b'])
+#
+#    print(gg)
+#
+#    # test group builder
+#    gb.main_tank_group_score(gg)
+#    print(gg)
 
 
 
@@ -463,16 +474,15 @@ def main():
 
 #    gg3 = Group()
 #    gg3.player_list.append(master_player_dict['Brd59'])
-#    gg3.player_list.append(master_player_dict['Clr60'])
+#    gg3.player_list.append(master_player_dict['Wiz60'])
 #    gg3.player_list.append(master_player_dict['Shm60torp'])
 #    gg3.player_list.append(master_player_dict['War59b'])
 #    gg3.player_list.append(master_player_dict['Enc60'])
 #    gg3.player_list.append(master_player_dict['War59a'])
 #
-#    x = gs.main_tank_group_score(gg3)
-#    print(x)
+#    gb.main_tank_group_score(gg3)
 #    print(gg3)
-#
+
 
 
 
