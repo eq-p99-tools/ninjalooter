@@ -9,10 +9,10 @@ import wx
 
 from ninjalooter import config
 from ninjalooter import extra_data
-from ninjalooter import logging
+from ninjalooter import logger
 
 # This is the app logger, not related to EQ logs
-LOG = logging.getLogger(__name__)
+LOG = logger.getLogger(__name__)
 
 
 class DictEquals:

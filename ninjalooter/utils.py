@@ -16,11 +16,11 @@ import xlsxwriter
 import xlsxwriter.exceptions
 
 from ninjalooter import config
-from ninjalooter import logging
+from ninjalooter import logger
 from ninjalooter import models
 
 # This is the app logger, not related to EQ logs
-LOG = logging.getLogger(__name__)
+LOG = logger.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 RE_TIMESTAMP = re.compile(config.TIMESTAMP)
