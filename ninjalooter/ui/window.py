@@ -6,7 +6,7 @@ import ObjectListView
 import wx
 
 from ninjalooter import config
-from ninjalooter import logging
+from ninjalooter import logger
 from ninjalooter import logparse
 from ninjalooter import overrides
 from ninjalooter.ui import attendance_frame
@@ -17,7 +17,7 @@ from ninjalooter.ui import population_frame
 from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
-LOG = logging.getLogger(__name__)
+LOG = logger.getLogger(__name__)
 # Monkeypatch ObjectListView to fix a character encoding bug (PR upstream?)
 # pylint: disable=protected-access
 ObjectListView.ObjectListView._HandleTypingEvent = overrides._HandleTypingEvent

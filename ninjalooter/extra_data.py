@@ -2,6 +2,8 @@
 import json
 import pydicti
 
+from ninjalooter import constants
+
 TIMER_MOBS = {
     "a thunder spirit": 1,
     "a thunder spirit princess": 1,
@@ -41,61 +43,61 @@ TIMER_MOBS = {
 
 CLASS_TITLES = {
     # Bard
-    "Minstrel": "Bard",
-    "Troubadour": "Bard",
-    "Virtuoso": "Bard",
+    "Minstrel": constants.BARD,
+    "Troubadour": constants.BARD,
+    "Virtuoso": constants.BARD,
     # Cleric
-    "Vicar": "Cleric",
-    "Templar": "Cleric",
-    "High Priest": "Cleric",
+    "Vicar": constants.CLERIC,
+    "Templar": constants.CLERIC,
+    "High Priest": constants.CLERIC,
     # Druid
-    "Wanderer": "Druid",
-    "Preserver": "Druid",
-    "Hierophant": "Druid",
+    "Wanderer": constants.DRUID,
+    "Preserver": constants.DRUID,
+    "Hierophant": constants.DRUID,
     # Enchanter
-    "Illusionist": "Enchanter",
-    "Beguiler": "Enchanter",
-    "Phantasmist": "Enchanter",
+    "Illusionist": constants.ENCHANTER,
+    "Beguiler": constants.ENCHANTER,
+    "Phantasmist": constants.ENCHANTER,
     # Magician
-    "Elementalist": "Magician",
-    "Conjurer": "Magician",
-    "Arch Mage": "Magician",
+    "Elementalist": constants.MAGICIAN,
+    "Conjurer": constants.MAGICIAN,
+    "Arch Mage": constants.MAGICIAN,
     # Monk
-    "Disciple": "Monk",
-    "Master": "Monk",
-    "Grandmaster": "Monk",
+    "Disciple": constants.MONK,
+    "Master": constants.MONK,
+    "Grandmaster": constants.MONK,
     # Necromancer
-    "Heretic": "Necromancer",
-    "Defiler": "Necromancer",
-    "Warlock": "Necromancer",
+    "Heretic": constants.NECROMANCER,
+    "Defiler": constants.NECROMANCER,
+    "Warlock": constants.NECROMANCER,
     # Paladin
-    "Cavalier": "Paladin",
-    "Knight": "Paladin",
-    "Crusader": "Paladin",
+    "Cavalier": constants.PALADIN,
+    "Knight": constants.PALADIN,
+    "Crusader": constants.PALADIN,
     # Ranger
-    "Pathfinder": "Ranger",
-    "Outrider": "Ranger",
-    "Warder": "Ranger",
+    "Pathfinder": constants.RANGER,
+    "Outrider": constants.RANGER,
+    "Warder": constants.RANGER,
     # Rogue
-    "Rake": "Rogue",
-    "Blackguard": "Rogue",
-    "Assassin": "Rogue",
+    "Rake": constants.ROGUE,
+    "Blackguard": constants.ROGUE,
+    "Assassin": constants.ROGUE,
     # Shadow Knight
-    "Reaver": "Shadow Knight",
-    "Revenant": "Shadow Knight",
-    "Grave Lord": "Shadow Knight",
+    "Reaver": constants.SHADOW_KNIGHT,
+    "Revenant": constants.SHADOW_KNIGHT,
+    "Grave Lord": constants.SHADOW_KNIGHT,
     # Shaman
-    "Mystic": "Shaman",
-    "Luminary": "Shaman",
-    "Oracle": "Shaman",
+    "Mystic": constants.SHAMAN,
+    "Luminary": constants.SHAMAN,
+    "Oracle": constants.SHAMAN,
     # Warrior
-    "Champion": "Warrior",
-    "Myrmidon": "Warrior",
-    "Warlord": "Warrior",
+    "Champion": constants.WARRIOR,
+    "Myrmidon": constants.WARRIOR,
+    "Warlord": constants.WARRIOR,
     # Wizard
-    "Channeler": "Wizard",
-    "Evoker": "Wizard",
-    "Sorcerer": "Wizard"
+    "Channeler": constants.WIZARD,
+    "Evoker": constants.WIZARD,
+    "Sorcerer": constants.WIZARD,
 }
 
 EXTRA_ITEM_DATA = pydicti.Dicti({

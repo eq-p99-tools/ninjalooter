@@ -1,13 +1,13 @@
 import re
 
 from ninjalooter import config
-from ninjalooter import logging
+from ninjalooter import logger
 from ninjalooter import logparse
 from ninjalooter import message_handlers
 from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
-LOG = logging.getLogger(__name__)
+LOG = logger.getLogger(__name__)
 
 MATCH_START_AUCTION_DKP = re.compile(
     config.TIMESTAMP +

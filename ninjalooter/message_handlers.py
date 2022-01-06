@@ -9,12 +9,12 @@ import wx
 
 from ninjalooter import config
 from ninjalooter import extra_data
-from ninjalooter import logging
+from ninjalooter import logger
 from ninjalooter import models
 from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
-LOG = logging.getLogger(__name__)
+LOG = logger.getLogger(__name__)
 AWARD_MESSAGE_MATCHER = re.compile(
     r"Gratss (?P<name>\w+) on \[(?P<item>.*?)] \((?P<dkp>\d+) DKP\)!")
 NUMBER_MATCHER = re.compile(r".*\d.*")
