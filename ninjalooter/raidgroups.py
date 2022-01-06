@@ -1,32 +1,35 @@
 import random
 import math
 
+from models import Player
 
 
 
 
-class Player():
-    name = None
-    pclass = None
-    level = None
-    guild = None
 
-    def __init__(self, name, pclass=None, level=None, guild=""):
-        self.name = name
-        self.pclass = pclass
-        self.level = level
-        self.guild = guild
 
-    def __repr__(self):
-        return (
-            "Player({name}, pclass={pclass}, level={level}, guild={guild})"
-            .format(name=f"'{self.name}'",
-                    pclass=f"'{self.pclass}'" if self.pclass else "None",
-                    level=f"'{self.level}'" if self.level else "None",
-                    guild=f"'{self.guild}'" if self.guild else "None"))
-
-    def __str__(self):
-        return self.__repr__()
+#class Player():
+#    name = None
+#    pclass = None
+#    level = None
+#    guild = None
+#
+#    def __init__(self, name, pclass=None, level=None, guild=""):
+#        self.name = name
+#        self.pclass = pclass
+#        self.level = level
+#        self.guild = guild
+#
+#    def __repr__(self):
+#        return (
+#            "Player({name}, pclass={pclass}, level={level}, guild={guild})"
+#            .format(name=f"'{self.name}'",
+#                    pclass=f"'{self.pclass}'" if self.pclass else "None",
+#                    level=f"'{self.level}'" if self.level else "None",
+#                    guild=f"'{self.guild}'" if self.guild else "None"))
+#
+#    def __str__(self):
+#        return self.__repr__()
 
 
 class Group():

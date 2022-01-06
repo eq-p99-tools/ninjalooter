@@ -57,6 +57,9 @@ class Player(DictEquals):
         return self.__repr__()
 
 
+
+
+
 class CredittLog(DictEquals):
     time = None
     user = None
