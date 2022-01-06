@@ -3,6 +3,7 @@ import json
 import dateutil.parser
 
 from ninjalooter import config
+from ninjalooter import constants
 from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
@@ -10,7 +11,7 @@ from ninjalooter import utils
 
 class TestModels(base.NLTestBase):
     def test_Player_model(self):
-        player = models.Player("Jim", "Cleric", 50, "Guild")
+        player = models.Player("Jim", constants.CLERIC, 50, "Guild")
 
         # Should be JSON Encodable
         player_json = json.dumps(player, cls=utils.JSONEncoder)
