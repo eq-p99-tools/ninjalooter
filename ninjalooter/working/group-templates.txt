@@ -36,18 +36,18 @@ General
 Any partial groups:
  - General
 
-1-2 groups:
- - 2x General
-
-3 groups
- - Tank, Cleric, Pull
+1-3 groups:
+ - All General
 
 4 groups:
- - Tank, Cleric, Pull, Tank
+ - General, Tank, Cleric, Pull
 
 5 groups:
- - Tank, Cleric, Pull, Tank, Cleric
+ - General, Tank, Cleric, Pull, Tank
 
-6+ groups:
- - Tank, Cleric, Pull, Tank, Cleric, (6 - n) General
+6 groups:
+ - General, Tank, Cleric, Pull, Tank, Cleric
+
+7+ groups:
+ - General, Tank, Cleric, Pull, Tank, Cleric, (N-6) General
 
