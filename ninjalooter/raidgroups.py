@@ -1,7 +1,7 @@
 import random
 import math
 
-from models import Player
+from ninjalooter import Player
 
 
 
