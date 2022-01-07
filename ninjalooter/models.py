@@ -11,6 +11,7 @@ import wx
 from ninjalooter import config
 from ninjalooter import extra_data
 from ninjalooter import logger
+from ninjalooter import constants
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -55,6 +56,119 @@ class Player(DictEquals):
 
     def __str__(self):
         return self.__repr__()
+
+
+    # helper function - true if War, Pal, or SK
+    def is_tank(self):
+        rv = False
+#        if (self.pclass == 'Warrior') or (self.pclass == 'Paladin') or (self.pclass == 'Shadow Knight'):
+        if self.pclass in constants.TANKS:
+            rv = True
+        return rv
+
+    # helper function - true if War
+    def is_war(self):
+        rv = False
+        if self.pclass == constants.WARRIOR:
+            rv = True
+        return rv
+
+    # helper function - true if Pal, or SK
+    def is_knight(self):
+        rv = False
+        if self.pclass in constants.KNIGHTS:
+            rv = True
+        return rv
+
+
+    # helper function - true if priest
+    def is_priest(self):
+        rv = False
+        if self.pclass in constants.PRIESTS:
+            rv = True
+        return rv
+
+    # helper function - true if torp shaman
+    # foo - need to differentiate between has_torp and not have
+    def is_torp_shaman(self):
+        rv = False
+        has_torpor = True   # foo - does this player have torpor spell
+        if self.pclass == constants.SHAMAN and has_torpor:
+            rv = True
+        return rv
+
+    # helper function - true if shaman
+    def is_shaman(self):
+        rv = False
+        if self.pclass == constants.SHAMAN:
+            rv = True
+        return rv
+
+    # helper function - true if cleric
+    def is_cleric(self):
+        rv = False
+        if self.pclass == constants.CLERIC:
+            rv = True
+        return rv
+
+    # helper function - true if melee
+    def is_melee(self):
+        rv = False
+        if self.pclass in constants.MELEE:
+            rv = True
+        return rv
+
+    # helper function - true if bard
+    def is_bard(self):
+        rv = False
+        if self.pclass == constants.BARD:
+            rv = True
+        return rv
+
+    # helper function - true if monk
+    def is_monk(self):
+        rv = False
+        if self.pclass == constants.MONK:
+            rv = True
+        return rv
+
+
+    # helper function - true if caster
+    def is_caster(self):
+        rv = False
+        if self.pclass in constants.CASTERS:
+            rv = True
+        return rv
+
+    # helper function - true if Enchanter
+    def is_enchanter(self):
+        rv = False
+        if self.pclass == constants.ENCHANTER:
+            rv = True
+        return rv
+
+    # helper function - true if necro
+    def is_necromancer(self):
+        rv = False
+        if self.pclass == constants.NECROMANCER:
+            rv = True
+        return rv
+
+    # helper function - true if wizard
+    def is_wizard(self):
+        rv = False
+        if self.pclass == constants.WIZARD:
+            rv = True
+        return rv
+
+    # helper function - true if coth mage
+    # foo - need to differentiate between has_coth and not have
+    def is_coth_magician(self):
+        rv = False
+        has_coth = True   # foo - does this player have coth spell
+        if self.pclass == constants.MAGICIAN and has_coth:
+            rv = True
+        return rv
 
 
 
