@@ -177,7 +177,7 @@ MATCH_START_WHO = re.compile(
     TIMESTAMP + r"Players on EverQuest:")
 MATCH_WHO = re.compile(
     TIMESTAMP +
-    r"(?: AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
+    r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
     r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w ]+)>)?")
 MATCH_END_WHO = re.compile(
     TIMESTAMP +
