@@ -20,12 +20,13 @@ a.datas += [(filename, filename, '.') for filename in glob('data/icons/*')]
 a.datas += [('data/items.json', 'data/items.json', '.')]
 a.datas += [('data/spells.json', 'data/spells.json', '.')]
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+from ninjalooter import config
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='ninjalooter',
+          name='ninjalooter-' + config.VERSION,
           debug=True,
           strip=False,
           upx=False,
