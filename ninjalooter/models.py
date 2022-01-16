@@ -5,9 +5,12 @@ import datetime
 import uuid as uuid_lib
 
 import dateutil.parser
+import math
 import wx
 
+
 from ninjalooter import config
+from ninjalooter import constants
 from ninjalooter import extra_data
 from ninjalooter import logger
 
@@ -54,6 +57,702 @@ class Player(DictEquals):
 
     def __str__(self):
         return self.__repr__()
+
+    # helper function - true if War, Pal, or SK
+    def is_tank(self):
+        rv = False
+        if self.pclass in constants.TANKS:
+            rv = True
+        return rv
+
+    # helper function - true if War
+    def is_war(self):
+        rv = False
+        if self.pclass == constants.WARRIOR:
+            rv = True
+        return rv
+
+    # helper function - true if Pal, or SK
+    def is_knight(self):
+        rv = False
+        if self.pclass in constants.KNIGHTS:
+            rv = True
+        return rv
+
+    # helper function - true if priest
+    def is_priest(self):
+        rv = False
+        if self.pclass in constants.PRIESTS:
+            rv = True
+        return rv
+
+    # helper function - true if torp shaman
+    # foo - need to differentiate between has_torp and not have
+    def is_torp_shaman(self):
+        rv = False
+        has_torpor = True   # foo - does this player have torpor spell
+        if self.pclass == constants.SHAMAN and has_torpor:
+            rv = True
+        return rv
+
+    # helper function - true if shaman
+    def is_shaman(self):
+        rv = False
+        if self.pclass == constants.SHAMAN:
+            rv = True
+        return rv
+
+    # helper function - true if cleric
+    def is_cleric(self):
+        rv = False
+        if self.pclass == constants.CLERIC:
+            rv = True
+        return rv
+
+    # helper function - true if melee
+    def is_melee(self):
+        rv = False
+        if self.pclass in constants.MELEE:
+            rv = True
+        return rv
+
+    # helper function - true if bard
+    def is_bard(self):
+        rv = False
+        if self.pclass == constants.BARD:
+            rv = True
+        return rv
+
+    # helper function - true if monk
+    def is_monk(self):
+        rv = False
+        if self.pclass == constants.MONK:
+            rv = True
+        return rv
+
+    # helper function - true if caster
+    def is_caster(self):
+        rv = False
+        if self.pclass in constants.CASTERS:
+            rv = True
+        return rv
+
+    # helper function - true if Enchanter
+    def is_enchanter(self):
+        rv = False
+        if self.pclass == constants.ENCHANTER:
+            rv = True
+        return rv
+
+    # helper function - true if necro
+    def is_necromancer(self):
+        rv = False
+        if self.pclass == constants.NECROMANCER:
+            rv = True
+        return rv
+
+    # helper function - true if wizard
+    def is_wizard(self):
+        rv = False
+        if self.pclass == constants.WIZARD:
+            rv = True
+        return rv
+
+    # helper function - true if coth mage
+    # foo - need to differentiate between has_coth and not have
+    def is_coth_magician(self):
+        rv = False
+        has_coth = True   # foo - does this player have coth spell
+        if self.pclass == constants.MAGICIAN and has_coth:
+            rv = True
+        return rv
+
+
+#
+# class for an EQ group
+#
+class Group(DictEquals):
+
+    def __init__(self, group_type='General'):
+
+        # info to support assigning a score to this group reflecting how
+        # well it matches a target profile
+        self.MAX_SLOT = 100         # slot filled with an exact match
+        self.MIN_SLOT = 10          # slot filled with anyone
+        self.LEVEL_PENALTY = 15     # per level less than 60
+        self.CLASS_PENALTY = 50     # penalty if not an exact class match
+        self.GENERAL_PENALTY = 0.7  # penalize scores of players in general
+
+        # group info
+        self.group_type = group_type
+        self.player_list = []
+        self.group_score = 0
+        self.max_group_score = 0
+
+    def __repr__(self):
+        rv = '{:<10} Members: ({}): '.format(self.group_type,
+                                             len(self.player_list))
+        for p in self.player_list:
+            rv += p.name + ', '
+        rv += '(SA score: {})'.format(self.max_group_score)
+        return rv
+
+    # Tank group
+    # generate a group score compared to ideal 'Tank' group makeup
+    #   - War, War
+    #   - Shaman w/ Torpor
+    #   - Bard
+    #   - Ench
+    #   - Any
+    #
+    def tank_score(self):
+
+        # running group score as positions are filled
+        self.group_score = 0
+
+        # keep track of whether a player has been used/counted
+        available_list = self.player_list.copy()
+
+        #
+        # find top 2 tanks
+        #
+        target_list = []  # list of (score, Player object) tuples
+        for p in available_list:
+            if p.is_tank():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # penalty points if not a warrior
+                if p.is_knight():
+                    player_score -= self.CLASS_PENALTY
+
+                # add to target list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add scores for top two tanks to group score, and remove top two
+        # tanks from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 2:
+            target_count = 2
+
+        while target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+            target_count -= 1
+
+        #
+        # find torp shaman
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_priest():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # penalty points if not a torp shaman
+                if not p.is_torp_shaman():
+                    player_score -= self.CLASS_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find bard
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_bard():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target from
+        # available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find ench
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_enchanter():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove top target from
+        # available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        # add scores for remaining group members - we get at least a few
+        # points for having someone in a slot, rather than an empty slot
+        # however, try to avoid duplicates of the classes already added
+        for p in available_list:
+            if not p.is_tank():
+                if not p.is_priest():
+                    if not p.is_bard():
+                        if not p.is_enchanter():
+                            self.group_score += self.MIN_SLOT
+
+        # return the sum of the player scores, as matched against the ideal
+        return self.group_score
+
+    # Cleric group
+    # generate a group score compared to ideal 'Cleric' group makeup
+    #   - Cleric x5
+    #   - Bard (or maybe necro)
+    #
+    def cleric_score(self):
+        # running group score as positions are filled
+        self.group_score = 0
+
+        # keep track of whether a player has been used/counted
+        available_list = self.player_list.copy()
+
+        #
+        # find top 5 clerics
+        #
+        target_list = []  # list of (score, Player object) tuples
+        for p in available_list:
+            if p.is_priest():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # penalty points if not a cleric
+                if not p.is_cleric():
+                    player_score -= self.CLASS_PENALTY
+
+                # add to target list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add scores for top two tanks to group score, and remove top five
+        # clerics from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 5:
+            target_count = 5
+
+        while target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+            target_count -= 1
+
+        #
+        # find bard, or possibly necro
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_bard() or p.is_necromancer():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # penalty points if not a torp shaman
+                if not p.is_bard():
+                    player_score -= self.CLASS_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        # return the sum of the player scores, as matched against the ideal
+        return self.group_score
+
+    # Pull group
+    # generate a group score compared to ideal 'Pull' group makeup
+    #   - Monk x3
+    #   - Mage w/ COTH
+    #   - Wiz
+    #   - Priest
+    #
+    def pull_score(self):
+
+        # running group score as positions are filled
+        self.group_score = 0
+
+        # keep track of whether a player has been used/counted
+        available_list = self.player_list.copy()
+
+        #
+        # find top 3 monks
+        #
+        target_list = []  # list of (score, Player object) tuples
+        for p in available_list:
+            if p.is_monk():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to target list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add scores for top two tanks to group score, and remove top three
+        # monks from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 3:
+            target_count = 3
+
+        while target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+            target_count -= 1
+
+        #
+        # find coth mage
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_coth_magician():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find wizard
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_wizard():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find priest
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_priest():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        # return the sum of the player scores, as matched against the ideal
+        return self.group_score
+
+    # General group
+    # generate a group score compared to ideal 'General' group makeup
+    #     - Priest
+    #     - Tank
+    #     - Slower (Enc or Shm)
+    #     - 3x other
+    #
+    def general_score(self):
+
+        # running group score as positions are filled
+        self.group_score = 0
+
+        # keep track of whether a player has been used/counted
+        available_list = self.player_list.copy()
+
+        #
+        # find priest
+        #
+        target_list = []  # list of (score, Player object) tuples
+        for p in available_list:
+            if p.is_priest():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find a tank
+        #
+        target_list = []  # list of (score, Player object) tuples
+        for p in available_list:
+            if p.is_tank():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to target list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        #
+        # find a slower
+        #
+        target_list.clear()
+        for p in available_list:
+            if p.is_shaman() or p.is_enchanter():
+                # start with top score
+                player_score = self.MAX_SLOT
+
+                # penalty points for level < 60
+                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+
+                # add to list
+                target_list.append((player_score, p))
+
+        # sort target list to find highest-scoring targets
+        sorted_target_list = sorted(target_list,
+                                    key=lambda tuple: tuple[0],
+                                    reverse=True)
+
+        # add score for top target to group score, and remove target
+        # from available_list
+        target_count = len(sorted_target_list)
+        if target_count > 0:
+            (player_score, player) = sorted_target_list.pop(0)
+            self.group_score += player_score
+            available_list.remove(player)
+
+        # add scores for remaining group members - we get at least a few
+        # points for having someone in a slot, rather than an empty slot
+        # however, try to avoid duplicates of the classes already added
+        for p in available_list:
+            if not p.is_priest():
+                if not p.is_tank():
+                    if not p.is_shaman():
+                        if not p.is_enchanter():
+                            self.group_score += self.MIN_SLOT
+
+        # penalize scores for players in General groups compared to the
+        # other more specific groups, to encourage their placement in
+        # specific groups
+        self.group_score = round(self.group_score * self.GENERAL_PENALTY)
+
+        # return the sum of the player scores, as matched against the ideal
+        return self.group_score
+
+
+#
+# class for an EQ raid
+#
+# multiple groups
+# also has the knowledge, given how many total raiders are available, how
+# many groups and what group types / profiles are desired
+#
+class Raid(DictEquals):
+
+    def __init__(self):
+        self.group_list = []
+
+    def add_empty_groups(self, player_count):
+
+        full_groups_needed = math.floor(player_count / 6)
+        total_groups_needed = math.ceil(player_count / 6)
+
+        self.group_list.clear()
+
+        # partial group needed?
+        if total_groups_needed > full_groups_needed:
+            self.group_list.append(Group(constants.GENERAL))
+
+        # 1-3 groups: All General
+        if full_groups_needed == 1:
+            self.group_list.append(Group(constants.GENERAL))
+        if full_groups_needed == 2:
+            self.group_list.append(Group(constants.GENERAL))
+            self.group_list.append(Group(constants.GENERAL))
+        if full_groups_needed == 3:
+            self.group_list.append(Group(constants.GENERAL))
+            self.group_list.append(Group(constants.GENERAL))
+            self.group_list.append(Group(constants.GENERAL))
+
+        # 4 groups: General, Tank, Cleric, Pull
+        if full_groups_needed >= 4:
+            self.group_list.append(Group(constants.GENERAL))
+            self.group_list.append(Group(constants.TANK))
+            self.group_list.append(Group(constants.CLERIC))
+            self.group_list.append(Group(constants.PULL))
+
+        # 5 groups: General, Tank, Cleric, Pull, Tank
+        if full_groups_needed >= 5:
+            self.group_list.append(Group(constants.TANK))
+
+        # 6 groups: General, Tank, Cleric, Pull, Tank, Cleric
+        if full_groups_needed >= 6:
+            self.group_list.append(Group(constants.CLERIC))
+
+        # 7+ groups: General, Tank, Cleric, Pull, Tank, Cleric, (n - 6) General
+        if full_groups_needed >= 7:
+            cnt = 7
+            while cnt <= full_groups_needed:
+                self.group_list.append(Group(constants.GENERAL))
+                cnt += 1
+
+        # now sort the groups into a sensible order
+        sort_order = {constants.PULL: 0,
+                      constants.TANK: 1,
+                      constants.CLERIC: 2,
+                      constants.GENERAL: 3}
+        self.group_list.sort(key=lambda val: sort_order[val.group_type])
+
+    def __repr__(self):
+        rv = ''
+        for gg in self.group_list:
+            rv += '{}\n'.format(gg)
+        return rv
 
 
 class CredittLog(DictEquals):
