@@ -8,7 +8,6 @@ import dateutil.parser
 import math
 import wx
 
-
 from ninjalooter import config
 from ninjalooter import constants
 from ninjalooter import extra_data
@@ -60,121 +59,73 @@ class Player(DictEquals):
 
     # helper function - true if War, Pal, or SK
     def is_tank(self):
-        rv = False
-        if self.pclass in constants.TANKS:
-            rv = True
-        return rv
+        return self.pclass in constants.TANKS
 
     # helper function - true if War
     def is_war(self):
-        rv = False
-        if self.pclass == constants.WARRIOR:
-            rv = True
-        return rv
+        return self.pclass == constants.WARRIOR
 
     # helper function - true if Pal, or SK
     def is_knight(self):
-        rv = False
-        if self.pclass in constants.KNIGHTS:
-            rv = True
-        return rv
+        return self.pclass in constants.KNIGHTS
 
     # helper function - true if priest
     def is_priest(self):
-        rv = False
-        if self.pclass in constants.PRIESTS:
-            rv = True
-        return rv
+        return self.pclass in constants.PRIESTS
 
     # helper function - true if torp shaman
     # foo - need to differentiate between has_torp and not have
     def is_torp_shaman(self):
-        rv = False
         has_torpor = True   # foo - does this player have torpor spell
-        if self.pclass == constants.SHAMAN and has_torpor:
-            rv = True
-        return rv
+        return self.pclass == constants.SHAMAN and has_torpor
 
     # helper function - true if shaman
     def is_shaman(self):
-        rv = False
-        if self.pclass == constants.SHAMAN:
-            rv = True
-        return rv
+        return self.pclass == constants.SHAMAN
 
     # helper function - true if cleric
     def is_cleric(self):
-        rv = False
-        if self.pclass == constants.CLERIC:
-            rv = True
-        return rv
+        return self.pclass == constants.CLERIC
 
     # helper function - true if melee
     def is_melee(self):
-        rv = False
-        if self.pclass in constants.MELEE:
-            rv = True
-        return rv
+        return self.pclass in constants.MELEE
 
     # helper function - true if bard
     def is_bard(self):
-        rv = False
-        if self.pclass == constants.BARD:
-            rv = True
-        return rv
+        return self.pclass == constants.BARD
 
     # helper function - true if monk
     def is_monk(self):
-        rv = False
-        if self.pclass == constants.MONK:
-            rv = True
-        return rv
+        return self.pclass == constants.MONK
 
     # helper function - true if caster
     def is_caster(self):
-        rv = False
-        if self.pclass in constants.CASTERS:
-            rv = True
-        return rv
+        return self.pclass in constants.CASTERS
 
     # helper function - true if Enchanter
     def is_enchanter(self):
-        rv = False
-        if self.pclass == constants.ENCHANTER:
-            rv = True
-        return rv
+        return self.pclass == constants.ENCHANTER
 
     # helper function - true if necro
     def is_necromancer(self):
-        rv = False
-        if self.pclass == constants.NECROMANCER:
-            rv = True
-        return rv
+        return self.pclass == constants.NECROMANCER
 
     # helper function - true if wizard
     def is_wizard(self):
-        rv = False
-        if self.pclass == constants.WIZARD:
-            rv = True
-        return rv
+        return self.pclass == constants.WIZARD
 
     # helper function - true if coth mage
     # foo - need to differentiate between has_coth and not have
     def is_coth_magician(self):
-        rv = False
         has_coth = True   # foo - does this player have coth spell
-        if self.pclass == constants.MAGICIAN and has_coth:
-            rv = True
-        return rv
+        return self.pclass == constants.MAGICIAN and has_coth
 
 
-#
-# class for an EQ group
-#
 class Group(DictEquals):
+    """Class to represent an EQ Group"""
 
-    def __init__(self, group_type='General'):
-
+    def __init__(self, group_type=constants.GT_GENERAL):
         # info to support assigning a score to this group reflecting how
         # well it matches a target profile
         self.MAX_SLOT = 100         # slot filled with an exact match
@@ -197,16 +148,16 @@ class Group(DictEquals):
         rv += '(SA score: {})'.format(self.max_group_score)
         return rv
 
-    # Tank group
-    # generate a group score compared to ideal 'Tank' group makeup
-    #   - War, War
-    #   - Shaman w/ Torpor
-    #   - Bard
-    #   - Ench
-    #   - Any
-    #
-    def tank_score(self):
+    def tank_score(self) -> int:
+        """Tank group
 
+        Generate a group score compared to ideal 'Tank' group makeup:
+          - War, War
+          - Shaman w/ Torpor
+          - Bard
+          - Enchanter
+          - Any
+        """
         # running group score as positions are filled
         self.group_score = 0
 
@@ -234,7 +185,7 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add scores for top two tanks to group score, and remove top two
@@ -244,7 +195,7 @@ class Group(DictEquals):
             target_count = 2
 
         while target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
             target_count -= 1
@@ -270,14 +221,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -298,14 +249,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target from
         # available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -326,14 +277,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove top target from
         # available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -341,21 +292,20 @@ class Group(DictEquals):
         # points for having someone in a slot, rather than an empty slot
         # however, try to avoid duplicates of the classes already added
         for p in available_list:
-            if not p.is_tank():
-                if not p.is_priest():
-                    if not p.is_bard():
-                        if not p.is_enchanter():
-                            self.group_score += self.MIN_SLOT
+            if not (p.is_tank() or p.is_priest() or
+                    p.is_bard() or p.is_enchanter()):
+                self.group_score += self.MIN_SLOT
 
         # return the sum of the player scores, as matched against the ideal
         return self.group_score
 
-    # Cleric group
-    # generate a group score compared to ideal 'Cleric' group makeup
-    #   - Cleric x5
-    #   - Bard (or maybe necro)
-    #
-    def cleric_score(self):
+    def cleric_score(self) -> int:
+        """Cleric group
+
+        Generate a group score compared to ideal 'Cleric' group makeup
+          - Cleric x5
+          - Bard (or maybe Necromancer)
+        """
         # running group score as positions are filled
         self.group_score = 0
 
@@ -383,7 +333,7 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add scores for top two tanks to group score, and remove top five
@@ -393,7 +343,7 @@ class Group(DictEquals):
             target_count = 5
 
         while target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
             target_count -= 1
@@ -419,28 +369,29 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
         # return the sum of the player scores, as matched against the ideal
         return self.group_score
 
-    # Pull group
-    # generate a group score compared to ideal 'Pull' group makeup
-    #   - Monk x3
-    #   - Mage w/ COTH
-    #   - Wiz
-    #   - Priest
-    #
-    def pull_score(self):
+    def pull_score(self) -> int:
+        """Pull group
+
+        Generate a group score compared to ideal 'Pull' group makeup
+          - Monk x3
+          - Mage w/ COTH
+          - Wiz
+          - Priest
+        """
 
         # running group score as positions are filled
         self.group_score = 0
@@ -465,7 +416,7 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add scores for top two tanks to group score, and remove top three
@@ -475,7 +426,7 @@ class Group(DictEquals):
             target_count = 3
 
         while target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
             target_count -= 1
@@ -497,14 +448,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -525,14 +476,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -553,28 +504,29 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
         # return the sum of the player scores, as matched against the ideal
         return self.group_score
 
-    # General group
-    # generate a group score compared to ideal 'General' group makeup
-    #     - Priest
-    #     - Tank
-    #     - Slower (Enc or Shm)
-    #     - 3x other
-    #
-    def general_score(self):
+    def general_score(self) -> int:
+        """General group
+
+        Generate a group score compared to ideal 'General' group makeup
+          - Priest
+          - Tank
+          - Slower (Enchanter or Shaman)
+          - 3x other
+        """
 
         # running group score as positions are filled
         self.group_score = 0
@@ -599,14 +551,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -627,14 +579,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -655,14 +607,14 @@ class Group(DictEquals):
 
         # sort target list to find highest-scoring targets
         sorted_target_list = sorted(target_list,
-                                    key=lambda tuple: tuple[0],
+                                    key=lambda x: x[0],
                                     reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
         target_count = len(sorted_target_list)
         if target_count > 0:
-            (player_score, player) = sorted_target_list.pop(0)
+            player_score, player = sorted_target_list.pop(0)
             self.group_score += player_score
             available_list.remove(player)
 
@@ -670,11 +622,9 @@ class Group(DictEquals):
         # points for having someone in a slot, rather than an empty slot
         # however, try to avoid duplicates of the classes already added
         for p in available_list:
-            if not p.is_priest():
-                if not p.is_tank():
-                    if not p.is_shaman():
-                        if not p.is_enchanter():
-                            self.group_score += self.MIN_SLOT
+            if not (p.is_priest() or p.is_tank() or
+                    p.is_shaman() or p.is_enchanter()):
+                self.group_score += self.MIN_SLOT
 
         # penalize scores for players in General groups compared to the
         # other more specific groups, to encourage their placement in
@@ -685,72 +635,70 @@ class Group(DictEquals):
         return self.group_score
 
 
-#
-# class for an EQ raid
-#
-# multiple groups
-# also has the knowledge, given how many total raiders are available, how
-# many groups and what group types / profiles are desired
-#
 class Raid(DictEquals):
+    """Class to represent an EQ raid. Contains multiple Groups.
+
+    Also has the knowledge, given how many total raiders are available, about
+    how many groups and what group types / profiles are desired.
+    """
 
     def __init__(self):
-        self.group_list = []
+        self.groups = []
 
-    def add_empty_groups(self, player_count):
+    def add_empty_groups(self, player_count) -> None:
 
         full_groups_needed = math.floor(player_count / 6)
         total_groups_needed = math.ceil(player_count / 6)
 
-        self.group_list.clear()
+        self.groups.clear()
 
         # partial group needed?
         if total_groups_needed > full_groups_needed:
-            self.group_list.append(Group(constants.GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
 
         # 1-3 groups: All General
         if full_groups_needed == 1:
-            self.group_list.append(Group(constants.GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
         if full_groups_needed == 2:
-            self.group_list.append(Group(constants.GENERAL))
-            self.group_list.append(Group(constants.GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
         if full_groups_needed == 3:
-            self.group_list.append(Group(constants.GENERAL))
-            self.group_list.append(Group(constants.GENERAL))
-            self.group_list.append(Group(constants.GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
+            self.groups.append(Group(constants.GT_GENERAL))
 
         # 4 groups: General, Tank, Cleric, Pull
         if full_groups_needed >= 4:
-            self.group_list.append(Group(constants.GENERAL))
-            self.group_list.append(Group(constants.TANK))
-            self.group_list.append(Group(constants.CLERIC))
-            self.group_list.append(Group(constants.PULL))
+            self.groups.append(Group(constants.GT_GENERAL))
+            self.groups.append(Group(constants.GT_TANK))
+            self.groups.append(Group(constants.GT_CLERIC))
+            self.groups.append(Group(constants.GT_PULL))
 
         # 5 groups: General, Tank, Cleric, Pull, Tank
         if full_groups_needed >= 5:
-            self.group_list.append(Group(constants.TANK))
+            self.groups.append(Group(constants.GT_TANK))
 
         # 6 groups: General, Tank, Cleric, Pull, Tank, Cleric
         if full_groups_needed >= 6:
-            self.group_list.append(Group(constants.CLERIC))
+            self.groups.append(Group(constants.GT_CLERIC))
 
         # 7+ groups: General, Tank, Cleric, Pull, Tank, Cleric, (n - 6) General
         if full_groups_needed >= 7:
             cnt = 7
             while cnt <= full_groups_needed:
-                self.group_list.append(Group(constants.GENERAL))
+                self.groups.append(Group(constants.GT_GENERAL))
                 cnt += 1
 
         # now sort the groups into a sensible order
-        sort_order = {constants.PULL: 0,
-                      constants.TANK: 1,
-                      constants.CLERIC: 2,
-                      constants.GENERAL: 3}
-        self.group_list.sort(key=lambda val: sort_order[val.group_type])
+        sort_order = {constants.GT_PULL: 0,
+                      constants.GT_TANK: 1,
+                      constants.GT_CLERIC: 2,
+                      constants.GT_GENERAL: 3}
+        self.groups.sort(key=lambda val: sort_order[val.group_type])
 
     def __repr__(self):
         rv = ''
-        for gg in self.group_list:
+        for gg in self.groups:
             rv += '{}\n'.format(gg)
         return rv
 
