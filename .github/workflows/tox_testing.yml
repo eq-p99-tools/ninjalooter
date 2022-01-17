@@ -17,4 +17,4 @@ jobs:
         run: pip install tox
       - name: Run Tox
         # Run tox using the version of Python in `PATH`
-        run: tox -v -e pep8,py39
+        run: tox -v -e pep8,coverage
