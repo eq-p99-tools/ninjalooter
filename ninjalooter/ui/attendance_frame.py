@@ -202,7 +202,7 @@ class AttendanceFrame(wx.Window):
         selected_tick = self.attendance_list.GetSelectedObject()
         if selected_tick:
             config.RAID_GROUPS.build_groups(list(selected_tick.log.values()))
-            wx.PostEvent(self.Parent.Parent, models.CalcRaidGroupsEvent())
+            wx.PostEvent(self.GetGrandParent(), models.CalcRaidGroupsEvent())
         print("raidgroups")
 
     def OnWhoHistory(self, e: models.WhoHistoryEvent):

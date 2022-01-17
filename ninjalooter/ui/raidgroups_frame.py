@@ -62,7 +62,7 @@ class RaidGroupsFrame(wx.Window):
             self.raidgroups_main_box.Add(
                 group_box, flag=wx.TOP | wx.LEFT, border=10)
         self.raidgroups_main_box.Layout()
-        self.Parent.SetSelection(4)
+        self.GetParent().SetSelection(4)
         e.Skip()
 
     def OnClearApp(self, e: models.AppClearEvent):

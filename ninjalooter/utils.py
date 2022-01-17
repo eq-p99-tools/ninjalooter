@@ -231,14 +231,14 @@ def get_active_item_names() -> list:
     return active_items
 
 
-def datetime_to_eq_format(dt: datetime.datetime) -> str:
-    return dt.strftime("%a %b %d %H:%M:%S %Y")
+def datetime_to_eq_format(some_datetime: datetime.datetime) -> str:
+    return some_datetime.strftime("%a %b %d %H:%M:%S %Y")
 
 
 def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
     # If the list is empty, return None
     if not lines:
-        return
+        return None
 
     # find the first timestamp, with line number (return None if no timestamps)
     for first_index, item in enumerate(lines):
@@ -246,21 +246,21 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
         if first_ts:
             break
     else:
-        return
+        return None
     # if the first timestamp is equal or after the timestamp, return it
     if first_ts >= timestamp:
         return first_index
 
     # find the last timestamp, with line number
-    for last_index, item in enumerate(reversed(lines)):
+    for item in reversed(lines):
         last_ts = get_timestamp(item)
         if last_ts:
             break
     else:  # not really necessary, but make pylint happy
-        return
+        return None
     # if the last time is before the timestamp, return None
     if last_ts < timestamp:
-        return
+        return None
 
     # if the list has 1 or less lines, return index 0
     if len(lines) <= 1:
@@ -268,12 +268,13 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
 
     # find the middle timestamp
     middle_index = int(len(lines)/2)
-    for middle_index_iter, item in enumerate(lines[middle_index:]):
+    for item in lines[middle_index:]:
         middle_ts = get_timestamp(item)
         if middle_ts:
             break
     else:
         middle_ts = None
+
     if middle_ts and middle_ts > timestamp:
         # if the middle timestamp is after our goal, look at the first half
         left = find_timestamp(lines[:middle_index], timestamp)
@@ -282,11 +283,11 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
         # if the middle timestamp was after our timestamp, but the stuff on the
         # left is all before it, then the middle timestamp must be our target
         return middle_index
-    else:
-        # the middle timestamp is equal or before our goal, so check the right
-        right = find_timestamp(lines[middle_index:], timestamp)
-        if right is not None:
-            return middle_index + right
+
+    # the middle timestamp is equal or before our goal, so check the right
+    right = find_timestamp(lines[middle_index:], timestamp)
+    if right is not None:
+        return middle_index + right
     LOG.error("Couldn't find a timestamp. How did we get here?")
 
 
@@ -294,6 +295,7 @@ def get_timestamp(logline: str) -> datetime.datetime:
     match = RE_TIMESTAMP.match(logline)
     if match:
         return dateutil.parser.parse(match.group("time"))
+    return None
 
 
 def get_first_timestamp(iterable_obj) -> datetime.datetime:

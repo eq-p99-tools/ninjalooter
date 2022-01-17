@@ -124,17 +124,15 @@ class Player(DictEquals):
 
 class Group(DictEquals):
     """Class to represent an EQ Group"""
+    # info to support assigning a score to this group reflecting how
+    # well it matches a target profile
+    MAX_SLOT = 100  # slot filled with an exact match
+    MIN_SLOT = 10  # slot filled with anyone
+    LEVEL_PENALTY = 15  # per level less than 60
+    CLASS_PENALTY = 50  # penalty if not an exact class match
+    GENERAL_PENALTY = 0.7  # penalize scores of players in general
 
     def __init__(self, group_type=constants.GT_GENERAL):
-        # info to support assigning a score to this group reflecting how
-        # well it matches a target profile
-        self.MAX_SLOT = 100         # slot filled with an exact match
-        self.MIN_SLOT = 10          # slot filled with anyone
-        self.LEVEL_PENALTY = 15     # per level less than 60
-        self.CLASS_PENALTY = 50     # penalty if not an exact class match
-        self.GENERAL_PENALTY = 0.7  # penalize scores of players in general
-
-        # group info
         self.group_type = group_type
         self.player_list = []
         self.group_score = 0
@@ -697,10 +695,7 @@ class Raid(DictEquals):
         self.groups.sort(key=lambda val: sort_order[val.group_type])
 
     def __repr__(self):
-        rv = ''
-        for gg in self.groups:
-            rv += '{}\n'.format(gg)
-        return rv
+        return '\n'.join([str(g) for g in self.groups])
 
 
 class CredittLog(DictEquals):

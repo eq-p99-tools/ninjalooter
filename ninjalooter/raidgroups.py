@@ -11,11 +11,11 @@ class GroupBuilder:
     Uses Simulated Annealing to search for an optimized match of (available
     raid classes) to (ideal raid groups and classes)
     """
-    def __init__(self):
-        self.INITIAL_ANNEAL_TEMP = 1500.0
-        self.COOLING_RATE = 0.9
-        self.INNER_LOOP_X = 10
+    INITIAL_ANNEAL_TEMP = 1500.0
+    COOLING_RATE = 0.9
+    INNER_LOOP_X = 10
 
+    def __init__(self):
         self.raid = models.Raid()
 
     def build_groups(self, master_player_list) -> int:
@@ -56,9 +56,8 @@ class GroupBuilder:
                     to_pos = random.randrange(player_count)
 
                 # do the swap
-                pp = master_player_list[to_pos]
-                master_player_list[to_pos] = master_player_list[from_pos]
-                master_player_list[from_pos] = pp
+                master_player_list[to_pos], master_player_list[from_pos] = (
+                    master_player_list[from_pos], master_player_list[to_pos])
 
                 # fill the groups with the revised player list
                 player_ndx = 0
@@ -113,9 +112,10 @@ class GroupBuilder:
 
                 # if we aren't going to accept the swap, then undo it
                 else:
-                    pp = master_player_list[to_pos]
-                    master_player_list[to_pos] = master_player_list[from_pos]
-                    master_player_list[from_pos] = pp
+                    (master_player_list[to_pos],
+                     master_player_list[from_pos]) = (
+                        master_player_list[from_pos],
+                        master_player_list[to_pos])
 
                 # inner loop counter
                 loop_count -= 1
