@@ -312,7 +312,7 @@ class BiddingFrame(wx.Window):
         if item_count > 0:
             self.pending_list.Select(min(selected_index, item_count - 1))
         utils.store_state()
-        wx.PostEvent(self.Parent.Parent, models.IgnoreEvent())
+        wx.PostEvent(self.GetGrandParent(), models.IgnoreEvent())
 
     def DialogDuplicate(self):
         dlg = wx.MessageDialog(
@@ -539,7 +539,7 @@ class IgnoredItemsWindow(wx.Frame):
     def __init__(self, parent=None,
                  title="Ignored Auctions (Double Click to Restore)"):
         wx.Frame.__init__(self, parent, title=title, size=(616, 600))
-        self.Parent.Connect(-1, -1, models.EVT_IGNORE, self.OnRefresh)
+        self.GetParent().Connect(-1, -1, models.EVT_IGNORE, self.OnRefresh)
         main_box = wx.BoxSizer(wx.HORIZONTAL)
 
         ignored_list = ObjectListView.ObjectListView(
@@ -578,4 +578,4 @@ class IgnoredItemsWindow(wx.Frame):
         config.IGNORED_AUCTIONS.remove(item)
         config.PENDING_AUCTIONS.append(item)
         self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
-        wx.PostEvent(self.Parent, models.DropEvent())
+        wx.PostEvent(self.GetParent(), models.DropEvent())

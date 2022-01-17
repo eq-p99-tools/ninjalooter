@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 import datetime
+import math
 import uuid as uuid_lib
 
 import dateutil.parser
-import math
 import wx
 
 from ninjalooter import config
@@ -124,17 +124,15 @@ class Player(DictEquals):
 
 class Group(DictEquals):
     """Class to represent an EQ Group"""
+    # info to support assigning a score to this group reflecting how
+    # well it matches a target profile
+    MAX_SLOT = 100  # slot filled with an exact match
+    MIN_SLOT = 10  # slot filled with anyone
+    LEVEL_PENALTY = 15  # per level less than 60
+    CLASS_PENALTY = 50  # penalty if not an exact class match
+    GENERAL_PENALTY = 0.7  # penalize scores of players in general
 
     def __init__(self, group_type=constants.GT_GENERAL):
-        # info to support assigning a score to this group reflecting how
-        # well it matches a target profile
-        self.MAX_SLOT = 100         # slot filled with an exact match
-        self.MIN_SLOT = 10          # slot filled with anyone
-        self.LEVEL_PENALTY = 15     # per level less than 60
-        self.CLASS_PENALTY = 50     # penalty if not an exact class match
-        self.GENERAL_PENALTY = 0.7  # penalize scores of players in general
-
-        # group info
         self.group_type = group_type
         self.player_list = []
         self.group_score = 0
@@ -697,10 +695,7 @@ class Raid(DictEquals):
         self.groups.sort(key=lambda val: sort_order[val.group_type])
 
     def __repr__(self):
-        rv = ''
-        for gg in self.groups:
-            rv += '{}\n'.format(gg)
-        return rv
+        return '\n'.join([str(g) for g in self.groups])
 
 
 class CredittLog(DictEquals):
@@ -1094,7 +1089,7 @@ class RandomAuction(Auction):
 
     def win_text(self) -> str:
         player = self.highest_players()
-        if player == "None" or player == '':
+        if player in ("None", ""):
             player = "ROT"
         roll = self.highest_number()
         if roll == "None":
@@ -1125,6 +1120,7 @@ EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
 EVT_CREDITT = wx.NewId()
 EVT_GRATSS = wx.NewId()
+EVT_CALC_RAIDGROUPS = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 EVT_IGNORE = wx.NewId()
 
@@ -1204,6 +1200,12 @@ class GratssEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_GRATSS)
+
+
+class CalcRaidGroupsEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_CALC_RAIDGROUPS)
 
 
 class AppClearEvent(LogEvent):  # pylint: disable=too-few-public-methods

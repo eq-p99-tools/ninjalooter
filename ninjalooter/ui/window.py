@@ -14,6 +14,7 @@ from ninjalooter.ui import bidding_frame
 from ninjalooter.ui import killtimes_frame
 from ninjalooter.ui import menu_bar
 from ninjalooter.ui import population_frame
+from ninjalooter.ui import raidgroups_frame
 from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
@@ -51,6 +52,9 @@ class MainWindow(wx.Frame):
 
         # Kill Times Frame
         self.killtimes_frame = killtimes_frame.KillTimesFrame(notebook)
+
+        # Raid Groups Frame
+        self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(notebook)
 
         self.Show(True)
         if config.ALWAYS_ON_TOP:

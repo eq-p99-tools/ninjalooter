@@ -57,7 +57,7 @@ def handle_gratss(match: re.Match, window: wx.Frame,
                 # don't count this item
                 return False
             # there was a bid and it matches player/dkp and item name
-            elif (old_auction.highest() and
+            if (old_auction.highest() and
                     old_auction.highest()[0] == (  #
                             award_match.group('name'),
                             int(award_match.group('dkp'))) and
@@ -230,7 +230,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
 
 def handle_auc_start(match: re.Match, window: wx.Frame,
                      skip_store=False) -> bool:
-    LOG.warning('AUCTION START for %s' % match.groupdict())
+    LOG.warning('AUCTION START for %s', match.groupdict())
     message_time = dateutil.parser.parse(match.group('time'))
     item_name = match.group('item')
     utils.complete_old_auctions(message_time - datetime.timedelta(minutes=30))
@@ -299,7 +299,7 @@ def handle_auc_start(match: re.Match, window: wx.Frame,
 
 def handle_auc_end(match: re.Match, window: wx.Frame,
                    skip_store=False) -> bool:
-    LOG.warning('AUCTION END for %s' % match.groupdict())
+    LOG.warning('AUCTION END for %s', match.groupdict())
     item_name = match.group('item')
     active_item = None
     for auc_item in config.ACTIVE_AUCTIONS.values():

@@ -2,14 +2,10 @@ import configparser
 import datetime
 import logging
 import re
-import sys
 
-VERSION = "1.14-rc1"
+VERSION = "1.14-rc2"
 
-if len(sys.argv) > 1:
-    CONFIG_FILENAME = sys.argv[1]
-else:
-    CONFIG_FILENAME = 'ninjalooter.ini'
+CONFIG_FILENAME = 'ninjalooter.ini'
 CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
 
@@ -114,6 +110,7 @@ ATTENDANCE_LOGS = list()
 CREDITT_LOG = list()
 GRATSS_LOG = list()
 KILL_TIMERS = list()
+RAID_GROUPS = None
 CREDITT_SASH_POS = 400
 GRATSS_SASH_POS = 150
 ACTIVE_SASH_POS = 215

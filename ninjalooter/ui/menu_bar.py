@@ -151,7 +151,7 @@ class MenuBar(wx.MenuBar):
     def OnReplayLog(self, e: wx.MenuEvent):
         LOG.info("Attempting to replay an eqlog...")
         openFileDialog = wx.FileDialog(
-            self.Parent, "Open EQ Logfile", "D:\\EverQuest\\Logs\\", "",
+            self.GetParent(), "Open EQ Logfile", "D:\\EverQuest\\Logs\\", "",
             "EQ Logfile (eqlog_*.txt)|eqlog_*.txt", wx.FD_OPEN)
 
         result = openFileDialog.ShowModal()
@@ -177,7 +177,8 @@ class MenuBar(wx.MenuBar):
             self.DialogParseFail()
             return
 
-        time_select_dialog = wx.Dialog(self.Parent, title="Select Time Bounds")
+        time_select_dialog = wx.Dialog(
+            self.GetParent(), title="Select Time Bounds")
         time_select_main_box = wx.BoxSizer(wx.VERTICAL)
 
         # Time Bounds
@@ -259,13 +260,13 @@ class MenuBar(wx.MenuBar):
             title="Parsing Logs...",
             message="Please wait while your logfile is parsed.",
             maximum=total_picked_lines,
-            parent=self.Parent,
+            parent=self.GetParent(),
             style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT |
                   wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME
         )
 
         logreplay.replay_logs(picked_lines, parse_progress_dialog)
-        self.Parent.bidding_frame.OnHideRot(None)
+        self.GetParent().bidding_frame.OnHideRot(None)
         parse_progress_dialog.Destroy()
 
     def DialogParseFail(self):
@@ -322,7 +323,7 @@ class MenuBar(wx.MenuBar):
         if not os.path.isdir(existing_logdir):
             existing_logdir = os.path.dirname(existing_logdir)
         openFileDialog = wx.DirDialog(
-            self.Parent, "Select Log Directory", existing_logdir,
+            self.GetParent(), "Select Log Directory", existing_logdir,
             wx.DD_DIR_MUST_EXIST)
 
         result = openFileDialog.ShowModal()
@@ -333,14 +334,15 @@ class MenuBar(wx.MenuBar):
             config.LOG_DIRECTORY = selected
             config.CONF.set('default', 'logdir', selected)
             config.write()
-            self.Parent.parser_thread.abort()
-            self.Parent.parser_thread = logparse.ParseThread(self.Parent)
-            self.Parent.parser_thread.start()
+            self.GetParent().parser_thread.abort()
+            self.GetParent().parser_thread = logparse.ParseThread(
+                self.GetParent())
+            self.GetParent().parser_thread.start()
 
     def OnExportExcel(self, e: wx.MenuEvent):
         LOG.info("Exporting to Excel format.")
         saveFileDialog = wx.FileDialog(
-            self.Parent, "Export to Excel", "", "",
+            self.GetParent(), "Export to Excel", "", "",
             "Excel Spreadsheet (*.xlsx)|*.xlsx", wx.FD_SAVE)
 
         result = saveFileDialog.ShowModal()
@@ -370,7 +372,7 @@ class MenuBar(wx.MenuBar):
     def OnExportEQDKP(self, e: wx.MenuEvent):
         LOG.info("Exporting to EQDKPlus format.")
         saveFileDialog = wx.FileDialog(
-            self.Parent, "Export to EQDKPlus", "", "",
+            self.GetParent(), "Export to EQDKPlus", "", "",
             "Excel Spreadsheet (*.xlsx)|*.xlsx", wx.FD_SAVE)
 
         result = saveFileDialog.ShowModal()
@@ -406,7 +408,7 @@ class MenuBar(wx.MenuBar):
         dlg.Destroy()
         if result == wx.ID_OK:
             utils.store_state(backup=True)
-            wx.PostEvent(self.Parent, models.AppClearEvent())
+            wx.PostEvent(self.GetParent(), models.AppClearEvent())
 
     def OnRestrict(self, e: wx.MenuEvent):
         config.RESTRICT_BIDS = self.restrict_mi.IsChecked()
@@ -433,4 +435,4 @@ class MenuBar(wx.MenuBar):
         config.write()
 
     def OnShowIgnored(self, e: wx.MenuEvent):
-        bidding_frame.IgnoredItemsWindow(parent=self.Parent)
+        bidding_frame.IgnoredItemsWindow(parent=self.GetParent())

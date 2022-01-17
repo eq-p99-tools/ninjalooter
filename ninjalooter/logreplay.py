@@ -47,7 +47,7 @@ def replay_logs(replay_lines, progress_dialog):
     total_picked_lines = len(replay_lines)
     last_rand_player = None
     for idx, line in enumerate(replay_lines):
-        keep_going, skip = progress_dialog.Update(
+        keep_going, _ = progress_dialog.Update(
             idx, newmsg="Now parsing line %s of %s..." %
                         (idx, total_picked_lines))
         if not keep_going:
