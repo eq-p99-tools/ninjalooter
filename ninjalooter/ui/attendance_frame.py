@@ -67,6 +67,12 @@ class AttendanceFrame(wx.Window):
         if config.SHOW_RAIDTICK_ONLY:
             self.OnRaidtickOnly(None)
 
+        attendance_use_raidgroups = wx.Button(
+            pane_1, label="Calculate Raid Groups")
+        attendance_use_raidgroups.Bind(wx.EVT_BUTTON, self.OnCalcRaidGroups)
+        attendance_buttons_box.Add(
+            attendance_use_raidgroups, border=5, flag=wx.ALL)
+
         # Creditt Log
         creditt_box = wx.BoxSizer(wx.HORIZONTAL)
         creditt_list = ObjectListView.ObjectListView(
@@ -192,6 +198,13 @@ class AttendanceFrame(wx.Window):
             self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         config.write()
 
+    def OnCalcRaidGroups(self, e: wx.Event):
+        selected_tick = self.attendance_list.GetSelectedObject()
+        if selected_tick:
+            config.RAID_GROUPS.build_groups(list(selected_tick.log.values()))
+            wx.PostEvent(self.Parent.Parent, models.CalcRaidGroupsEvent())
+        print("raidgroups")
+
     def OnWhoHistory(self, e: models.WhoHistoryEvent):
         if self.attendance_button_raidtick.GetValue():
             # Filter to raidtick only
@@ -265,7 +278,7 @@ class AttendanceDetailWindow(wx.Frame):
                 "Guild", "left", 180, "guild",
                 groupKeyGetter=attendanceGroupKey, fixedWidth=180),
         ])
-        attendance_list = [p for p in item.log.values()]
+        attendance_list = list(item.log.values())
         attendance_record.SetObjects(attendance_list)
         attendance_record.AlwaysShowScrollbars(False, True)
 

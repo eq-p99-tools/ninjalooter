@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 import datetime
+import math
 import uuid as uuid_lib
 
 import dateutil.parser
-import math
 import wx
 
 from ninjalooter import config
@@ -1094,7 +1094,7 @@ class RandomAuction(Auction):
 
     def win_text(self) -> str:
         player = self.highest_players()
-        if player == "None" or player == '':
+        if player in ("None", ""):
             player = "ROT"
         roll = self.highest_number()
         if roll == "None":
@@ -1125,6 +1125,7 @@ EVT_WHO_END = wx.NewId()
 EVT_KILL = wx.NewId()
 EVT_CREDITT = wx.NewId()
 EVT_GRATSS = wx.NewId()
+EVT_CALC_RAIDGROUPS = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 EVT_IGNORE = wx.NewId()
 
@@ -1204,6 +1205,12 @@ class GratssEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_GRATSS)
+
+
+class CalcRaidGroupsEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        self.SetEventType(EVT_CALC_RAIDGROUPS)
 
 
 class AppClearEvent(LogEvent):  # pylint: disable=too-few-public-methods
