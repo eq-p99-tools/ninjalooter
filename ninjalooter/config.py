@@ -2,14 +2,10 @@ import configparser
 import datetime
 import logging
 import re
-import sys
 
 VERSION = "1.14-rc2"
 
-if len(sys.argv) > 1:
-    CONFIG_FILENAME = sys.argv[1]
-else:
-    CONFIG_FILENAME = 'ninjalooter.ini'
+CONFIG_FILENAME = 'ninjalooter.ini'
 CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
 
