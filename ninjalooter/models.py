@@ -46,15 +46,15 @@ class Player(DictEquals):
         self._level = level
         self.guild = guild
 
-    # getter
+    # getter - ensure return type is integer
     @property
     def level(self):
         return int(self._level)
 
-    # setter
+    # setter - allows level to be int or str
     @level.setter
     def level(self, val):
-        self._level = int(val)
+        self._level = val
 
     def __repr__(self):
         return (
