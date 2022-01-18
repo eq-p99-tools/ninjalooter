@@ -43,18 +43,11 @@ class Player(DictEquals):
     def __init__(self, name, pclass=None, level=None, guild=""):
         self.name = name
         self.pclass = pclass
-        self._level = level
+        try:
+            self.level = int(level)
+        except (ValueError, TypeError):
+            self.level = 0
         self.guild = guild
-
-    # getter - ensure return type is integer
-    @property
-    def level(self):
-        return int(self._level)
-
-    # setter - allows level to be int or str
-    @level.setter
-    def level(self, val):
-        self._level = val
 
     def __repr__(self):
         return (
@@ -84,9 +77,9 @@ class Player(DictEquals):
         return self.pclass in constants.PRIESTS
 
     # helper function - true if torp shaman
-    #todo - need to differentiate between has_torp and not have
+    # todo - need to differentiate between has_torp and not have
     def is_torp_shaman(self):
-        has_torpor = True   #fixme - does this player have torpor spell
+        has_torpor = True  # fixme - does this player have torpor spell
         return self.pclass == constants.SHAMAN and has_torpor
 
     # helper function - true if shaman
@@ -128,7 +121,7 @@ class Player(DictEquals):
     # helper function - true if coth mage
     # todo - need to differentiate between has_coth and not have
     def is_coth_magician(self):
-        has_coth = True   #fixme - does this player have coth spell
+        has_coth = True  # fixme - does this player have coth spell
         return self.pclass == constants.MAGICIAN and has_coth
 
 
@@ -976,7 +969,7 @@ class DKPAuction(Auction):
         if current_bid != 'None':
             try:
                 bid_message = (
-                    "/{channel} ~" + config.BID_MESSAGE_REMINDER
+                        "/{channel} ~" + config.BID_MESSAGE_REMINDER
                 ).format(
                     channel=config.PRIMARY_BID_CHANNEL.upper(),
                     player=self.highest_players(),
@@ -997,7 +990,7 @@ class DKPAuction(Auction):
         else:
             try:
                 bid_message = (
-                    "/{channel} ~" + config.BID_MESSAGE_NEW
+                        "/{channel} ~" + config.BID_MESSAGE_NEW
                 ).format(
                     channel=config.PRIMARY_BID_CHANNEL.upper(),
                     player=None,
@@ -1026,7 +1019,7 @@ class DKPAuction(Auction):
             dkp = "0"
         try:
             grats_message = (
-                "/{channel} ~" + config.GRATS_MESSAGE_BID
+                    "/{channel} ~" + config.GRATS_MESSAGE_BID
             ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 player=player, number=dkp,
@@ -1085,7 +1078,7 @@ class RandomAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         try:
             bid_text = (
-                "/{channel} " + config.ROLL_MESSAGE
+                    "/{channel} " + config.ROLL_MESSAGE
             ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 item=self.item.name, target=self.number, classes=classes
@@ -1106,7 +1099,7 @@ class RandomAuction(Auction):
             roll = "0"
         try:
             win_text = (
-                "/{channel} " + config.GRATS_MESSAGE_ROLL
+                    "/{channel} " + config.GRATS_MESSAGE_ROLL
             ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 player=player, item=self.item.name,
@@ -1169,7 +1162,7 @@ class WhoEvent(LogEvent):
         if not isinstance(other, self.__class__):
             return False
         return (self.name, self.pclass, self.level, self.guild) == (
-                other.name, other.pclass, other.level, other.guild)
+            other.name, other.pclass, other.level, other.guild)
 
     def __repr__(self):
         return "WhoEvent({}, {}, {}, {})".format(
