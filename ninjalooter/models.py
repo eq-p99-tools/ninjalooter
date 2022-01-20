@@ -43,7 +43,10 @@ class Player(DictEquals):
     def __init__(self, name, pclass=None, level=None, guild=""):
         self.name = name
         self.pclass = pclass
-        self.level = level
+        try:
+            self.level = int(level)
+        except (ValueError, TypeError):
+            self.level = 0
         self.guild = guild
 
     def __repr__(self):
@@ -74,9 +77,9 @@ class Player(DictEquals):
         return self.pclass in constants.PRIESTS
 
     # helper function - true if torp shaman
-    # foo - need to differentiate between has_torp and not have
+    # todo - need to differentiate between has_torp and not have
     def is_torp_shaman(self):
-        has_torpor = True   # foo - does this player have torpor spell
+        has_torpor = True  # fixme - does this player have torpor spell
         return self.pclass == constants.SHAMAN and has_torpor
 
     # helper function - true if shaman
@@ -116,9 +119,9 @@ class Player(DictEquals):
         return self.pclass == constants.WIZARD
 
     # helper function - true if coth mage
-    # foo - need to differentiate between has_coth and not have
+    # todo - need to differentiate between has_coth and not have
     def is_coth_magician(self):
-        has_coth = True   # foo - does this player have coth spell
+        has_coth = True  # fixme - does this player have coth spell
         return self.pclass == constants.MAGICIAN and has_coth
 
 
