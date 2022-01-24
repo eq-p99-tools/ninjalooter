@@ -38,7 +38,8 @@ class RaidGroupsFrame(wx.Window):
 
     def OnCalcRaidGroups(self, e: models.CalcRaidGroupsEvent):
         print("Calc raidgroups")
-        self.no_groups_text.Hide()
+        for child in self.raidgroups_main_box.GetChildren():
+            child.Show(False)
         self.raidgroups_main_box.Clear()
         for group in config.RAID_GROUPS.raid.groups:
             group_box = wx.BoxSizer(wx.VERTICAL)
@@ -62,6 +63,7 @@ class RaidGroupsFrame(wx.Window):
             self.raidgroups_main_box.Add(
                 group_box, flag=wx.TOP | wx.LEFT, border=10)
         self.raidgroups_main_box.Layout()
+        self.Layout()
         self.GetParent().SetSelection(4)
         e.Skip()
 
