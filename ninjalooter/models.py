@@ -3,9 +3,11 @@
 from __future__ import annotations
 import datetime
 import math
+import threading
 import uuid as uuid_lib
 
 import dateutil.parser
+import playsound
 import wx
 
 from ninjalooter import config
@@ -24,9 +26,11 @@ class DictEquals:
         return self.__dict__ == other.__dict__
 
     def to_json(self):
+        json_dict = {key: self.__dict__[key] for key in self.__dict__
+                     if not key.startswith("_")}
         return {
             'json_type': self.__class__.__name__,
-            **self.__dict__
+            **json_dict
         }
 
     @classmethod
@@ -850,16 +854,29 @@ class ItemDrop(DictEquals):
 
 class Auction(DictEquals):
     item = None
-    complete = None
     start_time = None
+    _alert_timer = None
 
-    def __init__(self, item: ItemDrop, complete=False, start_time=None):
+    def __init__(self, item: ItemDrop, start_time=None, **kwargs):
         self.item = item
-        self.complete = complete
         if start_time:
             self.start_time = dateutil.parser.DEFAULTPARSER.parse(start_time)
         else:
             self.start_time = datetime.datetime.now()
+
+        if self.time_remaining().seconds > 0:
+            self._alert_timer = threading.Timer(
+                self.time_remaining().seconds, self._play_audio_alert)
+            config.AUCTION_ALERT_TIMERS.append(self._alert_timer)
+            self._alert_timer.start()
+
+    def _play_audio_alert(self):
+        config.WX_TASKBAR_ICON.ShowBalloon(
+            "Auction Ending Soon",
+            "The auction for '%s' is ending soon!" % self.item.name)
+        config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
+        if config.AUDIO_ALERTS:
+            playsound.playsound(config.AUC_EXPIRING_SOUND, False)
 
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()
@@ -916,6 +933,14 @@ class Auction(DictEquals):
         else:
             time_remaining = "{}s".format(seconds)
         return time_remaining
+
+    def cancel(self):
+        if self._alert_timer:
+            self._alert_timer.cancel()
+
+    def complete(self):
+        if self._alert_timer:
+            self._alert_timer.cancel()
 
 
 class DKPAuction(Auction):

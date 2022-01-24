@@ -3,8 +3,10 @@
 import copy
 import datetime
 import re
+import threading
 
 import dateutil.parser
+import playsound
 import wx
 
 from ninjalooter import config
@@ -78,6 +80,21 @@ def handle_start_who(match: re.Match, window: wx.Frame,
     return True
 
 
+def raidtick_reminder_alert() -> None:
+    config.WX_TASKBAR_ICON.ShowBalloon(
+        "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1),
+        "It has been an hour since your last recorded RaidTick. "
+        "You will be reminded %d more times." %
+        (10 - config.RAIDTICK_REMINDER_COUNT))
+    if config.AUDIO_ALERTS:
+        playsound.playsound(config.RAIDTICK_REMINDER_SOUND, False)
+    if config.RAIDTICK_REMINDER_COUNT < 10:
+        config.RAIDTICK_REMINDER_COUNT += 1
+        config.RAIDTICK_ALERT_TIMER = threading.Timer(
+            60, raidtick_reminder_alert)
+        config.RAIDTICK_ALERT_TIMER.start()
+
+
 def handle_end_who(match: re.Match, window: wx.Frame,
                    skip_store=False) -> bool:
     who_time = match.group('time')
@@ -86,6 +103,12 @@ def handle_end_who(match: re.Match, window: wx.Frame,
     raidtick_who = False
     if raidtick_was <= datetime.timedelta(seconds=3):
         raidtick_who = True
+        if config.RAIDTICK_ALERT_TIMER:
+            config.RAIDTICK_ALERT_TIMER.cancel()
+        config.RAIDTICK_REMINDER_COUNT = 0
+        config.RAIDTICK_ALERT_TIMER = threading.Timer(
+            60 * 60, raidtick_reminder_alert)
+        config.RAIDTICK_ALERT_TIMER.start()
     log_entry = models.WhoLog(
         parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who)
     config.ATTENDANCE_LOGS.append(log_entry)
@@ -177,6 +200,8 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
         return list()
     if used_found_items:
         wx.PostEvent(window, models.DropEvent())
+        if config.AUDIO_ALERTS:
+            playsound.playsound(config.NEW_DROP_SOUND)
     if not skip_store:
         utils.store_state()
     return found_items

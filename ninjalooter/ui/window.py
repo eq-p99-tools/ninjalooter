@@ -24,16 +24,38 @@ LOG = logger.getLogger(__name__)
 ObjectListView.ObjectListView._HandleTypingEvent = overrides._HandleTypingEvent
 
 
+class TaskBarIcon(wx.adv.TaskBarIcon):
+    def __init__(self, frame):
+        wx.adv.TaskBarIcon.__init__(self)
+        self.frame = frame
+        icon = wx.Icon()
+        icon.CopyFromBitmap(
+            wx.Bitmap(os.path.join(
+                config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
+                      wx.BITMAP_TYPE_ANY))
+        self.SetIcon(icon, "NinjaLooter " + config.VERSION)
+
+    def CreatePopupMenu(self):
+        self.menu = wx.Menu()
+        exit_button = wx.MenuItem(self.menu, wx.ID_ANY, 'Exit')
+        self.menu.Append(exit_button)
+        self.Bind(wx.EVT_MENU, self.frame.OnClose, exit_button)
+        return self.menu
+
+
 class MainWindow(wx.Frame):
     def __init__(self, parent=None, title="NinjaLooter EQ Loot Manager"):
         wx.Frame.__init__(self, parent, title=title, size=(850, 800))
         icon = wx.Icon()
         icon.CopyFromBitmap(
             wx.Bitmap(os.path.join(
-                utils.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
+                config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
                       wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        # Set up taskbar icon
+        config.WX_TASKBAR_ICON = TaskBarIcon(self)
 
         # Set up menubar
         menu_bar.MenuBar(self)
@@ -70,6 +92,11 @@ class MainWindow(wx.Frame):
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_OK:
+            config.WX_TASKBAR_ICON.Destroy()
+            if config.RAIDTICK_ALERT_TIMER:
+                config.RAIDTICK_ALERT_TIMER.cancel()
+            for timer in config.AUCTION_ALERT_TIMERS:
+                timer.cancel()
             self.parser_thread.abort()
             utils.store_state()
             self.Destroy()

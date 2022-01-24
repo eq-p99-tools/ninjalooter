@@ -1,10 +1,13 @@
 import configparser
 import datetime
 import logging
+import os
+import pathlib
 import re
 
-VERSION = "1.14-rc2"
+VERSION = "1.14-rc3"
 
+PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'
 CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
@@ -84,6 +87,19 @@ if not CONF.has_section("theme"):
     CONF.set("theme", "danger_color", DANGER_COLOR)
     write()
 
+# Audio alerts
+AUDIO_ALERTS = CONF.getboolean("alerts", "enabled", fallback=True)
+NEW_DROP_SOUND = CONF.get(
+    "alerts", "new_drop",
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.wav"))
+AUC_EXPIRING_SOUND = CONF.get(
+    "alerts", "auction_expiring",
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "auc_expiring.wav"))
+RAIDTICK_REMINDER_SOUND = CONF.get(
+    "alerts", "raidtick_reminder",
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds",
+                          "raidtick_reminder.wav"))
+
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
@@ -115,9 +131,13 @@ CREDITT_SASH_POS = 400
 GRATSS_SASH_POS = 150
 ACTIVE_SASH_POS = 215
 HISTORICAL_SASH_POS = 215
+RAIDTICK_ALERT_TIMER = None
+RAIDTICK_REMINDER_COUNT = 0
+AUCTION_ALERT_TIMERS = []
 
 # Calculated variables
 WX_LAST_WHO_SNAPSHOT = None
+WX_TASKBAR_ICON = None
 ALLIANCE_MAP = dict()
 for alliance, guilds in ALLIANCES.items():
     for guild in guilds:

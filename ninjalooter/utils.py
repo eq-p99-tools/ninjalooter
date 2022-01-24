@@ -5,7 +5,6 @@ import datetime
 import inspect
 import json
 import os
-import pathlib
 import re
 import webbrowser
 
@@ -24,8 +23,7 @@ LOG = logger.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
 RE_TIMESTAMP = re.compile(config.TIMESTAMP)
-PROJECT_DIR = pathlib.Path(__file__).parent.parent
-LOG.info("Project working directory: %s", PROJECT_DIR)
+LOG.info("Project working directory: %s", config.PROJECT_DIR)
 
 
 def ignore_pending_item(item: models.ItemDrop) -> None:
@@ -145,12 +143,14 @@ def get_latest_logfile(logdir: str) -> tuple:
 
 
 def load_item_data():
-    with open(os.path.join(PROJECT_DIR, 'data', 'items.json')) as item_file:
+    with open(os.path.join(config.PROJECT_DIR,
+                           'data', 'items.json')) as item_file:
         return json.load(item_file)
 
 
 def load_spell_data():
-    with open(os.path.join(PROJECT_DIR, 'data', 'spells.json')) as spell_file:
+    with open(os.path.join(config.PROJECT_DIR,
+                           'data', 'spells.json')) as spell_file:
         return json.load(spell_file)
 
 

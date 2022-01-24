@@ -1,5 +1,6 @@
 import unittest
 
+from ninjalooter import config
 from ninjalooter import models
 
 SAMPLE_ALLIANCES = {
@@ -95,4 +96,5 @@ SAMPLE_FULL_TEST = SAMPLE_ATTENDANCE_LOGS + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
 
 
 class NLTestBase(unittest.TestCase):
-    pass
+    def setUp(self) -> None:
+        config.AUDIO_ALERTS = False

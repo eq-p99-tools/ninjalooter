@@ -30,7 +30,7 @@ class MenuBar(wx.MenuBar):
 
         set_log_mi = wx.MenuItem(file_menu, wx.ID_FIND, '&Set Log Directory')
         set_log_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "gear.png"))
+            config.PROJECT_DIR, "data", "icons", "gear.png"))
         set_log_mi.SetBitmap(set_log_bitmap)
         file_menu.Append(set_log_mi)
         self.Bind(wx.EVT_MENU, self.OnConfigure, set_log_mi)
@@ -47,7 +47,7 @@ class MenuBar(wx.MenuBar):
         export_mi = wx.MenuItem(
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
         export_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "excel.png"))
+            config.PROJECT_DIR, "data", "icons", "excel.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExportExcel, export_mi)
@@ -55,7 +55,7 @@ class MenuBar(wx.MenuBar):
         export_mi = wx.MenuItem(
             file_menu, wx.ID_CONVERT, '&Export to EQDKPlus\tCtrl+P')
         export_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "export.png"))
+            config.PROJECT_DIR, "data", "icons", "export.png"))
         export_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_mi)
         self.Bind(wx.EVT_MENU, self.OnExportEQDKP, export_mi)
@@ -65,14 +65,14 @@ class MenuBar(wx.MenuBar):
         replay_mi = wx.MenuItem(file_menu, wx.ID_OPEN, '&Replay Log File')
         replay_mi.Enable(False)
         replay_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "reload.png"))
+            config.PROJECT_DIR, "data", "icons", "reload.png"))
         replay_mi.SetBitmap(replay_bitmap)
         file_menu.Append(replay_mi)
         self.Bind(wx.EVT_MENU, self.OnReplayLog, replay_mi)
 
         clear_mi = wx.MenuItem(file_menu, wx.ID_NEW, '&Clear Data')
         clear_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "clear.png"))
+            config.PROJECT_DIR, "data", "icons", "clear.png"))
         clear_mi.SetBitmap(clear_bitmap)
         file_menu.Append(clear_mi)
         self.Bind(wx.EVT_MENU, self.OnClearApp, clear_mi)
@@ -81,7 +81,7 @@ class MenuBar(wx.MenuBar):
 
         exit_mi = wx.MenuItem(file_menu, wx.ID_EXIT, '&Quit\tCtrl+W')
         exit_bitmap = wx.Bitmap(os.path.join(
-            utils.PROJECT_DIR, "data", "icons", "exit.png"))
+            config.PROJECT_DIR, "data", "icons", "exit.png"))
         exit_mi.SetBitmap(exit_bitmap)
         file_menu.Append(exit_mi)
         self.Bind(wx.EVT_MENU, parent.OnClose, exit_mi)
@@ -143,6 +143,13 @@ class MenuBar(wx.MenuBar):
         bidding_menu.Append(self.nodrop_only_mi)
         self.nodrop_only_mi.Check(config.NODROP_ONLY)
         self.Bind(wx.EVT_MENU, self.OnNodropOnly, self.nodrop_only_mi)
+
+        self.audio_alerts_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, 'Use &Audio Alerts',
+            kind=wx.ITEM_CHECK)
+        bidding_menu.Append(self.audio_alerts_mi)
+        self.audio_alerts_mi.Check(config.AUDIO_ALERTS)
+        self.Bind(wx.EVT_MENU, self.OnAudioAlerts, self.audio_alerts_mi)
 
         self.Append(bidding_menu, '&Bidding')
 
@@ -420,6 +427,12 @@ class MenuBar(wx.MenuBar):
         config.NODROP_ONLY = self.nodrop_only_mi.IsChecked()
         config.CONF.set(
             'default', 'nodrop_only', str(config.NODROP_ONLY))
+        config.write()
+
+    def OnAudioAlerts(self, e: wx.MenuEvent):
+        config.AUDIO_ALERTS = self.audio_alerts_mi.IsChecked()
+        config.CONF.set(
+            'alerts', 'enabled', str(config.AUDIO_ALERTS))
         config.write()
 
     def OnAlwaysOnTop(self, e: wx.MenuEvent):

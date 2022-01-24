@@ -327,6 +327,7 @@ class BiddingFrame(wx.Window):
         selected_object = self.active_list.GetSelectedObject()
         if not selected_object:
             return
+        selected_object.cancel()
         config.PENDING_AUCTIONS.append(selected_object.item)
         config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)
         self.pending_list.SetObjects(config.PENDING_AUCTIONS)
@@ -395,6 +396,7 @@ class BiddingFrame(wx.Window):
         selected_object = self.active_list.GetSelectedObject()
         if not selected_object:
             return
+        selected_object.complete()
         config.HISTORICAL_AUCTIONS[selected_object.item.uuid] = (
             selected_object)
         config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)

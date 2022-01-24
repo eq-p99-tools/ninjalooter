@@ -5,3 +5,4 @@ pyperclip
 python-dateutil
 XlsxWriter
 pydicti
+playsound==1.2.2  # Playsound 1.3.0 broke ... something

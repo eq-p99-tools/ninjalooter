@@ -17,6 +17,7 @@ a = Analysis(['ninjalooter\\cmd\\run.py'],
 )
 from glob import glob
 a.datas += [(filename, filename, '.') for filename in glob('data/icons/*')]
+a.datas += [(filename, filename, '.') for filename in glob('data/sounds/*')]
 a.datas += [('data/items.json', 'data/items.json', '.')]
 a.datas += [('data/spells.json', 'data/spells.json', '.')]
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
