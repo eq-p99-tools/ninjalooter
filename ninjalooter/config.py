@@ -89,6 +89,11 @@ if not CONF.has_section("theme"):
 
 # Audio alerts
 AUDIO_ALERTS = CONF.getboolean("alerts", "enabled", fallback=True)
+if not CONF.has_section("alerts"):
+    CONF.add_section("alerts")
+    CONF.set("alerts", "enabled", str(AUDIO_ALERTS))
+    write()
+
 NEW_DROP_SOUND = CONF.get(
     "alerts", "new_drop",
     fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.wav"))

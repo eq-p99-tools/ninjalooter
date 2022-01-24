@@ -439,12 +439,7 @@ class MenuBar(wx.MenuBar):
         config.ALWAYS_ON_TOP = self.alwaysontop_mi.IsChecked()
         config.CONF.set(
             'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
-        if config.ALWAYS_ON_TOP:
-            self._parent.SetWindowStyle(
-                self._parent.GetWindowStyle() | wx.STAY_ON_TOP)
-        else:
-            self._parent.SetWindowStyle(
-                self._parent.GetWindowStyle() & ~wx.STAY_ON_TOP)
+        self.GetParent().UpdateAlwaysOnTop()
         config.write()
 
     def OnShowIgnored(self, e: wx.MenuEvent):

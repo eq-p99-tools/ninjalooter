@@ -36,11 +36,31 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         self.SetIcon(icon, "NinjaLooter " + config.VERSION)
 
     def CreatePopupMenu(self):
-        self.menu = wx.Menu()
-        exit_button = wx.MenuItem(self.menu, wx.ID_ANY, 'Exit')
-        self.menu.Append(exit_button)
-        self.Bind(wx.EVT_MENU, self.frame.OnClose, exit_button)
-        return self.menu
+        menu = wx.Menu()
+
+        self.alwaysontop_mi = wx.MenuItem(
+            menu, wx.ID_ANY, 'Always On Top',
+            kind=wx.ITEM_CHECK)
+        menu.Append(self.alwaysontop_mi)
+        self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
+        self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
+
+        exit_mi = wx.MenuItem(menu, wx.ID_EXIT, 'Quit')
+        exit_bitmap = wx.Bitmap(os.path.join(
+            config.PROJECT_DIR, "data", "icons", "exit.png"))
+        exit_mi.SetBitmap(exit_bitmap)
+        menu.Append(exit_mi)
+        self.Bind(wx.EVT_MENU, self.frame.OnClose, exit_mi)
+
+        return menu
+
+    def OnAlwaysOnTop(self, e: wx.MenuEvent):
+        config.ALWAYS_ON_TOP = self.alwaysontop_mi.IsChecked()
+        self.frame.MenuBar.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
+        config.CONF.set(
+            'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
+        self.frame.UpdateAlwaysOnTop()
+        config.write()
 
 
 class MainWindow(wx.Frame):
@@ -54,11 +74,11 @@ class MainWindow(wx.Frame):
         self.SetIcon(icon)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-        # Set up taskbar icon
-        config.WX_TASKBAR_ICON = TaskBarIcon(self)
-
         # Set up menubar
         menu_bar.MenuBar(self)
+
+        # Set up taskbar icon
+        config.WX_TASKBAR_ICON = TaskBarIcon(self)
 
         # Notebook used to create a tabbed main interface
         notebook = wx.Notebook(self, style=wx.LEFT)
@@ -83,6 +103,14 @@ class MainWindow(wx.Frame):
             self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.parser_thread = logparse.ParseThread(self)
         self.parser_thread.start()
+
+    def UpdateAlwaysOnTop(self):
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(
+                self.GetWindowStyle() | wx.STAY_ON_TOP)
+        else:
+            self.SetWindowStyle(
+                self.GetWindowStyle() & ~wx.STAY_ON_TOP)
 
     def OnClose(self, e: wx.Event):
         dlg = wx.MessageDialog(
