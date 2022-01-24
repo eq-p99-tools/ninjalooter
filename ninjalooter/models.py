@@ -907,7 +907,7 @@ class Auction(DictEquals):
 
     def time_remaining_text(self) -> str:
         remaining = self.time_remaining()
-        if remaining.seconds == 0:
+        if remaining.seconds <= 30:
             return "a few moments"
         minutes = int(remaining.seconds / 60)
         seconds = remaining.seconds % 60
