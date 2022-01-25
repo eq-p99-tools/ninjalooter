@@ -85,7 +85,9 @@ def raidtick_reminder_alert() -> None:
         "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1),
         "It has been an hour since your last recorded RaidTick. "
         "You will be reminded %d more times." %
-        (10 - config.RAIDTICK_REMINDER_COUNT))
+        (10 - config.RAIDTICK_REMINDER_COUNT),
+        msec=2000
+    )
     if config.AUDIO_ALERTS:
         playsound.playsound(config.RAIDTICK_REMINDER_SOUND, False)
     if config.RAIDTICK_REMINDER_COUNT < 10:

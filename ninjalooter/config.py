@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14-rc3"
+VERSION = "1.14-rc4"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'
@@ -76,6 +76,9 @@ SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
 HIDE_ROTS = CONF.getboolean("default", "hide_rots", fallback=False)
 DROP_COOLDOWN = CONF.getint("default", "drop_cooldown", fallback=120)
 BACKUP_ON_CLEAR = CONF.getboolean("default", "backup_on_clear", fallback=True)
+AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
+                                    fallback=True)
+
 SAFE_COLOR = CONF.get("theme", "safe_color", fallback="#CCE2CB")
 WARN_COLOR = CONF.get("theme", "warn_color", fallback="#F6EAC2")
 DANGER_COLOR = CONF.get("theme", "danger_color", fallback="#FFAEA5")
@@ -153,6 +156,8 @@ SPELLS = dict()
 LAST_RAIDTICK = datetime.datetime.now()
 LAST_NUMBER = 0
 PLAYER_NAME = ""
+LATEST_LOGFILE = None
+WX_FILESYSTEM_WATCHER = None
 
 # Constants
 BASE_WIKI_URL = 'http://wiki.project1999.com'

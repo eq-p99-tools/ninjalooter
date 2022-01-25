@@ -75,10 +75,17 @@ class ParseThread(threading.Thread):
 
     def run(self):
         logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
+        config.LATEST_LOGFILE = logfile
         config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
         self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
                              .format(version=config.VERSION, name=name))
+        config.WX_TASKBAR_ICON.ShowBalloon(
+            "Now monitoring logs for %s" % name,
+            "A recently modified logfile was detected: %s" %
+            os.path.basename(logfile),
+            msec=2000
+        )
         if logfile:
             parse_logfile(logfile, self.window, self.loop_run)
 

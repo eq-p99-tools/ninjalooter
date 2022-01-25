@@ -873,7 +873,9 @@ class Auction(DictEquals):
     def _play_audio_alert(self):
         config.WX_TASKBAR_ICON.ShowBalloon(
             "Auction Ending Soon",
-            "The auction for '%s' is ending soon!" % self.item.name)
+            "The auction for '%s' is ending soon!" % self.item.name,
+            msec=2000
+        )
         config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
         if config.AUDIO_ALERTS:
             playsound.playsound(config.AUC_EXPIRING_SOUND, False)

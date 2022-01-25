@@ -35,6 +35,13 @@ class MenuBar(wx.MenuBar):
         file_menu.Append(set_log_mi)
         self.Bind(wx.EVT_MENU, self.OnConfigure, set_log_mi)
 
+        self.autoswap_mi = wx.MenuItem(
+            file_menu, wx.ID_ANY, 'Auto-Switch Characters',
+            kind=wx.ITEM_CHECK)
+        file_menu.Append(self.autoswap_mi)
+        self.autoswap_mi.Check(config.AUTO_SWAP_LOGFILE)
+        self.Bind(wx.EVT_MENU, self.OnAutoSwapLogfile, self.autoswap_mi)
+
         self.alwaysontop_mi = wx.MenuItem(
             file_menu, wx.ID_ANY, '&Always On Top',
             kind=wx.ITEM_CHECK)
@@ -345,6 +352,10 @@ class MenuBar(wx.MenuBar):
             self.GetParent().parser_thread = logparse.ParseThread(
                 self.GetParent())
             self.GetParent().parser_thread.start()
+            config.WX_FILESYSTEM_WATCHER.RemoveAll()
+            config.WX_FILESYSTEM_WATCHER.Add(
+                config.LOG_DIRECTORY,
+                events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
 
     def OnExportExcel(self, e: wx.MenuEvent):
         LOG.info("Exporting to Excel format.")
@@ -440,6 +451,12 @@ class MenuBar(wx.MenuBar):
         config.CONF.set(
             'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
         self.GetParent().UpdateAlwaysOnTop()
+        config.write()
+
+    def OnAutoSwapLogfile(self, e: wx.MenuEvent):
+        config.AUTO_SWAP_LOGFILE = self.autoswap_mi.IsChecked()
+        config.CONF.set(
+            'default', 'auto_swap_logfile', str(config.AUTO_SWAP_LOGFILE))
         config.write()
 
     def OnShowIgnored(self, e: wx.MenuEvent):

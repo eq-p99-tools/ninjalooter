@@ -104,6 +104,25 @@ class MainWindow(wx.Frame):
         self.parser_thread = logparse.ParseThread(self)
         self.parser_thread.start()
 
+        # Handle automatically switching characters
+        self.watcher = wx.FileSystemWatcher()
+        self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
+        if os.path.isdir(config.LOG_DIRECTORY):
+            self.watcher.Add(config.LOG_DIRECTORY,
+                             events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
+        config.WX_FILESYSTEM_WATCHER = self.watcher
+
+    def OnFilesystemEvent(self, e: wx.FileSystemWatcherEvent):
+        if not config.AUTO_SWAP_LOGFILE:
+            return
+        logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
+        if logfile != config.LATEST_LOGFILE:
+            config.PLAYER_NAME = name
+            config.LATEST_LOGFILE = logfile
+            self.parser_thread.abort()
+            self.parser_thread = logparse.ParseThread(self)
+            self.parser_thread.start()
+
     def UpdateAlwaysOnTop(self):
         if config.ALWAYS_ON_TOP:
             self.SetWindowStyle(
