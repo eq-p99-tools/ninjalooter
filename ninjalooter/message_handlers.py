@@ -6,7 +6,6 @@ import re
 import threading
 
 import dateutil.parser
-import playsound
 import wx
 
 from ninjalooter import config
@@ -81,15 +80,13 @@ def handle_start_who(match: re.Match, window: wx.Frame,
 
 
 def raidtick_reminder_alert() -> None:
-    config.WX_TASKBAR_ICON.ShowBalloon(
+    utils.alert_message(
         "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1),
         "It has been an hour since your last recorded RaidTick. "
         "You will be reminded %d more times." %
-        (10 - config.RAIDTICK_REMINDER_COUNT),
-        msec=2000
+        (10 - config.RAIDTICK_REMINDER_COUNT)
     )
-    if config.AUDIO_ALERTS:
-        playsound.playsound(config.RAIDTICK_REMINDER_SOUND, False)
+    utils.alert_sound(config.RAIDTICK_REMINDER_SOUND)
     if config.RAIDTICK_REMINDER_COUNT < 10:
         config.RAIDTICK_REMINDER_COUNT += 1
         config.RAIDTICK_ALERT_TIMER = threading.Timer(
@@ -202,8 +199,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
         return list()
     if used_found_items:
         wx.PostEvent(window, models.DropEvent())
-        if config.AUDIO_ALERTS:
-            playsound.playsound(config.NEW_DROP_SOUND)
+        utils.alert_sound(config.NEW_DROP_SOUND)
     if not skip_store:
         utils.store_state()
     return found_items

@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 from ninjalooter import config
 from ninjalooter import models
@@ -97,4 +98,11 @@ SAMPLE_FULL_TEST = SAMPLE_ATTENDANCE_LOGS + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
 
 class NLTestBase(unittest.TestCase):
     def setUp(self) -> None:
+        super(NLTestBase, self).setUp()
         config.AUDIO_ALERTS = False
+        config.ALLIANCES = SAMPLE_ALLIANCES
+        config.ALLIANCE_MAP = SAMPLE_ALLIANCE_MAP
+
+        thread_patcher1 = mock.patch('threading.Timer')
+        thread_patcher1.start()
+        self.addCleanup(thread_patcher1.stop)

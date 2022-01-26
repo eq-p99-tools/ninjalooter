@@ -158,6 +158,13 @@ class MenuBar(wx.MenuBar):
         self.audio_alerts_mi.Check(config.AUDIO_ALERTS)
         self.Bind(wx.EVT_MENU, self.OnAudioAlerts, self.audio_alerts_mi)
 
+        self.text_alerts_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, 'Use &Text Alerts',
+            kind=wx.ITEM_CHECK)
+        bidding_menu.Append(self.text_alerts_mi)
+        self.text_alerts_mi.Check(config.TEXT_ALERTS)
+        self.Bind(wx.EVT_MENU, self.OnTextAlerts, self.text_alerts_mi)
+
         self.Append(bidding_menu, '&Bidding')
 
         parent.SetMenuBar(self)
@@ -443,7 +450,13 @@ class MenuBar(wx.MenuBar):
     def OnAudioAlerts(self, e: wx.MenuEvent):
         config.AUDIO_ALERTS = self.audio_alerts_mi.IsChecked()
         config.CONF.set(
-            'alerts', 'enabled', str(config.AUDIO_ALERTS))
+            'alerts', 'audio_enabled', str(config.AUDIO_ALERTS))
+        config.write()
+
+    def OnTextAlerts(self, e: wx.MenuEvent):
+        config.TEXT_ALERTS = self.text_alerts_mi.IsChecked()
+        config.CONF.set(
+            'alerts', 'text_enabled', str(config.TEXT_ALERTS))
         config.write()
 
     def OnAlwaysOnTop(self, e: wx.MenuEvent):

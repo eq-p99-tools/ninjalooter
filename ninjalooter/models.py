@@ -7,7 +7,6 @@ import threading
 import uuid as uuid_lib
 
 import dateutil.parser
-import playsound
 import wx
 
 from ninjalooter import config
@@ -23,7 +22,11 @@ class DictEquals:
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.__dict__ == other.__dict__
+        self_dict = {key: self.__dict__[key] for key in self.__dict__
+                     if not key.startswith("_")}
+        other_dict = {key: other.__dict__[key] for key in other.__dict__
+                      if not key.startswith("_")}
+        return self_dict == other_dict
 
     def to_json(self):
         json_dict = {key: self.__dict__[key] for key in self.__dict__
@@ -866,19 +869,19 @@ class Auction(DictEquals):
 
         if self.time_remaining().seconds > 0:
             self._alert_timer = threading.Timer(
-                self.time_remaining().seconds, self._play_audio_alert)
+                self.time_remaining().seconds, self._do_alert)
             config.AUCTION_ALERT_TIMERS.append(self._alert_timer)
             self._alert_timer.start()
 
-    def _play_audio_alert(self):
-        config.WX_TASKBAR_ICON.ShowBalloon(
+    def _do_alert(self):
+        # import utils at runtime rather than on load to avoid circular error
+        from ninjalooter import utils
+        utils.alert_message(
             "Auction Ending Soon",
-            "The auction for '%s' is ending soon!" % self.item.name,
-            msec=2000
+            "The auction for '%s' is ending soon!" % self.item.name
         )
         config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
-        if config.AUDIO_ALERTS:
-            playsound.playsound(config.AUC_EXPIRING_SOUND, False)
+        utils.alert_sound(config.AUC_EXPIRING_SOUND)
 
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()

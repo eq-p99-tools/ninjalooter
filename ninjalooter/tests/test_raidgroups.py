@@ -8,6 +8,7 @@ from ninjalooter import raidgroups
 
 class TestRaidgroups(base.NLTestBase):
     def setUp(self) -> None:
+        super(TestRaidgroups, self).setUp()
         self.master_player_dict = {
             'War60a': models.Player('War60a', c.WARRIOR, 60, 'FoW'),
             'War60b': models.Player('War60b', c.WARRIOR, 60, 'FoW'),

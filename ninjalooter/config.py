@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14-rc4"
+VERSION = "1.14-rc5"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'
@@ -90,11 +90,13 @@ if not CONF.has_section("theme"):
     CONF.set("theme", "danger_color", DANGER_COLOR)
     write()
 
-# Audio alerts
-AUDIO_ALERTS = CONF.getboolean("alerts", "enabled", fallback=True)
+# Alerts
+AUDIO_ALERTS = CONF.getboolean("alerts", "audio_enabled", fallback=True)
+TEXT_ALERTS = CONF.getboolean("alerts", "text_enabled", fallback=True)
 if not CONF.has_section("alerts"):
     CONF.add_section("alerts")
-    CONF.set("alerts", "enabled", str(AUDIO_ALERTS))
+    CONF.set("alerts", "audio_enabled", str(AUDIO_ALERTS))
+    CONF.set("alerts", "text_enabled", str(TEXT_ALERTS))
     write()
 
 NEW_DROP_SOUND = CONF.get(

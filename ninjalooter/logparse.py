@@ -80,11 +80,10 @@ class ParseThread(threading.Thread):
         LOG.info("Starting logparser thread for %s...", name)
         self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
                              .format(version=config.VERSION, name=name))
-        config.WX_TASKBAR_ICON.ShowBalloon(
+        utils.alert_message(
             "Now monitoring logs for %s" % name,
             "A recently modified logfile was detected: %s" %
-            os.path.basename(logfile),
-            msec=2000
+            os.path.basename(logfile)
         )
         if logfile:
             parse_logfile(logfile, self.window, self.loop_run)

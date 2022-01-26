@@ -10,9 +10,8 @@ from ninjalooter import utils
 
 class TestMessageHandlers(base.NLTestBase):
     def setUp(self) -> None:
+        super(TestMessageHandlers, self).setUp()
         utils.setup_aho()
-        config.ALLIANCES = base.SAMPLE_ALLIANCES
-        config.ALLIANCE_MAP = base.SAMPLE_ALLIANCE_MAP
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')

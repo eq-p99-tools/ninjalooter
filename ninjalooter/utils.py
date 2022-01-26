@@ -10,6 +10,7 @@ import webbrowser
 
 from ahocorapy import keywordtree
 import dateutil.parser
+import playsound
 import pyperclip
 import xlsxwriter
 import xlsxwriter.exceptions
@@ -172,6 +173,16 @@ def open_wiki_url(item: models.ItemDrop) -> None:
 
 def to_clipboard(text: str) -> None:
     pyperclip.copy(text)
+
+
+def alert_message(title, message, msec=2000):
+    if config.TEXT_ALERTS and config.WX_TASKBAR_ICON is not None:
+        config.WX_TASKBAR_ICON.ShowBalloon(title, message, msec)
+
+
+def alert_sound(soundfile, block=False):
+    if config.AUDIO_ALERTS:
+        playsound.playsound(soundfile, block)
 
 
 # Thanks rici from StackOverflow for saving me time!
