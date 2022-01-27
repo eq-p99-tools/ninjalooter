@@ -102,18 +102,16 @@ class TestMessageHandlers(base.NLTestBase):
             'window', models.WhoEvent('Jim', 'Cleric', '50', None))
         mock_post_event.reset_mock()
 
-    @mock.patch('playsound.playsound')
+    @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_drop(self, mock_post_event, mock_store_state,
-                         mock_playsound):
+    def test_handle_drop(self, mock_post_event, mock_store_state):
         config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, 'Force of Will'),
             'James': models.Player('James', None, None, 'Kingdom'),
             'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
         }
         config.PENDING_AUCTIONS = list()
-        config.AUDIO_ALERTS = True
         # # FILTER OFF - Item linked by a non-federation guild member
         # config.RESTRICT_BIDS = False
         # line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
@@ -154,8 +152,8 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(0, len(config.PENDING_AUCTIONS))
         mock_post_event.assert_not_called()
         mock_post_event.reset_mock()
-        mock_playsound.assert_not_called()
-        mock_playsound.reset_mock()
+        self.mock_playsound.assert_not_called()
+        self.mock_playsound.reset_mock()
 
         # NODROP filter on, NODROP item
         line = ("[Sun Aug 16 22:47:31 2020] Jim says, "
@@ -177,8 +175,8 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
         mock_post_event.reset_mock()
-        mock_playsound.assert_called_once()
-        mock_playsound.reset_mock()
+        self.mock_playsound.assert_called_once()
+        self.mock_playsound.reset_mock()
 
         # NODROP filter off, droppable item
         config.NODROP_ONLY = False
@@ -197,8 +195,8 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
         mock_post_event.reset_mock()
-        mock_playsound.assert_called_once()
-        mock_playsound.reset_mock()
+        self.mock_playsound.assert_called_once()
+        self.mock_playsound.reset_mock()
 
         # Two items linked by a federation guild member, plus chat
         line = ("[Sun Aug 16 22:47:41 2020] James tells the guild, "
@@ -224,8 +222,8 @@ class TestMessageHandlers(base.NLTestBase):
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
         mock_post_event.reset_mock()
-        mock_playsound.assert_called_once()
-        mock_playsound.reset_mock()
+        self.mock_playsound.assert_called_once()
+        self.mock_playsound.reset_mock()
 
         # Random chatter by federation guild member
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
@@ -237,7 +235,7 @@ class TestMessageHandlers(base.NLTestBase):
             [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
-        mock_playsound.assert_not_called()
+        self.mock_playsound.assert_not_called()
 
         # Someone reports they looted an item
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
@@ -249,7 +247,7 @@ class TestMessageHandlers(base.NLTestBase):
             [jim_belt_1, jim_disc_1, james_disc, james_earring],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
-        mock_playsound.assert_not_called()
+        self.mock_playsound.assert_not_called()
 
         # Bid message doesn't register as a drop
         config.ACTIVE_AUCTIONS.clear()
@@ -268,7 +266,7 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertListEqual(['Shiverback-hide Jerkin'], items)
         self.assertListEqual([], config.PENDING_AUCTIONS)
         mock_post_event.assert_not_called()
-        mock_playsound.assert_not_called()
+        self.mock_playsound.assert_not_called()
 
         # A gratss message from another app should not register as a drop
         bid_line = ("[Sun Aug 16 22:47:31 2020] Toald tells the guild, "
@@ -311,7 +309,41 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertListEqual([jerkin_2.name], items)
         self.assertEqual(2, len(config.PENDING_AUCTIONS))
 
-        config.AUDIO_ALERTS = False
+    @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
+    @mock.patch('ninjalooter.config.WX_TASKBAR_ICON')
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_drop_alert(self, mock_post_event, mock_store_state,
+                               mock_taskbar_icon):
+        config.PENDING_AUCTIONS = list()
+        config.NODROP_ONLY = False
+
+        copper_disc_uuid = "1"
+        platinum_disc_uuid = "2"
+        jade_reaver_uuid = "3"
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Copper Disc Platinum Disc Jade Reaver'")
+        match = config.MATCH_DROP_GU.match(line)
+        with mock.patch('uuid.uuid4') as mock_uuid4:
+            mock_uuid4.return_value = [
+                copper_disc_uuid, platinum_disc_uuid, jade_reaver_uuid]
+            items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(3, len(items))
+        self.assertIn('Copper Disc', items)
+        self.assertIn('Platinum Disc', items)
+        self.assertIn('Jade Reaver', items)
+        mock_post_event.assert_called_once_with(
+            'window', models.DropEvent())
+        mock_post_event.reset_mock()
+        mock_taskbar_icon.ShowBalloon.assert_called_once_with(
+            "New Drops Detected",
+            "\u00A0\u2022 Copper Disc\n"
+            "\u00A0\u2022 Platinum Disc\n"
+            "\u00A0\u2022 Jade Reaver",
+            2000
+        )
+        self.mock_playsound.assert_called_once()
+        self.mock_playsound.reset_mock()
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')

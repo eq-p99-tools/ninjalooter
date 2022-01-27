@@ -19,7 +19,7 @@ def _HandleTypingEvent(self, evt):
         return False
 
     if evt.GetKeyCode() in (wx.WXK_BACK, wx.WXK_DELETE):
-        self.searchPrefix = u""
+        self.searchPrefix = ""
         return True
 
     # On which column are we going to compare values?

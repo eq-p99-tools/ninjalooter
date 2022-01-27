@@ -106,3 +106,8 @@ class NLTestBase(unittest.TestCase):
         thread_patcher1 = mock.patch('threading.Timer')
         thread_patcher1.start()
         self.addCleanup(thread_patcher1.stop)
+
+        self.mock_playsound = mock.Mock()
+        sound_patcher = mock.patch('playsound.playsound', self.mock_playsound)
+        sound_patcher.start()
+        self.addCleanup(sound_patcher.stop)

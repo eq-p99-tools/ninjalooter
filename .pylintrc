@@ -53,7 +53,11 @@ disable=
   too-many-branches,
 #  too-many-nested-blocks,
   too-many-statements,
-#  bare-except
+#  bare-except,
+  consider-using-f-string,
+  use-dict-literal,
+  use-list-literal,
+  unspecified-encoding,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

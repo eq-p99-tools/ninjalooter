@@ -875,6 +875,7 @@ class Auction(DictEquals):
 
     def _do_alert(self):
         # import utils at runtime rather than on load to avoid circular error
+        # pylint: disable=import-outside-toplevel
         from ninjalooter import utils
         utils.alert_message(
             "Auction Ending Soon",

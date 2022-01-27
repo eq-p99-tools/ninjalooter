@@ -599,13 +599,13 @@ def add_sample_data():
 
 
 class JSONEncoder(json.JSONEncoder):
-    def default(self, obj):  # pylint: disable=arguments-differ
+    def default(self, o):  # pylint: disable=arguments-differ
         try:
-            return obj.to_json()
+            return o.to_json()
         except AttributeError:
-            if isinstance(obj, datetime.datetime):
-                return obj.isoformat()
-            return json.JSONEncoder.default(self, obj)
+            if isinstance(o, datetime.datetime):
+                return o.isoformat()
+            return json.JSONEncoder.default(self, o)
 
 
 # Mutated from https://github.com/AlexisGomes/JsonEncoder/

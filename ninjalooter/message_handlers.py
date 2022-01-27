@@ -199,6 +199,9 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
         return list()
     if used_found_items:
         wx.PostEvent(window, models.DropEvent())
+        utils.alert_message(
+            "New Drops Detected",
+            '\n'.join(["\u00A0\u2022 %s" % drop for drop in used_found_items]))
         utils.alert_sound(config.NEW_DROP_SOUND)
     if not skip_store:
         utils.store_state()
