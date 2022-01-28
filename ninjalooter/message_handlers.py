@@ -82,15 +82,15 @@ def handle_start_who(match: re.Match, window: wx.Frame,
 def raidtick_reminder_alert() -> None:
     utils.alert_message(
         "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1),
-        "It has been an hour since your last recorded RaidTick. "
-        "You will be reminded %d more times." %
-        (10 - config.RAIDTICK_REMINDER_COUNT)
+        "It has been more than an hour since your last recorded RaidTick.\n"
+        "You will be reminded %d more times, starting in 10 minutes." %
+        (5 - config.RAIDTICK_REMINDER_COUNT)
     )
     utils.alert_sound(config.RAIDTICK_REMINDER_SOUND)
-    if config.RAIDTICK_REMINDER_COUNT < 10:
+    if config.RAIDTICK_REMINDER_COUNT < 5:
         config.RAIDTICK_REMINDER_COUNT += 1
         config.RAIDTICK_ALERT_TIMER = threading.Timer(
-            60, raidtick_reminder_alert)
+            10 * 60, raidtick_reminder_alert)
         config.RAIDTICK_ALERT_TIMER.start()
 
 

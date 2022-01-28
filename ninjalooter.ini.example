@@ -42,7 +42,8 @@ warn_color = #F6EAC2
 danger_color = #FFAEA5
 
 [alerts]
-enabled = True
+audio_enabled = True
+text_enabled = True
 new_drop = data\sounds\new_drop.wav
 auction_expiring = data\sounds\auc_expiring.wav
 raidtick_reminder = data\sounds\raidtick_reminder.wav
