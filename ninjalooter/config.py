@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14-rc6"
+VERSION = "1.14-rc7"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'
@@ -104,6 +104,10 @@ if not CONF.has_section("theme"):
 # Alerts
 AUDIO_ALERTS = CONF.getboolean("alerts", "audio_enabled", fallback=True)
 TEXT_ALERTS = CONF.getboolean("alerts", "text_enabled", fallback=True)
+SECOND_MAIN_REMINDER_DKP = CONF.getint("alerts", "second_main_reminder_dkp",
+                                       fallback=None)
+ALT_REMINDER_DKP = CONF.getint("alerts", "alt_reminder_dkp",
+                               fallback=None)
 if not CONF.has_section("alerts"):
     CONF.add_section("alerts")
     CONF.set("alerts", "audio_enabled", str(AUDIO_ALERTS))

@@ -251,6 +251,27 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                 return False
             result = auc_item.add(bid, name)
             wx.PostEvent(window, models.BidEvent(auc_item))
+            # pylint: disable=protected-access
+            if (config.SECOND_MAIN_REMINDER_DKP and
+                    bid > config.SECOND_MAIN_REMINDER_DKP and
+                    not auc_item._second_main_cap_alerted):
+                utils.alert_message(
+                    "%d DKP is above the Second-Main Cap" % bid,
+                    "%s's bid for %s is above the cap for second-mains. "
+                    "Please verify bidders are aware of this." % (name, item),
+                    msec=8000
+                )
+                auc_item._second_main_cap_alerted = True
+            elif (config.ALT_REMINDER_DKP and
+                    bid > config.ALT_REMINDER_DKP and
+                    not auc_item._alt_cap_alerted):
+                utils.alert_message(
+                    "%d DKP is above the Alt Bid Cap" % bid,
+                    "%s's bid for %s is above the cap for alts. "
+                    "Please verify bidders are aware of this." % (name, item),
+                    msec=8000
+                )
+                auc_item._alt_cap_alerted = True
             if not skip_store:
                 utils.store_state()
             return result

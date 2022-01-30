@@ -947,6 +947,8 @@ class DKPAuction(Auction):
     bids = None
     min_dkp = None
     alliance = None
+    _alt_cap_alerted = False
+    _second_main_cap_alerted = False
 
     def __init__(self, item: ItemDrop, alliance: str, bids=None,
                  min_dkp=None, **kwargs):
