@@ -60,3 +60,5 @@ default = 1
 sheet_url =
 sheet_name_column = Item
 sheet_value_column = Minimum
+sheet_restrictions_column = Restrictions
+sheet_droppable_column = Droppable

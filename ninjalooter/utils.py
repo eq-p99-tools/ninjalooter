@@ -3,6 +3,7 @@
 import collections
 import csv
 import datetime
+import distutils.util
 import inspect
 import json
 import os
@@ -191,6 +192,14 @@ def alert_sound(soundfile, block=False):
             playsound.playsound(soundfile, block)
         except:  # noqa
             LOG.exception("Couldn't play soundfile.")
+
+
+def clear_alerts():
+    if config.RAIDTICK_ALERT_TIMER:
+        config.RAIDTICK_ALERT_TIMER.cancel()
+        config.RAIDTICK_REMINDER_COUNT = 0
+    for timer in config.AUCTION_ALERT_TIMERS:
+        timer.cancel()
 
 
 # Thanks rici from StackOverflow for saving me time!
@@ -639,10 +648,21 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
                 else:
                     mindkp_row = -3
             item = {'min_dkp': mindkp_row}
-            if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
-                item['classes'] = list(map(
-                    lambda x: x.strip(),
-                    row[config.MIN_DKP_RESTR_COL].split(",")))
+            try:
+                if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
+                    item['classes'] = list(map(
+                        lambda x: x.strip(),
+                        row[config.MIN_DKP_RESTR_COL].split(",")))
+            except:  # noqa
+                LOG.warning("Couldn't parse column `%s` for row: %s",
+                            config.MIN_DKP_DROP_COL, row)
+            try:
+                if config.MIN_DKP_DROP_COL and row[config.MIN_DKP_DROP_COL]:
+                    item['nodrop'] = bool(distutils.util.strtobool(
+                        row[config.MIN_DKP_DROP_COL]))
+            except:  # noqa
+                LOG.warning("Couldn't parse column `%s` for row: %s",
+                            config.MIN_DKP_DROP_COL, row)
             output[row[config.MIN_DKP_NAME_COL]] = item
         except:  # noqa
             LOG.warning("Couldn't parse row: %s", row)

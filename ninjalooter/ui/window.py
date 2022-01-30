@@ -140,11 +140,8 @@ class MainWindow(wx.Frame):
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_OK:
+            utils.clear_alerts()
             config.WX_TASKBAR_ICON.Destroy()
-            if config.RAIDTICK_ALERT_TIMER:
-                config.RAIDTICK_ALERT_TIMER.cancel()
-            for timer in config.AUCTION_ALERT_TIMERS:
-                timer.cancel()
             self.parser_thread.abort()
             utils.store_state()
             self.Destroy()

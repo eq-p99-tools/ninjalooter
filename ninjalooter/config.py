@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14-rc8"
+VERSION = "1.14-rc9"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'
@@ -89,6 +89,8 @@ MIN_DKP_NAME_COL = CONF.get("min_dkp", "sheet_name_column", fallback='Item')
 MIN_DKP_VAL_COL = CONF.get("min_dkp", "sheet_value_column", fallback='Minimum')
 MIN_DKP_RESTR_COL = CONF.get(
     "min_dkp", "sheet_restrictions_column", fallback='Restrictions')
+MIN_DKP_DROP_COL = CONF.get(
+    "min_dkp", "sheet_droppable_column", fallback='Droppable')
 
 SAFE_COLOR = CONF.get("theme", "safe_color", fallback="#CCE2CB")
 WARN_COLOR = CONF.get("theme", "warn_color", fallback="#F6EAC2")

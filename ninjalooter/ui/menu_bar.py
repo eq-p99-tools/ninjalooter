@@ -435,6 +435,7 @@ class MenuBar(wx.MenuBar):
         if result == wx.ID_OK:
             utils.store_state(backup=True)
             wx.PostEvent(self.GetParent(), models.AppClearEvent())
+            utils.clear_alerts()
 
     def OnRestrict(self, e: wx.MenuEvent):
         config.RESTRICT_BIDS = self.restrict_mi.IsChecked()
