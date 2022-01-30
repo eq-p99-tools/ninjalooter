@@ -1,5 +1,7 @@
 # pylint: disable=no-member,invalid-name,unused-argument
 # pylint: disable=too-many-locals,too-many-statements
+import datetime
+
 import ObjectListView
 import wx
 import wx.lib.splitter
@@ -152,6 +154,14 @@ class BiddingFrame(wx.Window):
 
         active_button_undo = wx.Button(pane_2, label="Undo")
         active_buttonspacer = wx.StaticLine(pane_2)
+        active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
+        self.active_buttons_timespinner = wx.SpinCtrl(
+            pane_2, min=1, max=30, initial=1, size=(40, 22))
+        active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
+        active_button_timesub = wx.Button(pane_2, label="-", size=(15, 22))
+        active_buttons_timebox.Add(active_button_timesub)
+        active_buttons_timebox.Add(self.active_buttons_timespinner)
+        active_buttons_timebox.Add(active_button_timeadd)
         active_button_gettext = wx.Button(pane_2, label="Copy Bid")
         active_button_complete = wx.Button(pane_2, label="Complete")
         active_button_wiki = wx.Button(pane_2, label="Wiki?")
@@ -161,13 +171,16 @@ class BiddingFrame(wx.Window):
             value=config.PRIMARY_BID_CHANNEL,
             style=wx.CB_READONLY)
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
-        active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=10)
-        active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=10)
-        active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=10)
-        active_buttons_box.Add(active_button_wiki, flag=wx.TOP, border=10)
-        active_buttons_box.Add(active_cb_bid_target, flag=wx.TOP, border=10)
+        active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_button_wiki, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_cb_bid_target, flag=wx.TOP, border=6)
 
         active_button_undo.Bind(wx.EVT_BUTTON, self.UndoStart)
+        active_button_timeadd.Bind(wx.EVT_BUTTON, self.AucTimeDelta)
+        active_button_timesub.Bind(wx.EVT_BUTTON, self.AucTimeDelta)
         active_button_gettext.Bind(wx.EVT_BUTTON, self.CopyBidText)
         active_button_complete.Bind(wx.EVT_BUTTON, self.CompleteAuction)
         active_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiActive)
@@ -421,6 +434,17 @@ class BiddingFrame(wx.Window):
             list(config.HISTORICAL_AUCTIONS.values()))
         self.active_list.SelectObject(selected_object)
         utils.store_state()
+
+    def AucTimeDelta(self, e: wx.Event):
+        selected_object = self.active_list.GetSelectedObject()
+        if not selected_object:
+            return
+        delta = datetime.timedelta(
+            minutes=self.active_buttons_timespinner.Value)
+        if e.EventObject.Label == "-":
+            selected_object.start_time -= delta
+        else:
+            selected_object.start_time += delta
 
     def CopyBidText(self, e: wx.Event):
         selected_object = self.active_list.GetSelectedObject()
