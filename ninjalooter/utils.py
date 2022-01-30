@@ -628,7 +628,17 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
     output = {}
     for row in csv_data:
         try:
-            item = {'min_dkp': int(row[config.MIN_DKP_VAL_COL] or "1")}
+            mindkp_row = row[config.MIN_DKP_VAL_COL] or "1"
+            try:
+                mindkp_row = int(mindkp_row)
+            except ValueError:
+                if mindkp_row.lower().strip() == "random":
+                    mindkp_row = -1
+                elif mindkp_row.lower().strip() == "bank":
+                    mindkp_row = -2
+                else:
+                    mindkp_row = -3
+            item = {'min_dkp': mindkp_row}
             if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
                 item['classes'] = list(map(
                     lambda x: x.strip(),

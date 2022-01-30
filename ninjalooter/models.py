@@ -842,7 +842,14 @@ class ItemDrop(DictEquals):
         if self.min_dkp_override:
             return self.min_dkp_override
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name, {})
-        return extra_item_data.get('min_dkp', config.MIN_DKP)
+        minimum = extra_item_data.get('min_dkp', config.MIN_DKP)
+        if minimum == -1:
+            return "Random"
+        if minimum == -2:
+            return "Bank"
+        if minimum == -3:
+            return "???"
+        return minimum
 
     def __str__(self):
         return "{name} ({reporter} @ {time})".format(
@@ -966,7 +973,7 @@ class DKPAuction(Auction):
             LOG.info("%s attempted to bid for %s but didn't post a number",
                      player, self.item)
             return False
-        if number < self.min_dkp:
+        if type(self.min_dkp) == int and number < self.min_dkp:
             # Bid too low
             LOG.info("%s attempted to bid for %s but bid too low: %d < %d",
                      player, self.item, number, self.min_dkp)
