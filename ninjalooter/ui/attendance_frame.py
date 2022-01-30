@@ -54,13 +54,16 @@ class AttendanceFrame(wx.Window):
         attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         attendance_list.SetEmptyListMsg(
             "No who log history.\nPlease type `/who` ingame.")
+        attendance_list.SetToolTip(
+            "Double click an attendance record to edit it in a detailed view")
 
         # Attendance / Raidtick Buttons
         attendance_buttons_box = wx.BoxSizer(wx.VERTICAL)
         attendance_box.Add(attendance_buttons_box,
                            flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
         attendance_button_raidtick = wx.CheckBox(pane_1, label="Raidtick Only")
-        attendance_buttons_box.Add(attendance_button_raidtick)
+        attendance_buttons_box.Add(attendance_button_raidtick,
+                                   flag=wx.ALL, border=6)
         attendance_button_raidtick.Bind(wx.EVT_CHECKBOX, self.OnRaidtickOnly)
         self.attendance_button_raidtick = attendance_button_raidtick
         attendance_button_raidtick.SetValue(config.SHOW_RAIDTICK_ONLY)

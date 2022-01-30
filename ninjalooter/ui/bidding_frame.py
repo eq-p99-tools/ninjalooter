@@ -70,6 +70,7 @@ class BiddingFrame(wx.Window):
         ])
         pending_list.SetObjects(config.PENDING_AUCTIONS)
         pending_list.SetEmptyListMsg("No drops pending.")
+        pending_list.SetToolTip("Double click an item to ignore it")
 
         # Buttons
         pending_buttons_box = wx.BoxSizer(wx.VERTICAL)
@@ -142,6 +143,8 @@ class BiddingFrame(wx.Window):
         ])
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         active_list.SetEmptyListMsg("No auctions pending.")
+        active_list.SetToolTip(
+            "Double click an auction to edit bid the history")
         self.active_list_refresh_timer = wx.Timer(self, id=1)
         self.Bind(wx.EVT_TIMER, self.refresh_active_list,
                   self.active_list_refresh_timer)
@@ -158,7 +161,9 @@ class BiddingFrame(wx.Window):
         self.active_buttons_timespinner = wx.SpinCtrl(
             pane_2, min=1, max=30, initial=1, size=(40, 22))
         active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
+        active_button_timeadd.SetToolTip("Add time to Auction")
         active_button_timesub = wx.Button(pane_2, label="-", size=(15, 22))
+        active_button_timesub.SetToolTip("Remove time from Auction")
         active_buttons_timebox.Add(active_button_timesub)
         active_buttons_timebox.Add(self.active_buttons_timespinner)
         active_buttons_timebox.Add(active_button_timeadd)
@@ -170,6 +175,8 @@ class BiddingFrame(wx.Window):
             choices=list(config.BID_CHANNEL_OPTIONS),
             value=config.PRIMARY_BID_CHANNEL,
             style=wx.CB_READONLY)
+        active_cb_bid_target.SetToolTip("Selected channel will be used for "
+                                        "Auction clipboard messages")
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
         active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
@@ -223,6 +230,8 @@ class BiddingFrame(wx.Window):
         history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
         history_list.SetEmptyListMsg("No auctions completed.")
+        history_list.SetToolTip(
+            "Double click an auction to edit bid the history")
 
         # Buttons
         history_buttons_box = wx.BoxSizer(wx.VERTICAL)

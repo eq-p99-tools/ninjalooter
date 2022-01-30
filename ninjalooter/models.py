@@ -984,7 +984,7 @@ class DKPAuction(Auction):
 
     def highest(self) -> list:
         if not self.bids:
-            LOG.debug("No bids yet for %s", self.item)
+            # LOG.debug("No bids yet for %s", self.item)
             return list()
         bid = max(self.bids)
         bidder = self.bids[bid]
