@@ -34,6 +34,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
                 config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
                       wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon, "NinjaLooter " + config.VERSION)
+        self.alwaysontop_mi = None
 
     def CreatePopupMenu(self):
         menu = wx.Menu()

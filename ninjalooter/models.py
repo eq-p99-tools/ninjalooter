@@ -1,4 +1,4 @@
-# pylint: disable=no-member
+# pylint: disable=no-member,too-many-lines
 
 from __future__ import annotations
 import datetime
@@ -198,9 +198,7 @@ class Group(DictEquals):
 
         # add scores for top two tanks to group score, and remove top two
         # tanks from available_list
-        target_count = len(sorted_target_list)
-        if target_count > 2:
-            target_count = 2
+        target_count = min(len(sorted_target_list), 2)
 
         while target_count > 0:
             player_score, player = sorted_target_list.pop(0)
@@ -346,9 +344,7 @@ class Group(DictEquals):
 
         # add scores for top two tanks to group score, and remove top five
         # clerics from available_list
-        target_count = len(sorted_target_list)
-        if target_count > 5:
-            target_count = 5
+        target_count = min(len(sorted_target_list), 5)
 
         while target_count > 0:
             player_score, player = sorted_target_list.pop(0)
@@ -429,9 +425,7 @@ class Group(DictEquals):
 
         # add scores for top two tanks to group score, and remove top three
         # monks from available_list
-        target_count = len(sorted_target_list)
-        if target_count > 3:
-            target_count = 3
+        target_count = min(len(sorted_target_list), 3)
 
         while target_count > 0:
             player_score, player = sorted_target_list.pop(0)
@@ -835,7 +829,7 @@ class ItemDrop(DictEquals):
         if not extra_item_data:
             return ""
         classes = extra_item_data.get('classes', [])
-        return ', '.join(classes)
+        return ', '.join(map(lambda x: x.strip(), classes))
 
     def droppable(self) -> str:
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
@@ -860,7 +854,7 @@ class Auction(DictEquals):
     start_time = None
     _alert_timer = None
 
-    def __init__(self, item: ItemDrop, start_time=None, **kwargs):
+    def __init__(self, item: ItemDrop, start_time=None, **_):
         self.item = item
         if start_time:
             self.start_time = dateutil.parser.DEFAULTPARSER.parse(start_time)

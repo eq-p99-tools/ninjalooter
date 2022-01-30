@@ -2,7 +2,11 @@
 import json
 import pydicti
 
+from ninjalooter import config
 from ninjalooter import constants
+from ninjalooter import logger
+
+LOG = logger.getLogger(__name__)
 
 TIMER_MOBS = {
     "a thunder spirit": 1,
@@ -1124,6 +1128,13 @@ EXTRA_ITEM_DATA = pydicti.Dicti({
         "nodrop": True,
     },
 })
+
+if config.MIN_DKP_SHEET_URL:
+    from ninjalooter import utils
+    data = utils.fetch_google_sheet_data(config.MIN_DKP_SHEET_URL)
+    if data:
+        mindkp_data = utils.translate_sheet_csv_to_mindkp_json(data)
+        EXTRA_ITEM_DATA.update(mindkp_data)
 
 try:
     with open('item_data.json') as extra_item_data:

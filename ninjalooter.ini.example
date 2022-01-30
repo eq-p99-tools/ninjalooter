@@ -1,7 +1,6 @@
 [default]
 logdir = C:\Everquest\Logs\
 numbers = 1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999
-min_dkp = 1
 min_bid_time = 150
 restrict_bids = False
 nodrop_only = True
@@ -35,6 +34,9 @@ bid_message_reminder = "[{item}]{classes} - BID IN /{channel}. You MUST include 
 roll_message = "[{item}]{classes} ROLL {target} NOW!"
 grats_message_bid = "Gratss {player} on [{item}] ({number} DKP)!"
 grats_message_roll = "Gratss {player} on [{item}] with {roll} / {target}!"
+# The old excel export function was causing confusion.
+# Tou can manually enable it if you REALLY want to use it.
+allow_excel_export = False
 
 [theme]
 safe_color = #CCE2CB
@@ -47,3 +49,12 @@ text_enabled = True
 new_drop = data\sounds\new_drop.wav
 auction_expiring = data\sounds\auc_expiring.wav
 raidtick_reminder = data\sounds\raidtick_reminder.wav
+
+[min_dkp]
+# Global default minimum DKP for any item if not otherwise specified
+default = 1
+
+# You can provide a URL for a Google Sheet with Item/Minimum columns
+sheet_url =
+sheet_name_column = Item
+sheet_value_column = Minimum

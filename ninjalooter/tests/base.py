@@ -95,6 +95,41 @@ SAMPLE_KILL_TIMES = """
 
 SAMPLE_FULL_TEST = SAMPLE_ATTENDANCE_LOGS + SAMPLE_OOC_DROP + SAMPLE_AUC_BID
 
+SAMPLE_GSHEETS_TEXT = (
+    'Era,Zone,Boss,Item,Minimum,Restrictions,Notes\r\n'
+    'Classic,Permafrost,Lady Vox,White Wolf-hide Girdle,10,,\r\n'
+    'Classic,Permafrost,Lady Vox,White Dragon Scales,100,,epic\r\n'
+    'Test,Nowhere,Noone,My Item,,"BRD, CLR",no dkp min\r\n'
+)
+SAMPLE_GSHEETS_DATA = [
+    {'Era': 'Classic',
+     'Zone': 'Permafrost',
+     'Boss': 'Lady Vox',
+     'Item': 'White Wolf-hide Girdle',
+     'Minimum': '10',
+     'Restrictions': '',
+     'Notes': ''},
+    {'Era': 'Classic',
+     'Zone': 'Permafrost',
+     'Boss': 'Lady Vox',
+     'Item': 'White Dragon Scales',
+     'Minimum': '100',
+     'Restrictions': '',
+     'Notes': 'epic'},
+    {'Era': 'Test',
+     'Zone': 'Nowhere',
+     'Boss': 'Noone',
+     'Item': 'My Item',
+     'Minimum': '',
+     'Restrictions': 'BRD, CLR',
+     'Notes': 'no dkp min'},
+]
+SAMPLE_GSHEETS_MINDKP_JSON = {
+     'My Item': {'classes': ['BRD', 'CLR'], 'min_dkp': 1},
+     'White Dragon Scales': {'min_dkp': 100},
+     'White Wolf-hide Girdle': {'min_dkp': 10}
+}
+
 
 class NLTestBase(unittest.TestCase):
     def setUp(self) -> None:

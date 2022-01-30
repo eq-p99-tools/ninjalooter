@@ -66,7 +66,7 @@ GRATS_MESSAGE_ROLL = CONF.get(
     fallback=DEFAULT_GRATS_MESSAGE_ROLL
 )
 GRATS_MESSAGE_ROLL = GRATS_MESSAGE_ROLL.strip("\"\'")
-MIN_DKP = CONF.getint("default", "min_dkp", fallback=1)
+MIN_DKP_OLD = CONF.getint("default", "min_dkp", fallback=1)
 MIN_BID_TIME = CONF.getint("default", "min_bid_time", fallback=150) + 1
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
@@ -78,6 +78,17 @@ DROP_COOLDOWN = CONF.getint("default", "drop_cooldown", fallback=120)
 BACKUP_ON_CLEAR = CONF.getboolean("default", "backup_on_clear", fallback=True)
 AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
                                     fallback=True)
+ALLOW_EXCEL_EXPORT = CONF.getboolean("default", "allow_excel_export",
+                                     fallback=False)
+
+if not CONF.has_section("min_dkp"):
+    CONF.add_section("min_dkp")
+MIN_DKP = CONF.getint("min_dkp", "default", fallback=MIN_DKP_OLD)
+MIN_DKP_SHEET_URL = CONF.get("min_dkp", "sheet_url", fallback=None)
+MIN_DKP_NAME_COL = CONF.get("min_dkp", "sheet_name_column", fallback='Item')
+MIN_DKP_VAL_COL = CONF.get("min_dkp", "sheet_value_column", fallback='Minimum')
+MIN_DKP_RESTR_COL = CONF.get(
+    "min_dkp", "sheet_restrictions_column", fallback='Restrictions')
 
 SAFE_COLOR = CONF.get("theme", "safe_color", fallback="#CCE2CB")
 WARN_COLOR = CONF.get("theme", "warn_color", fallback="#F6EAC2")

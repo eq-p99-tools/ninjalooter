@@ -1,4 +1,4 @@
-# pylint: disable=no-member
+# pylint: disable=no-member,unused-argument
 
 import copy
 import datetime
@@ -80,11 +80,15 @@ def handle_start_who(match: re.Match, window: wx.Frame,
 
 
 def raidtick_reminder_alert() -> None:
+    reminder_message = (
+        "It has been more than an hour since your last recorded RaidTick.\n"
+        "You will be reminded %d more times.%s" %
+        (5 - config.RAIDTICK_REMINDER_COUNT))
+    if config.RAIDTICK_REMINDER_COUNT >= 5:
+        reminder_message += " Next reminder: 10 minutes."
     utils.alert_message(
         "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1),
-        "It has been more than an hour since your last recorded RaidTick.\n"
-        "You will be reminded %d more times, starting in 10 minutes." %
-        (5 - config.RAIDTICK_REMINDER_COUNT)
+        reminder_message
     )
     utils.alert_sound(config.RAIDTICK_REMINDER_SOUND)
     if config.RAIDTICK_REMINDER_COUNT < 5:

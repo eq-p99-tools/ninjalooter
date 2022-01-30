@@ -61,7 +61,7 @@ class BiddingFrame(wx.Window):
                                       fixedWidth=225),
             ObjectListView.ColumnDefn("Min. DKP", "center", 61, "min_dkp",
                                       fixedWidth=61),
-            ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
+            ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes",
                                       fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
@@ -124,7 +124,7 @@ class BiddingFrame(wx.Window):
         active_list.SetColumns([
             ObjectListView.ColumnDefn("Item", "left", 215, "name",
                                       fixedWidth=215),
-            ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
+            ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes",
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
@@ -196,7 +196,7 @@ class BiddingFrame(wx.Window):
         history_list.SetColumns([
             ObjectListView.ColumnDefn("Item", "left", 240, "name",
                                       fixedWidth=240),
-            ObjectListView.ColumnDefn("Classes", "left", 95, "classes",
+            ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes",
                                       fixedWidth=95),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),
@@ -460,7 +460,8 @@ class BiddingFrame(wx.Window):
     def ShowActiveDetail(self, e: wx.EVT_LEFT_DCLICK):
         return self.ShowItemDetail(self.active_list)
 
-    def SelectBidTarget(self, e: wx.EVT_COMBOBOX):
+    @staticmethod
+    def SelectBidTarget(e: wx.EVT_COMBOBOX):
         config.PRIMARY_BID_CHANNEL = e.String
         config.CONF.set(
             'default', 'primary_bid_channel', config.PRIMARY_BID_CHANNEL)
@@ -556,7 +557,7 @@ class IgnoredItemsWindow(wx.Frame):
                                       fixedWidth=80),
             ObjectListView.ColumnDefn("Item", "left", 178, "name",
                                       fixedWidth=178),
-            ObjectListView.ColumnDefn("Classes", "left", 85, "classes",
+            ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes",
                                       fixedWidth=85),
             ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
                                       fixedWidth=70),

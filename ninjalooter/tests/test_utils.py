@@ -1,4 +1,5 @@
 from unittest import mock
+import requests_mock
 
 from ninjalooter import models
 from ninjalooter.tests import base
@@ -85,3 +86,43 @@ class TestUtils(base.NLTestBase):
         utils.setup_aho()
         self.assertTrue(utils.config.TRIE._finalized)
         self.assertGreater(utils.config.TRIE._counter, 100000)
+
+    @requests_mock.Mocker()
+    def test_fetch_google_sheet_data(self, mock_requests):
+        test_id = "1vIHTT-YqlS5V8qkCQF8du5Xgl-QOVu1nMNjk_h8eLDQ"
+        test_url = (
+            "https://docs.google.com/spreadsheets/d/{id}/edit#gid=0"
+        ).format(id=test_id)
+
+        csv_url = (
+            "https://docs.google.com/spreadsheets/d/{id}/export?format=csv"
+        ).format(id=test_id)
+        mock_requests.get(csv_url, text=base.SAMPLE_GSHEETS_TEXT)
+
+        # Fetch URL from ID
+        data = utils.fetch_google_sheet_data(test_id)
+        self.assertListEqual(
+            list(base.SAMPLE_GSHEETS_DATA[0].keys()), data.fieldnames)
+        self.assertEqual(base.SAMPLE_GSHEETS_DATA, list(data))
+
+        # Fetch URL from URL
+        data = utils.fetch_google_sheet_data(test_url)
+        self.assertListEqual(
+            list(base.SAMPLE_GSHEETS_DATA[0].keys()), data.fieldnames)
+        self.assertEqual(base.SAMPLE_GSHEETS_DATA, list(data))
+
+        # Fail gracefully if URL has no valid ID
+        self.assertIsNone(utils.fetch_google_sheet_data("http://google.com"))
+
+        # Fail gracefully if URL can't be fetched
+        mock_requests.get(csv_url, status_code=404)
+        self.assertIsNone(utils.fetch_google_sheet_data(test_url))
+
+        # Fail gracefully if URL returns bad/no data
+        mock_requests.get(csv_url, text="<html>This isn't csv</html>")
+        self.assertEqual([], list(utils.fetch_google_sheet_data(test_url)))
+
+    def test_translate_sheet_csv_to_mindkp_json(self):
+        data = utils.translate_sheet_csv_to_mindkp_json(
+            base.SAMPLE_GSHEETS_DATA)
+        self.assertEqual(base.SAMPLE_GSHEETS_MINDKP_JSON, data)

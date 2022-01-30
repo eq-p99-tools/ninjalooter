@@ -1,4 +1,4 @@
-# pylint: disable=no-member,invalid-name,unused-argument
+# pylint: disable=no-member,invalid-name,unused-argument,duplicate-code
 import ObjectListView
 import wx
 import wx.lib.splitter

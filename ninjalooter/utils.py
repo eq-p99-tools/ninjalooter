@@ -1,6 +1,7 @@
 # pylint: disable=too-many-locals,too-many-branches
 
 import collections
+import csv
 import datetime
 import inspect
 import json
@@ -12,6 +13,7 @@ from ahocorapy import keywordtree
 import dateutil.parser
 import playsound
 import pyperclip
+import requests
 import xlsxwriter
 import xlsxwriter.exceptions
 
@@ -179,7 +181,7 @@ def alert_message(title, message, msec=2000):
     if config.TEXT_ALERTS and config.WX_TASKBAR_ICON is not None:
         try:
             config.WX_TASKBAR_ICON.ShowBalloon(title, message, msec)
-        except:
+        except:  # noqa
             LOG.exception("Couldn't show alert balloon.")
 
 
@@ -187,7 +189,7 @@ def alert_sound(soundfile, block=False):
     if config.AUDIO_ALERTS:
         try:
             playsound.playsound(soundfile, block)
-        except:
+        except:  # noqa
             LOG.exception("Couldn't play soundfile.")
 
 
@@ -266,7 +268,7 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
         return None
     # if the first timestamp is equal or after the timestamp, return it
     if first_ts >= timestamp:
-        return first_index
+        return first_index  # pylint: disable=undefined-loop-variable
 
     # find the last timestamp, with line number
     for item in reversed(lines):
@@ -590,6 +592,52 @@ def export_to_eqdkp(filename):
         return True
     except xlsxwriter.exceptions.FileCreateError:
         return False
+
+
+def fetch_google_sheet_data(url):
+    # Parse out the spreadsheet ID
+    pattern1 = r".*/spreadsheets/d/([\w\-]+)/.*"
+    pattern2 = r"^([\w\-]+)$"
+    match = re.match(pattern1, url) or re.match(pattern2, url)
+    if not match:
+        LOG.error("Couldn't parse spreadsheet ID from URL: %s", url)
+        return None
+    sheet_id = match.group(1)
+
+    # Get the data in CSV format
+    new_url = (
+        "https://docs.google.com/spreadsheets/d/{id}/export?format=csv"
+    ).format(id=sheet_id)
+    req = requests.get(new_url)
+    if req.status_code != 200:
+        LOG.error("Couldn't fetch spreadsheet `%s`: %d",
+                  sheet_id, req.status_code)
+        return None
+
+    # Load the csv
+    try:
+        data = csv.DictReader(req.text.splitlines())
+    except:  # noqa
+        LOG.exception("Couldn't parse spreadsheet data.")
+        return None
+
+    return data
+
+
+def translate_sheet_csv_to_mindkp_json(csv_data):
+    output = {}
+    for row in csv_data:
+        try:
+            item = {'min_dkp': int(row[config.MIN_DKP_VAL_COL] or "1")}
+            if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
+                item['classes'] = list(map(
+                    lambda x: x.strip(),
+                    row[config.MIN_DKP_RESTR_COL].split(",")))
+            output[row[config.MIN_DKP_NAME_COL]] = item
+        except:  # noqa
+            LOG.warning("Couldn't parse row: %s", row)
+            continue
+    return output
 
 
 def add_sample_data():
