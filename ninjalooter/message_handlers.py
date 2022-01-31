@@ -16,8 +16,18 @@ from ninjalooter import utils
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
-AWARD_MESSAGE_MATCHER = re.compile(
-    r"Gratss (?P<name>\w+) on \[(?P<item>.*?)] \((?P<dkp>\d+) DKP\)!")
+AWARD_MESSAGE_MATCHER = "~" + config.GRATS_MESSAGE_BID
+REPLACEMENTS = [
+    ("[", r"\["), ("]", r"\]"),
+    ("(", r"\("), (")", r"\)"),
+    ("{player}", r"(?P<name>\w+)"),
+    ("{number}", r"(?P<dkp>\d+)"),
+    ("{item}", r"(?P<item>.*?)"),
+    ("{", r"\{"), ("}", r"\}")
+]
+for before, after in REPLACEMENTS:
+    AWARD_MESSAGE_MATCHER = AWARD_MESSAGE_MATCHER.replace(before, after)
+AWARD_MESSAGE_MATCHER = re.compile(AWARD_MESSAGE_MATCHER)
 NUMBER_MATCHER = re.compile(r".*\d.*")
 
 

@@ -277,7 +277,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.HISTORICAL_AUCTIONS[auction1.item.uuid] = (
             config.ACTIVE_AUCTIONS.pop(auction1.item.uuid))
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
+                "'~Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
         match = config.MATCH_DROP_GU.match(line)
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([], items)
@@ -507,31 +507,31 @@ class TestMessageHandlers(base.NLTestBase):
 
         # A gratss message from auction history should not register (bids)
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
+                "'~Gratss Toald on [Shiverback-hide Jerkin] (1 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertFalse(message_handlers.handle_gratss(match, 'window'))
 
         # A gratss message from auction history should not register (no bids)
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Gratss ROT on [Copper Disc] (0 DKP)!'")
+                "'~Gratss ROT on [Copper Disc] (0 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertFalse(message_handlers.handle_gratss(match, 'window'))
 
         # A gratss message that doesn't match auction history SHOULD register
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
-                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+                "'~Gratss Jim on [Bladestopper] (100 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertTrue(message_handlers.handle_gratss(match, 'window'))
 
         # A gratss message direct to /tell should register (no tell windows)
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells you, "
-                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+                "'~Gratss Jim on [Bladestopper] (100 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertTrue(message_handlers.handle_gratss(match, 'window'))
 
         # A gratss message direct to /tell should register (tell windows)
         line = ("[Sun Aug 16 22:47:31 2020] Jim -> You, "
-                "'Gratss Jim on [Bladestopper] (100 DKP)!'")
+                "'~Gratss Jim on [Bladestopper] (100 DKP)!'")
         match = config.MATCH_GRATSS.match(line)
         self.assertTrue(message_handlers.handle_gratss(match, 'window'))
 

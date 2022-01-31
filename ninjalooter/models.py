@@ -800,12 +800,14 @@ class WhoLog(DictEquals):
     time = None
     log = None
     raidtick = False
+    tick_name = None
 
-    def __init__(self, time, log, raidtick=False):
+    def __init__(self, time, log, raidtick=False, tick_name=None):
         super().__init__()
         self.time = time
         self.log = log
         self.raidtick = raidtick
+        self.tick_name = tick_name
 
     def eqtime(self) -> str:
         return self.time.strftime("%a %b %d %H:%M:%S %Y")

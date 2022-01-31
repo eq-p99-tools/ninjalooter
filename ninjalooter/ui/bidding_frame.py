@@ -160,6 +160,7 @@ class BiddingFrame(wx.Window):
         active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
         self.active_buttons_timespinner = wx.SpinCtrl(
             pane_2, min=1, max=30, initial=1, size=(40, 22))
+        self.active_buttons_timespinner.SetToolTip("Minutes to add/remove")
         active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
         active_button_timeadd.SetToolTip("Add time to Auction")
         active_button_timesub = wx.Button(pane_2, label="-", size=(15, 22))

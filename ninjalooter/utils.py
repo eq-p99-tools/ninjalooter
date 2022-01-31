@@ -497,14 +497,15 @@ def export_to_eqdkp(filename):
         if wholog.raidtick:
             tick_time = wholog.eqtime()
             tick_lines = []
-            for member, guild in wholog.log.items():
+            for member, player_obj in wholog.log.items():
+                guild = player_obj.guild
                 if config.RESTRICT_BIDS and guild not in \
                         config.ALLIANCES[config.DEFAULT_ALLIANCE]:
                     continue
                 tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
                 tick_lines.append(tick_line)
             if tick_lines:
-                raidtick_logs.append(tick_lines)
+                raidtick_logs.append((wholog.tick_name, tick_lines))
 
     # Get all raw creditt/gratss messages
     creditt_messages = [x.raw_message for x in config.CREDITT_LOG]
@@ -541,16 +542,19 @@ def export_to_eqdkp(filename):
         creditt_sheet.write_string(len(creditt_messages) + row + 1, 0, gratss)
 
     # Create a page per raidtick
-    for tick in raidtick_logs:
+    for tick_name, tick in raidtick_logs:
         tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group('time')
         parsed_time = dateutil.parser.parse(tick_timestamp)
-        time_str = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
-        worksheet = workbook.add_worksheet(time_str)
+        if tick_name:
+            sheet_name = tick_name
+        else:
+            sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
+        worksheet = workbook.add_worksheet(sheet_name)
         sheets[parsed_time] = worksheet
         # Write /who logs
         for row, line in enumerate(tick):
             worksheet.write_string(row, 0, line)
-            sheet_rows[time_str] = row + 1
+            sheet_rows[sheet_name] = row + 1
     # If there weren't any ticks, just make one sheet to hold loot
     if not sheets and closed_loots:
         sheets["Loot"] = workbook.add_worksheet("Loot")

@@ -35,33 +35,41 @@ class AttendanceFrame(wx.Window):
         attendance_box = wx.BoxSizer(wx.HORIZONTAL)
         attendance_list = ObjectListView.ObjectListView(
             pane_1, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(650, 600))
+            size=wx.Size(680, 600))
         attendance_box.Add(attendance_list, flag=wx.EXPAND | wx.ALL)
         attendance_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowAttendanceDetail)
+        attendance_list.Bind(wx.EVT_RIGHT_DCLICK, self.OnMarkRaidtick)
         self.attendance_list = attendance_list
 
         attendance_list.SetColumns([
             ObjectListView.ColumnDefn(
-                "Time", "left", 180, "time",
-                fixedWidth=180),
+                "Time", "left", 140, "time",
+                fixedWidth=140),
+            ObjectListView.ColumnDefn(
+                "Name", "left", 140, "tick_name",
+                fixedWidth=140),
             ObjectListView.ColumnDefn(
                 "RT", "left", 25, "raidtick_display",
                 fixedWidth=25),
             ObjectListView.ColumnDefn(
-                "Populations", "left", 425, "populations",
-                fixedWidth=425),
+                "Populations", "left", 357, "populations",
+                fixedWidth=357),
         ])
         attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         attendance_list.SetEmptyListMsg(
             "No who log history.\nPlease type `/who` ingame.")
         attendance_list.SetToolTip(
-            "Double click an attendance record to edit it in a detailed view")
+            "Double left-click an attendance record to edit it in a detailed "
+            "view.\n"
+            "Double right-click an attendance record to toggle its RaidTick "
+            "status.")
 
         # Attendance / Raidtick Buttons
         attendance_buttons_box = wx.BoxSizer(wx.VERTICAL)
         attendance_box.Add(attendance_buttons_box,
                            flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        attendance_button_raidtick = wx.CheckBox(pane_1, label="Raidtick Only")
+        attendance_button_raidtick = wx.CheckBox(
+            pane_1, label="Show RaidTicks Only")
         attendance_buttons_box.Add(attendance_button_raidtick,
                                    flag=wx.ALL, border=6)
         attendance_button_raidtick.Bind(wx.EVT_CHECKBOX, self.OnRaidtickOnly)
@@ -70,8 +78,14 @@ class AttendanceFrame(wx.Window):
         if config.SHOW_RAIDTICK_ONLY:
             self.OnRaidtickOnly(None)
 
+        attendance_toggle_raidtick = wx.Button(
+            pane_1, label="Toggle RaidTick", size=(140, 22))
+        attendance_toggle_raidtick.Bind(wx.EVT_BUTTON, self.OnMarkRaidtick)
+        attendance_buttons_box.Add(
+            attendance_toggle_raidtick, border=5, flag=wx.ALL)
+
         attendance_use_raidgroups = wx.Button(
-            pane_1, label="Calculate Raid Groups")
+            pane_1, label="Calculate Raid Groups", size=(140, 22))
         attendance_use_raidgroups.Bind(wx.EVT_BUTTON, self.OnCalcRaidGroups)
         attendance_buttons_box.Add(
             attendance_use_raidgroups, border=5, flag=wx.ALL)
@@ -103,7 +117,8 @@ class AttendanceFrame(wx.Window):
         creditt_buttons_box = wx.BoxSizer(wx.VERTICAL)
         creditt_box.Add(creditt_buttons_box,
                         flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        creditt_button_ignore = wx.Button(pane_2, label="Ignore Creditt")
+        creditt_button_ignore = wx.Button(
+            pane_2, label="Ignore Creditt", size=(140, 22))
         creditt_buttons_box.Add(creditt_button_ignore)
         creditt_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnoreCreditt)
 
@@ -134,7 +149,8 @@ class AttendanceFrame(wx.Window):
         gratss_buttons_box = wx.BoxSizer(wx.VERTICAL)
         gratss_box.Add(gratss_buttons_box,
                        flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        gratss_button_ignore = wx.Button(pane_3, label="Ignore Gratss")
+        gratss_button_ignore = wx.Button(
+            pane_3, label="Ignore Gratss", size=(140, 22))
         gratss_buttons_box.Add(gratss_button_ignore)
         gratss_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnoreGratss)
 
@@ -239,6 +255,15 @@ class AttendanceFrame(wx.Window):
             selected_object, parent=self,
             title="Attendance Record: {}".format(selected_object.time))
 
+    def OnMarkRaidtick(self, e: wx.EVT_RIGHT_DCLICK):
+        selected_object = self.attendance_list.GetSelectedObject()
+        if not selected_object:
+            return
+        selected_object.raidtick = not selected_object.raidtick
+        self.OnRaidtickOnly(e)
+        self.attendance_list.SelectObject(selected_object)
+        utils.store_state()
+
 
 class AttendanceDetailWindow(wx.Frame):
     def __init__(self, item, parent=None, title="Attendance Record"):
@@ -257,10 +282,16 @@ class AttendanceDetailWindow(wx.Frame):
         remove_button.Bind(wx.EVT_BUTTON, self.OnRemovePlayer)
         button_box.Add(remove_button, border=5, flag=wx.ALL)
 
+        name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22),
+                                   value=item.tick_name or "")
+        name_textbox.SetHint("Tick Name")
+        name_textbox.Bind(wx.EVT_TEXT, self.OnNameTick)
+        button_box.Add(name_textbox, flag=wx.TOP | wx.LEFT, border=6)
+
         raidtick_checkbox = wx.CheckBox(self, label="Raidtick")
         raidtick_checkbox.SetValue(item.raidtick)
         raidtick_checkbox.Bind(wx.EVT_CHECKBOX, self.OnRaidtickCheck)
-        bs = wx.SizerFlags().Border(wx.LEFT, 140).CenterVertical()
+        bs = wx.SizerFlags().Border(wx.LEFT, 5).CenterVertical()
         button_box.Add(raidtick_checkbox, bs)
         self.raidtick_checkbox = raidtick_checkbox
 
@@ -291,6 +322,7 @@ class AttendanceDetailWindow(wx.Frame):
     def OnRaidtickCheck(self, e: wx.EVT_CHECKBOX):
         self.item.raidtick = self.raidtick_checkbox.IsChecked()
         self.GetParent().OnRaidtickOnly(e)
+        utils.store_state()
 
     def OnRemovePlayer(self, e: wx.EVT_BUTTON):
         selected_player = self.attendance_record.GetSelectedObject()
@@ -300,6 +332,7 @@ class AttendanceDetailWindow(wx.Frame):
         self.item.log.pop(selected_player.name)
         self.attendance_record.RemoveObject(selected_player)
         self.Update()
+        utils.store_state()
 
     def OnAddPlayer(self, e: wx.EVT_BUTTON):
         name_dialog = wx.TextEntryDialog(self, "Player name:", "Add Player")
@@ -317,3 +350,8 @@ class AttendanceDetailWindow(wx.Frame):
         self.item.log[player_name] = player_record
         self.attendance_record.AddObject(player_record)
         self.attendance_record.Update()
+        utils.store_state()
+
+    def OnNameTick(self, e: wx.EVT_TEXT):
+        self.item.tick_name = e.EventObject.Value
+        utils.store_state()
