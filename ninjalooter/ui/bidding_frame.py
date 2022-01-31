@@ -426,6 +426,7 @@ class BiddingFrame(wx.Window):
             list(config.ACTIVE_AUCTIONS.values()))
         self.history_list.SetObjects(
             list(config.HISTORICAL_AUCTIONS.values()))
+        self.OnHideRot(None)
         self.history_list.SelectObject(selected_object)
         self.CopyWinText(e)
         utils.store_state()
