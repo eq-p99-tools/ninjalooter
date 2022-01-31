@@ -182,7 +182,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # penalty points if not a warrior
                 if p.is_knight():
@@ -216,7 +220,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # penalty points if not a torp shaman
                 if not p.is_torp_shaman():
@@ -248,7 +256,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -276,7 +288,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -328,7 +344,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # penalty points if not a cleric
                 if not p.is_cleric():
@@ -362,7 +382,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # penalty points if not a torp shaman
                 if not p.is_bard():
@@ -413,7 +437,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to target list
                 target_list.append((player_score, p))
@@ -443,7 +471,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -471,7 +503,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -499,7 +535,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -546,7 +586,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
@@ -574,7 +618,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to target list
                 target_list.append((player_score, p))
@@ -602,7 +650,11 @@ class Group(DictEquals):
                 player_score = self.MAX_SLOT
 
                 # penalty points for level < 60
-                player_score -= (60 - p.level) * self.LEVEL_PENALTY
+                try:
+                    player_level = int(p.level)
+                except (ValueError, TypeError):
+                    player_level = 0
+                player_score -= (60 - player_level) * self.LEVEL_PENALTY
 
                 # add to list
                 target_list.append((player_score, p))
