@@ -973,7 +973,7 @@ class DKPAuction(Auction):
             LOG.info("%s attempted to bid for %s but didn't post a number",
                      player, self.item)
             return False
-        if type(self.min_dkp) == int and number < self.min_dkp:
+        if isinstance(self.min_dkp, int) and number < self.min_dkp:
             # Bid too low
             LOG.info("%s attempted to bid for %s but bid too low: %d < %d",
                      player, self.item, number, self.min_dkp)
@@ -1189,7 +1189,11 @@ class WhoEvent(LogEvent):
         self.SetEventType(EVT_WHO)
         self.name = name
         self.pclass = pclass
-        self.level = level
+        try:
+            self.level = int(level)
+        except (ValueError, TypeError):
+            LOG.exception("Couldn't parse level to int: %s", level)
+            self.level = 0
         self.guild = guild
 
     def __eq__(self, other):

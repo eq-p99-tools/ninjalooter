@@ -138,7 +138,11 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
         LOG.info("Updating player history for %s from %s to %s",
                  name, config.PLAYER_DB[name].guild, guild)
         config.PLAYER_DB[name].pclass = pclass
-        config.PLAYER_DB[name].level = level
+        try:
+            config.PLAYER_DB[name].level = int(level)
+        except (ValueError, TypeError):
+            LOG.exception("Couldn't parse level to int: %s", level)
+            config.PLAYER_DB[name].level = 0
         config.PLAYER_DB[name].guild = guild
     elif guild:
         LOG.info("Updating player history for RP %s from %s to %s",
