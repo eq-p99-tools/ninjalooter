@@ -69,6 +69,8 @@ class RaidGroupsFrame(wx.Window):
 
     def OnClearApp(self, e: models.AppClearEvent):
         config.RAID_GROUPS = raidgroups.GroupBuilder()
+        for child in self.raidgroups_main_box.GetChildren():
+            child.Show(False)
         self.raidgroups_main_box.Clear()
         self.no_groups_text.Show()
         e.Skip()
