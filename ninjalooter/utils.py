@@ -399,8 +399,7 @@ def store_state(backup=False):
 
 
 def export_to_excel(filename):
-    LOG.warning("Export to filename %s: NOT IMPLEMENTED",
-                filename)
+    LOG.info("Exporting to Excel file: %s", filename)
 
     # Completed Auctions
     excel_data = {
@@ -449,7 +448,9 @@ def export_to_excel(filename):
         if data:
             worksheet = workbook.add_worksheet(page)
             worksheet.write_row(0, 0, data[0].keys(), bold)
-            worksheet.set_column(0, 1, 22)
+            worksheet.set_column(0, 0, 22)
+            worksheet.set_column(1, 1, 30)
+            worksheet.set_column(2, 2, 16)
             row_num = 1
             for row in data:
                 worksheet.write_row(row_num, 0, row.values())
@@ -474,13 +475,21 @@ def export_to_excel(filename):
                 except Exception:
                     return False
 
-            attendance_sheet.write_row(0, 0, ('name', 'guild'), bold)
-            attendance_sheet.set_column(0, 1, 18)
+            attendance_sheet.write_row(
+                0, 0, ('name', 'level', 'class', 'guild'), bold)
+            attendance_sheet.set_column(0, 0, 18)
+            attendance_sheet.set_column(1, 1, 8)
+            attendance_sheet.set_column(2, 3, 18)
             row_num = 1
-            for name, guild in entry.log.items():
-                attendance_sheet.write_row(row_num, 0, (name, guild))
+            for name, player_obj in entry.log.items():
+                attendance_sheet.write_row(
+                    row_num, 0,
+                    (name,
+                     player_obj.level if player_obj.level != 0 else "",
+                     player_obj.pclass,
+                     player_obj.guild))
                 row_num += 1
-            attendance_sheet.autofilter(0, 0, row_num - 1, 1)
+            attendance_sheet.autofilter(0, 0, row_num - 1, 3)
 
     # Save the workbook
     try:
@@ -491,6 +500,8 @@ def export_to_excel(filename):
 
 
 def export_to_eqdkp(filename):
+    LOG.info("Exporting to EQDKP file: %s", filename)
+
     # Recreate /who lines for each recorded raidtick
     raidtick_logs = []
     for wholog in config.ATTENDANCE_LOGS:
@@ -502,7 +513,10 @@ def export_to_eqdkp(filename):
                 if config.RESTRICT_BIDS and guild not in \
                         config.ALLIANCES[config.DEFAULT_ALLIANCE]:
                     continue
-                tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
+                level_class = "ANONYMOUS"
+                if player_obj.level:
+                    level_class = f"{player_obj.level} {player_obj.pclass}"
+                tick_line = f"[{tick_time}] [{level_class}] {member} <{guild}>"
                 tick_lines.append(tick_line)
             if tick_lines:
                 raidtick_logs.append((wholog.tick_name, tick_lines))

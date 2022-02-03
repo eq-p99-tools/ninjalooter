@@ -193,12 +193,15 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     skip = False
     for item in found_items:
         if item.lower() in utils.get_active_item_names():
+            LOG.debug("Skipping drop %s because it is already up for auction.")
             continue
         for pending in config.PENDING_AUCTIONS:
             pending_time = dateutil.parser.parse(pending.timestamp)
             if (item.lower() == pending.name.lower() and
                     (now - pending_time).seconds < config.DROP_COOLDOWN):
                 skip = True
+                LOG.debug("Skipping drop %s because of DROP_COOLDOWN config.",
+                          item)
                 break
         if skip:
             skip = False
@@ -258,7 +261,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                     "Ignoring bid by %s because `%s` is a random auction.",
                     name, item)
                 return False
-            if config.RESTRICT_BIDS and alliance != auc_item.alliance:
+            if config.RESTRICT_BIDS and guild and alliance != auc_item.alliance:
                 # Player is not in the correct alliance
                 LOG.info("%s attempted to bid for %s, but is in the wrong "
                          "guild/alliance: %s/%s", name, item, guild, alliance)

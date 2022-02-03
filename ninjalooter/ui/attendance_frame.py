@@ -209,13 +209,16 @@ class AttendanceFrame(wx.Window):
         config.SHOW_RAIDTICK_ONLY = self.attendance_button_raidtick.IsChecked()
         config.CONF.set(
             'default', 'raidtick_filter', str(config.SHOW_RAIDTICK_ONLY))
+        self.RefreshList()
+        config.write()
+
+    def RefreshList(self):
         if config.SHOW_RAIDTICK_ONLY:
             # Filter to raidtick only
             raidticks = [x for x in config.ATTENDANCE_LOGS if x.raidtick]
             self.attendance_list.SetObjects(raidticks)
         else:
             self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
-        config.write()
 
     def OnCalcRaidGroups(self, e: wx.Event):
         selected_tick = self.attendance_list.GetSelectedObject()
@@ -268,6 +271,7 @@ class AttendanceFrame(wx.Window):
 class AttendanceDetailWindow(wx.Frame):
     def __init__(self, item, parent=None, title="Attendance Record"):
         wx.Frame.__init__(self, parent, title=title, size=(420, 800))
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.item = item
 
         main_box = wx.BoxSizer(wx.VERTICAL)
@@ -282,15 +286,13 @@ class AttendanceDetailWindow(wx.Frame):
         remove_button.Bind(wx.EVT_BUTTON, self.OnRemovePlayer)
         button_box.Add(remove_button, border=5, flag=wx.ALL)
 
-        name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22),
-                                   value=item.tick_name or "")
-        name_textbox.SetHint("Tick Name")
-        name_textbox.Bind(wx.EVT_TEXT, self.OnNameTick)
-        button_box.Add(name_textbox, flag=wx.TOP | wx.LEFT, border=6)
+        self.name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22),
+                                        value=item.tick_name or "")
+        self.name_textbox.SetHint("Tick Name")
+        button_box.Add(self.name_textbox, flag=wx.TOP | wx.LEFT, border=6)
 
         raidtick_checkbox = wx.CheckBox(self, label="Raidtick")
         raidtick_checkbox.SetValue(item.raidtick)
-        raidtick_checkbox.Bind(wx.EVT_CHECKBOX, self.OnRaidtickCheck)
         bs = wx.SizerFlags().Border(wx.LEFT, 5).CenterVertical()
         button_box.Add(raidtick_checkbox, bs)
         self.raidtick_checkbox = raidtick_checkbox
@@ -318,11 +320,6 @@ class AttendanceDetailWindow(wx.Frame):
 
         self.SetSizer(main_box)
         self.Show()
-
-    def OnRaidtickCheck(self, e: wx.EVT_CHECKBOX):
-        self.item.raidtick = self.raidtick_checkbox.IsChecked()
-        self.GetParent().OnRaidtickOnly(e)
-        utils.store_state()
 
     def OnRemovePlayer(self, e: wx.EVT_BUTTON):
         selected_player = self.attendance_record.GetSelectedObject()
@@ -352,6 +349,9 @@ class AttendanceDetailWindow(wx.Frame):
         self.attendance_record.Update()
         utils.store_state()
 
-    def OnNameTick(self, e: wx.EVT_TEXT):
-        self.item.tick_name = e.EventObject.Value
+    def OnClose(self, e: wx.EVT_CLOSE):
+        self.item.raidtick = self.raidtick_checkbox.IsChecked()
+        self.item.tick_name = self.name_textbox.Value
+        self.GetParent().RefreshList()
         utils.store_state()
+        self.Destroy()

@@ -1096,6 +1096,16 @@ class DKPAuction(Auction):
                     min=self.get_target_min(), classes=classes,
                     time_remaining=self.time_remaining_text(),
                 )
+        if config.PRIMARY_BID_CHANNEL == "unset":
+            # import utils at runtime rather than on load to avoid circular error
+            # pylint: disable=import-outside-toplevel
+            from ninjalooter import utils
+            utils.alert_message(
+                "Default Bid Channel Unset",
+                "You don't have a default bidding channel set. Please set a "
+                "default bidding channel (to the right of the Active Auctions "
+                "section of the Bidding tab).",
+                msec=5000)
         return bid_message
 
     def win_text(self) -> str:
