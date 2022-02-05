@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14.0"
+VERSION = "1.14.1"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 CONFIG_FILENAME = 'ninjalooter.ini'

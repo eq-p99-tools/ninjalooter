@@ -278,7 +278,7 @@ class MenuBar(wx.MenuBar):
         LOG.debug("Last line: %s", loglines[max(last_index - 1, 0)])
         picked_lines = loglines[first_index:last_index]
         total_picked_lines = len(picked_lines)
-        parse_progress_dialog = wx.ProgressDialog(
+        parse_progress_dialog = wx.GenericProgressDialog(
             title="Parsing Logs...",
             message="Please wait while your logfile is parsed.",
             maximum=total_picked_lines,

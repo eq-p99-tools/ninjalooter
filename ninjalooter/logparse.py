@@ -80,13 +80,19 @@ class ParseThread(threading.Thread):
         LOG.info("Starting logparser thread for %s...", name)
         self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
                              .format(version=config.VERSION, name=name))
-        utils.alert_message(
-            "Now monitoring logs for %s" % name,
-            "A recently modified logfile was detected: %s" %
-            os.path.basename(logfile)
-        )
         if logfile:
+            utils.alert_message(
+                "Now monitoring logs for %s" % name,
+                "A recently modified logfile was detected: %s" %
+                os.path.basename(logfile)
+            )
             parse_logfile(logfile, self.window, self.loop_run)
+        else:
+            utils.alert_message(
+                "Not monitoring any logs",
+                "No logfile detected. Please configure your EQ Log Directory "
+                "via the File menu."
+            )
 
     def abort(self):
         self.loop_run.clear()

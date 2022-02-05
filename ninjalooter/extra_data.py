@@ -1129,16 +1129,21 @@ EXTRA_ITEM_DATA = pydicti.Dicti({
     },
 })
 
-if config.MIN_DKP_SHEET_URL:
-    from ninjalooter import utils
-    data = utils.fetch_google_sheet_data(config.MIN_DKP_SHEET_URL)
-    if data:
-        mindkp_data = utils.translate_sheet_csv_to_mindkp_json(data)
-        EXTRA_ITEM_DATA.update(mindkp_data)
 
-try:
-    with open('item_data.json') as extra_item_data:
-        OVERRIDE_EXTRA_ITEM_DATA = pydicti.Dicti(json.load(extra_item_data))
-    EXTRA_ITEM_DATA.update(OVERRIDE_EXTRA_ITEM_DATA)
-except FileNotFoundError:
-    pass
+def apply_sheet_overrides():
+    if config.MIN_DKP_SHEET_URL:
+        # pylint: disable=import-outside-toplevel
+        from ninjalooter import utils
+        data = utils.fetch_google_sheet_data(config.MIN_DKP_SHEET_URL)
+        if data:
+            mindkp_data = utils.translate_sheet_csv_to_mindkp_json(data)
+            EXTRA_ITEM_DATA.update(mindkp_data)
+
+
+def apply_custom_overrides():
+    try:
+        with open('item_data.json') as extra_item_data:
+            override_data = pydicti.Dicti(json.load(extra_item_data))
+        EXTRA_ITEM_DATA.update(override_data)
+    except FileNotFoundError:
+        pass
