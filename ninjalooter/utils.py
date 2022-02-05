@@ -676,7 +676,7 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
                             config.MIN_DKP_DROP_COL, row)
             try:
                 if config.MIN_DKP_DROP_COL and row[config.MIN_DKP_DROP_COL]:
-                    item['nodrop'] = bool(distutils.util.strtobool(
+                    item['nodrop'] = not bool(distutils.util.strtobool(
                         row[config.MIN_DKP_DROP_COL]))
             except:  # noqa
                 LOG.warning("Couldn't parse column `%s` for row: %s",
