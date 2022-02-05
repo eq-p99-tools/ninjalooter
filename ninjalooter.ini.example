@@ -1,5 +1,6 @@
 [default]
 logdir = C:\Everquest\Logs\
+# List of numbers to cycle through for random rolls
 numbers = 1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999
 min_bid_time = 150
 restrict_bids = False
@@ -8,6 +9,7 @@ raidtick_filter = False
 alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle,Ancient Blood,Gathered Might;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
 default_alliance = Force of Will
 hide_rots = False
+# If an item is linked more than once in drop_cooldown seconds, ignore it
 drop_cooldown = 120
 always_on_top = False
 backup_on_clear = True
@@ -46,6 +48,7 @@ danger_color = #FFAEA5
 [alerts]
 audio_enabled = True
 text_enabled = True
+# Soundfiles should be specified by absolute path, or relative to ninjalooter.exe
 new_drop = data\sounds\new_drop.wav
 auction_expiring = data\sounds\auc_expiring.wav
 raidtick_reminder = data\sounds\raidtick_reminder.wav
@@ -56,9 +59,17 @@ raidtick_reminder = data\sounds\raidtick_reminder.wav
 # Global default minimum DKP for any item if not otherwise specified
 default = 1
 
-# You can provide a URL for a Google Sheet with Item/Minimum columns
+# You can provide a URL for a Google Sheet with Item/Minimum columns.
+# The first row should be headers, as configured below.
+# This sheet_url can be a full https link, or just the spreadsheet ID
 sheet_url =
+# This column should contain the exact item name. If unsure compare to items.json
 sheet_name_column = Item
+# This column should contain the min-dkp for the item, or one of: "bank", "random"
 sheet_value_column = Minimum
+# This column can contain any bidding restrictions, like classes or pre-reqs, though
+# keep in mind that the display is only big enough for about 14 letters
 sheet_restrictions_column = Restrictions
+# This column indicates whether the item is "droppable", and should be some truthy
+# value like "Yes", "True", "1" or "No", "False", "0" (case-insensitive)
 sheet_droppable_column = Droppable
