@@ -112,6 +112,7 @@ class TestMessageHandlers(base.NLTestBase):
             'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
         }
         config.PENDING_AUCTIONS = list()
+        config.ACTIVE_AUCTIONS = {}
         # # FILTER OFF - Item linked by a non-federation guild member
         # config.RESTRICT_BIDS = False
         # line = ("[Sun Aug 16 22:47:31 2020] Dan says out of character, "
@@ -402,15 +403,6 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
 
-        # Someone we haven't seen bids on an active item
-        line = ("[Sun Aug 16 22:47:31 2020] Paul auctions, "
-                "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
-        result = message_handlers.handle_bid(match, 'window')
-        self.assertFalse(result)
-        self.assertListEqual([], disc_auction.highest())
-        mock_post_event.assert_not_called()
-
         # Someone in the alliance says random stuff with a number
         line = ("[Sun Aug 16 22:47:31 2020] Tim auctions, "
                 "'I am 12 and what channel is this'")
@@ -428,6 +420,17 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
         mock_post_event.assert_not_called()
+
+        # Someone we haven't seen bids on an active item
+        line = ("[Sun Aug 16 22:47:31 2020] Paul auctions, "
+                "'Copper Disc 5 DKP'")
+        match = config.MATCH_BID[0].match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertListEqual([('Paul', 5)], disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
 
         # Someone in the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "

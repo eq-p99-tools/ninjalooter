@@ -929,7 +929,7 @@ class Auction(DictEquals):
             self._alert_timer.start()
 
     def _do_alert(self):
-        # import utils at runtime rather than on load to avoid circular error
+        # import at runtime rather than on load to avoid circular error
         # pylint: disable=import-outside-toplevel
         from ninjalooter import utils
         utils.alert_message(
@@ -1097,7 +1097,7 @@ class DKPAuction(Auction):
                     time_remaining=self.time_remaining_text(),
                 )
         if config.PRIMARY_BID_CHANNEL == "unset":
-            # import utils at runtime rather than on load to avoid circular error
+            # import at runtime rather than on load to avoid circular error
             # pylint: disable=import-outside-toplevel
             from ninjalooter import utils
             utils.alert_message(

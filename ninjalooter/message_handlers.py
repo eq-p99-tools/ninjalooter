@@ -261,7 +261,8 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                     "Ignoring bid by %s because `%s` is a random auction.",
                     name, item)
                 return False
-            if config.RESTRICT_BIDS and guild and alliance != auc_item.alliance:
+            if (config.RESTRICT_BIDS and guild and
+                    alliance != auc_item.alliance):
                 # Player is not in the correct alliance
                 LOG.info("%s attempted to bid for %s, but is in the wrong "
                          "guild/alliance: %s/%s", name, item, guild, alliance)
