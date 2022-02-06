@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14.1"
+VERSION = "1.14.2"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 NEEDS_WRITE = False
