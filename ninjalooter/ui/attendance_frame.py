@@ -319,6 +319,9 @@ class AttendanceDetailWindow(wx.Frame):
         attendance_record.AlwaysShowScrollbars(False, True)
 
         self.SetSizer(main_box)
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(
+                self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
     def OnRemovePlayer(self, e: wx.EVT_BUTTON):
@@ -351,7 +354,7 @@ class AttendanceDetailWindow(wx.Frame):
 
     def OnClose(self, e: wx.EVT_CLOSE):
         self.item.raidtick = self.raidtick_checkbox.IsChecked()
-        self.item.tick_name = self.name_textbox.Value
+        self.item.tick_name = self.name_textbox.GetValue()
         self.GetParent().RefreshList()
         utils.store_state()
         self.Destroy()

@@ -174,6 +174,10 @@ def open_wiki_url(item: models.ItemDrop) -> None:
     webbrowser.open(url)
 
 
+def open_generic_url(url: str) -> None:
+    webbrowser.open(url)
+
+
 def to_clipboard(text: str) -> None:
     pyperclip.copy(text)
 

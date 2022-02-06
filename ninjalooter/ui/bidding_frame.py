@@ -549,6 +549,9 @@ class ItemDetailWindow(wx.Frame):
         self.bid_data = text_area
 
         self.SetSizer(main_box)
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(
+                self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
     def OnClose(self, e: wx.Event):
@@ -603,6 +606,9 @@ class IgnoredItemsWindow(wx.Frame):
         self.ignored_list = ignored_list
 
         self.SetSizer(main_box)
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(
+                self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
     def OnRefresh(self, e: models.IgnoreEvent):

@@ -1,4 +1,5 @@
 import wx
+import wx.html
 
 from ninjalooter import autoupdate
 from ninjalooter import extra_data

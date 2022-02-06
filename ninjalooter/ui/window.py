@@ -2,9 +2,12 @@
 
 import os.path
 
+import markdown2
 import ObjectListView
 import wx
+import wx.html
 
+from ninjalooter import autoupdate
 from ninjalooter import config
 from ninjalooter import logger
 from ninjalooter import logparse
@@ -113,6 +116,10 @@ class MainWindow(wx.Frame):
                              events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
         config.WX_FILESYSTEM_WATCHER = self.watcher
 
+        # Show Changelog on new version
+        if config.LAST_RUN_VERSION != config.VERSION:
+            ChangeLog(self)
+
     def OnFilesystemEvent(self, e: wx.FileSystemWatcherEvent):
         if not config.AUTO_SWAP_LOGFILE:
             return
@@ -145,3 +152,38 @@ class MainWindow(wx.Frame):
             self.parser_thread.abort()
             utils.store_state()
             self.Destroy()
+
+
+class ChangeLog(wx.Frame):
+    def __init__(self, parent=None):
+        try:
+            version, tag_data = autoupdate.get_release_from_github(
+                config.VERSION)
+        except:  # noqa
+            LOG.exception("Failed to fetch changelog data from GitHub.")
+            return
+        title = f"Changelog for {version}"
+        wx.Frame.__init__(self, parent, title=title, size=(600, 400))
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        self.changelog_data = markdown2.markdown(tag_data['body'])
+
+        self.html_win = wx.html.HtmlWindow(self)
+        self.html_win.SetPage(self.changelog_data)
+        self.html_win.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OpenURL)
+        if config.ALWAYS_ON_TOP:
+            self.SetWindowStyle(
+                self.GetWindowStyle() | wx.STAY_ON_TOP)
+        self.html_win.SetBackgroundColour(wx.Colour("#eff7fa"))
+        self.Show()
+
+    @staticmethod
+    def OpenURL(e: wx.html.EVT_HTML_LINK_CLICKED):
+        url = e.GetLinkInfo().GetHref()
+        utils.open_generic_url(url)
+
+    def OnClose(self, e: wx.EVT_CLOSE):
+        config.LAST_RUN_VERSION = config.VERSION
+        config.CONF.set("default", "last_run_version", config.VERSION)
+        config.write()
+        self.Destroy()

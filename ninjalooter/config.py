@@ -8,6 +8,7 @@ import re
 VERSION = "1.14.1"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
+NEEDS_WRITE = False
 CONFIG_FILENAME = 'ninjalooter.ini'
 CONF = configparser.ConfigParser()
 CONF.read(CONFIG_FILENAME)
@@ -80,6 +81,7 @@ AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
                                     fallback=True)
 ALLOW_EXCEL_EXPORT = CONF.getboolean("default", "allow_excel_export",
                                      fallback=False)
+LAST_RUN_VERSION = CONF.get("default", "last_run_version", fallback=None)
 
 if not CONF.has_section("min_dkp"):
     CONF.add_section("min_dkp")
@@ -101,7 +103,7 @@ if not CONF.has_section("theme"):
     CONF.set("theme", "safe_color", SAFE_COLOR)
     CONF.set("theme", "warn_color", WARN_COLOR)
     CONF.set("theme", "danger_color", DANGER_COLOR)
-    write()
+    NEEDS_WRITE = True
 
 # Alerts
 AUDIO_ALERTS = CONF.getboolean("alerts", "audio_enabled", fallback=True)
@@ -114,7 +116,7 @@ if not CONF.has_section("alerts"):
     CONF.add_section("alerts")
     CONF.set("alerts", "audio_enabled", str(AUDIO_ALERTS))
     CONF.set("alerts", "text_enabled", str(TEXT_ALERTS))
-    write()
+    NEEDS_WRITE = True
 
 NEW_DROP_SOUND = CONF.get(
     "alerts", "new_drop",
@@ -272,3 +274,6 @@ MATCH_BID = [BID_CHANNEL_OPTIONS[chan.strip().lower()]
              if chan.strip().lower() in BID_CHANNEL_OPTIONS]
 PRIMARY_BID_CHANNEL = CONF.get("default", "primary_bid_channel",
                                fallback="unset")
+
+if NEEDS_WRITE:
+    write()

@@ -16,6 +16,8 @@ from ninjalooter import logger
 LOG = logger.getLogger(__name__)
 GITHUB_API_LATEST_RELEASE_URL = (
     "https://api.github.com/repos/rm-you/ninjalooter/releases/latest")
+GITHUB_API_TAGGED_RELEASE_URL = (
+    "https://api.github.com/repos/rm-you/ninjalooter/releases/tags/{tag}")
 
 if os.path.exists("github_auth.json"):
     with open("github_auth.json") as gha:
@@ -26,14 +28,16 @@ else:
     get = requests.get
 
 
-def get_newest_release_from_github():
-    latest = get(GITHUB_API_LATEST_RELEASE_URL).json()
-    latest_version = semver.VersionInfo.parse(latest['tag_name'])
-    assets_url = latest['assets_url']
-    return latest_version, assets_url
+def get_release_from_github(tag=None):
+    if tag:
+        tag_data = get(GITHUB_API_TAGGED_RELEASE_URL.format(tag=tag)).json()
+    else:
+        tag_data = get(GITHUB_API_LATEST_RELEASE_URL).json()
+    version = semver.VersionInfo.parse(tag_data['tag_name'])
+    return version, tag_data
 
 
-def download_and_unpack(url):
+def download_and_unpack(url: str):
     # pylint: disable=no-member
     asset_data = get(url).json()
     zip_url = None
@@ -74,7 +78,7 @@ def download_and_unpack(url):
 def check_update():
     # pylint: disable=no-member
     current_version = semver.VersionInfo.parse(VERSION)
-    newest_version, newest_url = get_newest_release_from_github()
+    newest_version, tag_data = get_release_from_github()
     if newest_version > current_version:
         au_win = wx.MessageDialog(
             None,
@@ -85,7 +89,7 @@ def check_update():
         result = au_win.ShowModal()
         au_win.Destroy()
         if result == wx.ID_YES:
-            newest_exe = download_and_unpack(newest_url)
+            newest_exe = download_and_unpack(tag_data['assets_url'])
             if newest_exe:
                 current_exe = os.path.basename(sys.executable).lower()
                 if not current_exe.startswith("python"):
