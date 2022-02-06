@@ -75,7 +75,7 @@ ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
 SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
                                      fallback=False)
 HIDE_ROTS = CONF.getboolean("default", "hide_rots", fallback=False)
-DROP_COOLDOWN = CONF.getint("default", "drop_cooldown", fallback=120)
+DROP_COOLDOWN = CONF.getint("default", "drop_cooldown", fallback=60)
 BACKUP_ON_CLEAR = CONF.getboolean("default", "backup_on_clear", fallback=True)
 AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
                                     fallback=True)
