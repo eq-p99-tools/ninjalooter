@@ -10,7 +10,7 @@ alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle,Ancie
 default_alliance = Force of Will
 hide_rots = False
 # If an item is linked more than once in drop_cooldown seconds, ignore it
-drop_cooldown = 120
+drop_cooldown = 60
 always_on_top = False
 backup_on_clear = True
 primary_bid_channel = unset
