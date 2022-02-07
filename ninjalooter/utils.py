@@ -149,7 +149,14 @@ def get_latest_logfile(logdir: str) -> tuple:
 def load_item_data():
     with open(os.path.join(config.PROJECT_DIR,
                            'data', 'items.json')) as item_file:
-        return json.load(item_file)
+        items = json.load(item_file)
+    backtick_items = {item: link for item, link in items.items()
+                      if "`" in item}
+    for item, link in backtick_items.items():
+        fixed_item_name = item.replace("`", "'")
+        if fixed_item_name not in items:
+            items[item.replace("`", "'")] = link
+    return items
 
 
 def load_spell_data():
@@ -517,10 +524,12 @@ def export_to_eqdkp(filename):
                 if config.RESTRICT_BIDS and guild not in \
                         config.ALLIANCES[config.DEFAULT_ALLIANCE]:
                     continue
-                level_class = "ANONYMOUS"
+                level_class = None
                 if player_obj.level:
                     level_class = f"{player_obj.level} {player_obj.pclass}"
-                tick_line = f"[{tick_time}] [{level_class}] {member} <{guild}>"
+                tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
+                if level_class:
+                    tick_line += " {%s}" % level_class
                 tick_lines.append(tick_line)
             if tick_lines:
                 raidtick_logs.append((wholog.tick_name, tick_lines))

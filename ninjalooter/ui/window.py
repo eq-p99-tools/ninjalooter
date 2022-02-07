@@ -4,6 +4,7 @@ import os.path
 
 import markdown2
 import ObjectListView
+import semver
 import wx
 import wx.html
 
@@ -117,8 +118,13 @@ class MainWindow(wx.Frame):
         config.WX_FILESYSTEM_WATCHER = self.watcher
 
         # Show Changelog on new version
-        if config.LAST_RUN_VERSION != config.VERSION:
-            ChangeLog(self)
+        try:
+            last_run = semver.VersionInfo.parse(config.LAST_RUN_VERSION)
+            current = semver.VersionInfo.parse(config.VERSION)
+            if current > last_run:
+                ChangeLog(self)
+        except ValueError:
+            pass
 
     def OnFilesystemEvent(self, e: wx.FileSystemWatcherEvent):
         if not config.AUTO_SWAP_LOGFILE:
