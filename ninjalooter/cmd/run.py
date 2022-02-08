@@ -1,3 +1,5 @@
+import traceback
+
 import wx
 import wx.html
 
@@ -28,4 +30,9 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    try:
+        run()
+    except:  # noqa
+        with open("nl-crash-log.txt", "w") as f:
+            traceback.print_exc(file=f)
+        raise

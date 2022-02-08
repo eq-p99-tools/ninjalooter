@@ -123,8 +123,10 @@ class MainWindow(wx.Frame):
             current = semver.VersionInfo.parse(config.VERSION)
             if current > last_run:
                 ChangeLog(self)
-        except ValueError:
-            pass
+        except (ValueError, TypeError):
+            config.LAST_RUN_VERSION = config.VERSION
+            config.CONF.set("default", "last_run_version", config.VERSION)
+            config.write()
 
     def OnFilesystemEvent(self, e: wx.FileSystemWatcherEvent):
         if not config.AUTO_SWAP_LOGFILE:
