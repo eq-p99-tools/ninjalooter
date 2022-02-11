@@ -1,3 +1,4 @@
+import platform
 import traceback
 
 import wx
@@ -14,13 +15,14 @@ LOG = logger.getLogger(__name__)
 
 def run():
     app = wx.App(False)
-    try:
-        autoupdate.check_update()
-    except SystemExit:
-        return
-    except:  # noqa
-        LOG.exception(
-            "Failed to automatically update. Continuing with old version.")
+    if platform.system() == "Windows":
+        try:
+            autoupdate.check_update()
+        except SystemExit:
+            return
+        except:  # noqa
+            LOG.exception(
+                "Failed to automatically update. Continuing with old version.")
 
     extra_data.apply_sheet_overrides()
     extra_data.apply_custom_overrides()
