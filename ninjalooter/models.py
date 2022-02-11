@@ -809,8 +809,12 @@ class WhoLog(DictEquals):
         self.raidtick = raidtick
         self.tick_name = tick_name
 
-    def eqtime(self) -> str:
-        return self.time.strftime("%a %b %d %H:%M:%S %Y")
+    def eqtime(self, allow_eastern=False) -> str:
+        # import at runtime rather than on load to avoid circular error
+        # pylint: disable=import-outside-toplevel
+        from ninjalooter import utils
+        return utils.datetime_to_eq_format(
+            self.time, allow_eastern=allow_eastern)
 
     def raidtick_display(self):
         return "✔️" if self.raidtick else ""  # or "❌"?

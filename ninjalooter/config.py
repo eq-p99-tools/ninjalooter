@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14.4"
+VERSION = "1.14.5"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 NEEDS_WRITE = False
@@ -81,6 +81,8 @@ AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
                                     fallback=True)
 ALLOW_EXCEL_EXPORT = CONF.getboolean("default", "allow_excel_export",
                                      fallback=False)
+EXPORT_TIME_IN_EASTERN = CONF.getboolean("default", "export_time_in_eastern",
+                                         fallback=False)
 LAST_RUN_VERSION = CONF.get("default", "last_run_version", fallback=None)
 
 if not CONF.has_section("min_dkp"):

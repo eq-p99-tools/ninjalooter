@@ -1,4 +1,5 @@
 # pylint: disable=no-member,invalid-name,unused-argument
+# pylint: disable=too-many-instance-attributes
 
 import datetime
 import os.path
@@ -51,22 +52,29 @@ class MenuBar(wx.MenuBar):
 
         file_menu.AppendSeparator()
 
-        export_mi = wx.MenuItem(
+        self.export_tz_mi = wx.MenuItem(
+            file_menu, wx.ID_ANY, 'Export in Eastern Time',
+            kind=wx.ITEM_CHECK)
+        file_menu.Append(self.export_tz_mi)
+        self.export_tz_mi.Check(config.EXPORT_TIME_IN_EASTERN)
+        self.Bind(wx.EVT_MENU, self.OnExportTimezone, self.export_tz_mi)
+
+        export_excel_mi = wx.MenuItem(
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
-        export_mi.Enable(config.ALLOW_EXCEL_EXPORT)
+        export_excel_mi.Enable(config.ALLOW_EXCEL_EXPORT)
         export_bitmap = wx.Bitmap(os.path.join(
             config.PROJECT_DIR, "data", "icons", "excel.png"))
-        export_mi.SetBitmap(export_bitmap)
-        file_menu.Append(export_mi)
-        self.Bind(wx.EVT_MENU, self.OnExportExcel, export_mi)
+        export_excel_mi.SetBitmap(export_bitmap)
+        file_menu.Append(export_excel_mi)
+        self.Bind(wx.EVT_MENU, self.OnExportExcel, export_excel_mi)
 
-        export_mi = wx.MenuItem(
+        export_dkp_mi = wx.MenuItem(
             file_menu, wx.ID_CONVERT, '&Export to EQDKPlus\tCtrl+P')
         export_bitmap = wx.Bitmap(os.path.join(
             config.PROJECT_DIR, "data", "icons", "export.png"))
-        export_mi.SetBitmap(export_bitmap)
-        file_menu.Append(export_mi)
-        self.Bind(wx.EVT_MENU, self.OnExportEQDKP, export_mi)
+        export_dkp_mi.SetBitmap(export_bitmap)
+        file_menu.Append(export_dkp_mi)
+        self.Bind(wx.EVT_MENU, self.OnExportEQDKP, export_dkp_mi)
 
         file_menu.AppendSeparator()
 
@@ -364,6 +372,13 @@ class MenuBar(wx.MenuBar):
             config.WX_FILESYSTEM_WATCHER.Add(
                 config.LOG_DIRECTORY,
                 events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
+
+    def OnExportTimezone(self, e: wx.MenuEvent):
+        config.EXPORT_TIME_IN_EASTERN = self.export_tz_mi.IsChecked()
+        config.CONF.set(
+            'default', 'export_time_in_eastern',
+            str(config.EXPORT_TIME_IN_EASTERN))
+        config.write()
 
     def OnExportExcel(self, e: wx.MenuEvent):
         LOG.info("Exporting to Excel format.")
