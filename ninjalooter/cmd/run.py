@@ -1,4 +1,4 @@
-import platform
+import sys
 import traceback
 
 import wx
@@ -15,7 +15,7 @@ LOG = logger.getLogger(__name__)
 
 def run():
     app = wx.App(False)
-    if platform.system() == "Windows":
+    if getattr(sys, 'frozen', False):
         try:
             autoupdate.check_update()
         except SystemExit:
