@@ -1180,7 +1180,7 @@ class RandomAuction(Auction):
         classes = ' ({})'.format(self.classes()) if self.classes() else ""
         try:
             bid_text = (
-                "/{channel} " + config.ROLL_MESSAGE
+                "/{channel} ~" + config.ROLL_MESSAGE
             ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 item=self.item.name, target=self.number, classes=classes

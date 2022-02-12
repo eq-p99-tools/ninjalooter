@@ -251,7 +251,7 @@ class TestModels(base.NLTestBase):
 
         config.PRIMARY_BID_CHANNEL = 'auc'
         self.assertEqual(
-            "/AUC [Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
+            "/AUC ~[Copper Disc] (DRU, SHD) ROLL 12345 NOW!",
             auc.bid_text())
 
         item_name = 'Golden Jasper Earring'
@@ -260,7 +260,7 @@ class TestModels(base.NLTestBase):
 
         config.PRIMARY_BID_CHANNEL = 'gu'
         self.assertEqual(
-            "/GU [Golden Jasper Earring] ROLL 12345 NOW!",
+            "/GU ~[Golden Jasper Earring] ROLL 12345 NOW!",
             auc.bid_text())
 
     def test_get_next_number(self):

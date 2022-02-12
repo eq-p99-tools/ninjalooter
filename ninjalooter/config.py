@@ -134,7 +134,7 @@ RAIDTICK_REMINDER_SOUND = CONF.get(
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
-             "Castle:Castle,Ancient Blood,Gathered Might;"
+             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot;"
              "Kingdom:Kingdom,Karens of Karana;"
              "Seal Team:Seal Team"
 )
