@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 
-VERSION = "1.14.6"
+VERSION = "1.14.7"
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 NEEDS_WRITE = False
@@ -190,18 +190,31 @@ SAVE_STATE_FILE = 'state.json'
 TIMESTAMP = r"\[(?P<time>\w{3} \w{3} \d{2} \d\d:\d\d:\d\d \d{4})\] +"
 
 # Drop Matchers
-MATCH_DROP_OOC = re.compile(
-    TIMESTAMP +
-    r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
 MATCH_DROP_SAY = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) says?, '(?P<text>.*)'")
+MATCH_DROP_OOC = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) says? out of character, '(?P<text>.*)'")
+MATCH_DROP_AUC = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) auctions?, '(?P<text>.*)'")
+MATCH_DROP_SHOUT = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) shouts?, '(?P<text>.*)'")
 MATCH_DROP_GU = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) (tells the guild|say to your guild),"
     r" '(?P<text>.*)'")
 
 # Bid Matchers
+MATCH_BID_SAY = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) says?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID_OOC = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) says? out of character, "
+    r"'(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
 MATCH_BID_AUC = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
@@ -228,7 +241,7 @@ MATCH_START_WHO = re.compile(
 MATCH_WHO = re.compile(
     TIMESTAMP +
     r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
-    r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w ]+)>)?")
+    r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w \']+)>)?")
 MATCH_END_WHO = re.compile(
     TIMESTAMP +
     r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
@@ -252,11 +265,15 @@ MATCH_GRATSS = re.compile(
 )
 
 DROP_CHANNEL_OPTIONS = {
-    "ooc": MATCH_DROP_OOC,
     "say": MATCH_DROP_SAY,
+    "ooc": MATCH_DROP_OOC,
+    "auc": MATCH_DROP_AUC,
+    "shout": MATCH_DROP_SHOUT,
     "gu": MATCH_DROP_GU
 }
 BID_CHANNEL_OPTIONS = {
+    "say": MATCH_BID_SAY,
+    "ooc": MATCH_BID_OOC,
     "auc": MATCH_BID_AUC,
     "shout": MATCH_BID_SHOUT,
     "gu": MATCH_BID_GU
@@ -264,13 +281,13 @@ BID_CHANNEL_OPTIONS = {
 
 MATCH_DROP = CONF.get(
     "default", "drop_channels",
-    fallback="ooc, say")
+    fallback="say, ooc")
 MATCH_DROP = [DROP_CHANNEL_OPTIONS[chan.strip().lower()]
               for chan in MATCH_DROP.split(',')
               if chan.strip().lower() in DROP_CHANNEL_OPTIONS]
 MATCH_BID = CONF.get(
     "default", "bid_channels",
-    fallback="auc, shout, gu")
+    fallback="say, auc, shout, gu")
 MATCH_BID = [BID_CHANNEL_OPTIONS[chan.strip().lower()]
              for chan in MATCH_BID.split(',')
              if chan.strip().lower() in BID_CHANNEL_OPTIONS]

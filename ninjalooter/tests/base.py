@@ -42,7 +42,7 @@ SAMPLE_ATTENDANCE_LOGS = """
 [Sun Aug 16 22:46:32 2020] Players on EverQuest:
 [Sun Aug 16 22:46:32 2020] ---------------------------
 [Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
-[Sun Aug 16 22:46:32 2020] [50 Druid] Tom (Wood Elf) <Seal Team> LFG
+[Sun Aug 16 22:46:32 2020] [50 Druid] Tom (Wood Elf) <Freya's Chariot> LFG
 [Sun Aug 16 22:46:32 2020] [50 Magician] Fred (Gnome) LFG
 [Sun Aug 16 22:46:32 2020] [50 Necromancer] George (Dark Elf) <Kingdom> LFG
 [Sun Aug 16 22:46:32 2020] [50 Cleric] Tim (Dark Elf) <Seal Team> LFG

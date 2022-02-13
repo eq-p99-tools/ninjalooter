@@ -53,6 +53,10 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual('Kingdom', config.LAST_WHO_SNAPSHOT['Peter'].guild)
         self.assertIsNone(config.LAST_WHO_SNAPSHOT['Fred'].guild)
 
+        # It should have picked up Tom in Freya's Chariot
+        self.assertEqual(
+            "Freya's Chariot", config.LAST_WHO_SNAPSHOT['Tom'].guild)
+
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
     def test_handle_who(self, mock_post_event, mock_store_state):
@@ -311,6 +315,46 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual(2, len(config.PENDING_AUCTIONS))
 
     @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_drops_all_matchers(
+            self, mock_post_event, mock_store_state):
+        # Check SAY
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says, "
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP_SAY.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(['Belt of Iniquity'], items)
+
+        # Check OOC
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP_OOC.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(['Belt of Iniquity'], items)
+
+        # Check AUC
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP_AUC.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(['Belt of Iniquity'], items)
+
+        # Check SHOUT
+        line = ("[Sun Aug 16 22:47:31 2020] Jim shouts, "
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP_SHOUT.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(['Belt of Iniquity'], items)
+
+        # Check GU
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Belt of Iniquity'")
+        match = config.MATCH_DROP_GU.match(line)
+        items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(['Belt of Iniquity'], items)
+
+    @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
     @mock.patch('ninjalooter.config.WX_TASKBAR_ICON')
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
@@ -366,7 +410,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -376,7 +420,7 @@ class TestMessageHandlers(base.NLTestBase):
         # FILTER ON - Someone outside the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertEqual([], disc_auction.highest())
@@ -386,7 +430,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = False
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Platinum Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -397,7 +441,7 @@ class TestMessageHandlers(base.NLTestBase):
         config.RESTRICT_BIDS = True
         line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertEqual([], disc_auction.highest())
@@ -406,7 +450,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance says random stuff with a number
         line = ("[Sun Aug 16 22:47:31 2020] Tim auctions, "
                 "'I am 12 and what channel is this'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -415,7 +459,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on two items at once
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP Platinum Disc'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([], disc_auction.highest())
@@ -424,7 +468,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone we haven't seen bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Paul auctions, "
                 "'Copper Disc 5 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertListEqual([('Paul', 5)], disc_auction.highest())
@@ -435,7 +479,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an active item
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 10 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 10), disc_auction.highest())
@@ -446,7 +490,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance bids on an active item with wrong case
         line = ("[Sun Aug 16 22:47:31 2020] Pim auctions, "
                 "'copper DISC 11 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Pim', 11), disc_auction.highest())
@@ -458,7 +502,7 @@ class TestMessageHandlers(base.NLTestBase):
         # This would trigger a bug with "2nd" being read as "2 DKP"
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'Copper Disc 2nd main 12dkp'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertTrue(result)
         self.assertIn(('Jim', 12), disc_auction.highest())
@@ -469,11 +513,58 @@ class TestMessageHandlers(base.NLTestBase):
         # Someone in the alliance avoids bidding using ~
         line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
                 "'~Copper Disc 14 DKP'")
-        match = config.MATCH_BID[0].match(line)
+        match = config.MATCH_BID[1].match(line)
         result = message_handlers.handle_bid(match, 'window')
         self.assertFalse(result)
         self.assertListEqual([('Jim', 12)], disc_auction.highest())
         mock_post_event.assert_not_called()
+
+        config.ACTIVE_AUCTIONS.clear()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_bid_all_matchers(self, mock_post_event, mock_store_state):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        disc_auction = models.DKPAuction(itemdrop, 'VCR')
+        config.ACTIVE_AUCTIONS = {
+            itemdrop.uuid: disc_auction
+        }
+
+        # Check SAY
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says, "
+                "'Copper Disc 10 DKP'")
+        match = config.MATCH_BID_SAY.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+
+        # Check OOC
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'Copper Disc 11 DKP'")
+        match = config.MATCH_BID_OOC.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+
+        # Check AUC
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 12 DKP'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+
+        # Check SHOUT
+        line = ("[Sun Aug 16 22:47:31 2020] Jim shouts, "
+                "'Copper Disc 13 DKP'")
+        match = config.MATCH_BID_SHOUT.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+
+        # Check GU
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Copper Disc 14 DKP'")
+        match = config.MATCH_BID_GU.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
 
         config.ACTIVE_AUCTIONS.clear()
 
