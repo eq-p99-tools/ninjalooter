@@ -640,6 +640,11 @@ def export_to_eqdkp(filename):
             sheet_name = tick_name
         else:
             sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
+        while sheet_name in workbook.sheetnames:
+            if sheet_name[-1] in map(str, range(10)):
+                sheet_name = sheet_name[:-1] + str(int(sheet_name[-1]) + 1)
+            else:
+                sheet_name += " 2"
         worksheet = workbook.add_worksheet(sheet_name)
         sheets[parsed_time] = worksheet
         # Write /who logs
