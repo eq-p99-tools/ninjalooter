@@ -801,13 +801,15 @@ class WhoLog(DictEquals):
     log = None
     raidtick = False
     tick_name = None
+    zone = None
 
-    def __init__(self, time, log, raidtick=False, tick_name=None):
+    def __init__(self, time, log, raidtick=False, tick_name=None, zone=None):
         super().__init__()
         self.time = time
         self.log = log
         self.raidtick = raidtick
         self.tick_name = tick_name
+        self.zone = zone
 
     def eqtime(self, allow_eastern=False) -> str:
         # import at runtime rather than on load to avoid circular error

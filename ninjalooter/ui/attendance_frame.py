@@ -288,7 +288,10 @@ class AttendanceDetailWindow(wx.Frame):
 
         self.name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22),
                                         value=item.tick_name or "")
-        self.name_textbox.SetHint("Tick Name")
+        if self.item.zone:
+            self.name_textbox.SetHint(f"{self.item.zone}?")
+        else:
+            self.name_textbox.SetHint("Tick Name?")
         button_box.Add(self.name_textbox, flag=wx.TOP | wx.LEFT, border=6)
 
         raidtick_checkbox = wx.CheckBox(self, label="Raidtick")

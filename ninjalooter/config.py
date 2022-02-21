@@ -4,8 +4,15 @@ import logging
 import os
 import pathlib
 import re
+import semver
 
-VERSION = "1.14.7"
+SEMVER = semver.VersionInfo(
+    major=1,
+    minor=14,
+    patch=8,
+    prerelease='rc1',
+)
+VERSION = str(SEMVER)
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent
 NEEDS_WRITE = False

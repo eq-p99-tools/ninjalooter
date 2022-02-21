@@ -368,10 +368,11 @@ class MenuBar(wx.MenuBar):
             self.GetParent().parser_thread = logparse.ParseThread(
                 self.GetParent())
             self.GetParent().parser_thread.start()
-            config.WX_FILESYSTEM_WATCHER.RemoveAll()
-            config.WX_FILESYSTEM_WATCHER.Add(
-                config.LOG_DIRECTORY,
-                events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
+            if config.WX_FILESYSTEM_WATCHER is not None:
+                config.WX_FILESYSTEM_WATCHER.RemoveAll()
+                config.WX_FILESYSTEM_WATCHER.Add(
+                    config.LOG_DIRECTORY,
+                    events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
 
     def OnExportTimezone(self, e: wx.MenuEvent):
         config.EXPORT_TIME_IN_EASTERN = self.export_tz_mi.IsChecked()

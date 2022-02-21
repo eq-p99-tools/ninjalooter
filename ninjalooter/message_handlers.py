@@ -111,6 +111,9 @@ def raidtick_reminder_alert() -> None:
 def handle_end_who(match: re.Match, window: wx.Frame,
                    skip_store=False) -> bool:
     who_time = match.group('time')
+    zone = match.group('zone')
+    if zone.lower() == "everquest":
+        zone = None
     parsed_time = dateutil.parser.parse(who_time)
     raidtick_was = parsed_time - config.LAST_RAIDTICK
     raidtick_who = False
@@ -123,7 +126,7 @@ def handle_end_who(match: re.Match, window: wx.Frame,
             60 * 60, raidtick_reminder_alert)
         config.RAIDTICK_ALERT_TIMER.start()
     log_entry = models.WhoLog(
-        parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who)
+        parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who, zone)
     config.ATTENDANCE_LOGS.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
     wx.PostEvent(window, models.WhoEndEvent())

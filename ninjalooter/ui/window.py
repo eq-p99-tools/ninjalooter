@@ -1,6 +1,7 @@
 # pylint: disable=no-member,invalid-name,unused-argument
 
 import os.path
+import sys
 
 import markdown2
 import ObjectListView
@@ -110,12 +111,14 @@ class MainWindow(wx.Frame):
         self.parser_thread.start()
 
         # Handle automatically switching characters
-        self.watcher = wx.FileSystemWatcher()
-        self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
-        if os.path.isdir(config.LOG_DIRECTORY):
-            self.watcher.Add(config.LOG_DIRECTORY,
-                             events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
-        config.WX_FILESYSTEM_WATCHER = self.watcher
+        if sys.platform != "darwin":  # FileSystemWatcher is buggy on OSX
+            self.watcher = wx.FileSystemWatcher()
+            self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
+            if os.path.isdir(config.LOG_DIRECTORY):
+                self.watcher.Add(
+                    config.LOG_DIRECTORY,
+                    events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
+            config.WX_FILESYSTEM_WATCHER = self.watcher
 
         # Show Changelog on new version
         try:
