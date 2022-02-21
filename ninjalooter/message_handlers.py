@@ -119,6 +119,7 @@ def handle_end_who(match: re.Match, window: wx.Frame,
     raidtick_who = False
     if raidtick_was <= datetime.timedelta(seconds=3):
         raidtick_who = True
+        # Handle reminder alerts
         if config.RAIDTICK_ALERT_TIMER:
             config.RAIDTICK_ALERT_TIMER.cancel()
         config.RAIDTICK_REMINDER_COUNT = 0
@@ -127,6 +128,14 @@ def handle_end_who(match: re.Match, window: wx.Frame,
         config.RAIDTICK_ALERT_TIMER.start()
     log_entry = models.WhoLog(
         parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who, zone)
+    if raidtick_who:
+        # Give audio confirmation of the RaidTick detection
+        utils.alert_sound(config.NEW_RAIDTICK_SOUND)
+        utils.alert_message(
+            "RaidTick Recorded",
+            "Recorded a new RaidTick with %d player(s), %d of which are in "
+            "your alliance." % (len(log_entry.log), log_entry.alliance_count())
+        )
     config.ATTENDANCE_LOGS.append(log_entry)
     wx.PostEvent(window, models.WhoHistoryEvent())
     wx.PostEvent(window, models.WhoEndEvent())

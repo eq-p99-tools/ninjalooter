@@ -821,6 +821,14 @@ class WhoLog(DictEquals):
     def raidtick_display(self):
         return "✔️" if self.raidtick else ""  # or "❌"?
 
+    def alliance_count(self):
+        pops = {alliance: 0 for alliance in config.ALLIANCES}
+        for player in self.log.values():
+            alliance = config.ALLIANCE_MAP.get(player.guild)
+            if alliance:
+                pops[alliance] += 1
+        return pops[config.DEFAULT_ALLIANCE]
+
     def populations(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
         for player in self.log.values():

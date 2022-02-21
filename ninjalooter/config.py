@@ -10,7 +10,6 @@ SEMVER = semver.VersionInfo(
     major=1,
     minor=14,
     patch=8,
-    prerelease='rc1',
 )
 VERSION = str(SEMVER)
 
@@ -137,6 +136,10 @@ RAIDTICK_REMINDER_SOUND = CONF.get(
     "alerts", "raidtick_reminder",
     fallback=os.path.join(PROJECT_DIR, "data", "sounds",
                           "raidtick_reminder.wav"))
+NEW_RAIDTICK_SOUND = CONF.get(
+    "alerts", "new_raidtick",
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds",
+                          "new_raidtick.wav"))
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
@@ -244,7 +247,7 @@ MATCH_RAND2 = re.compile(
 
 # Other Matchers
 MATCH_START_WHO = re.compile(
-    TIMESTAMP + r"Players on EverQuest:")
+    TIMESTAMP + r"Players [oi]n EverQuest:")
 MATCH_WHO = re.compile(
     TIMESTAMP +
     r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"

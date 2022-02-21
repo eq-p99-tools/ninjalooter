@@ -52,6 +52,7 @@ text_enabled = True
 new_drop = data\sounds\new_drop.wav
 auction_expiring = data\sounds\auc_expiring.wav
 raidtick_reminder = data\sounds\raidtick_reminder.wav
+new_raidtick = data\sounds\new_raidtick.wav
 # alt_reminder_dkp =
 # second_main_reminder_dkp =
 
