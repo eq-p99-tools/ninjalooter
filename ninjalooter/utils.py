@@ -147,23 +147,34 @@ def get_latest_logfile(logdir: str) -> tuple:
     return latest_file, char_name
 
 
+def _duplicate_backtick_apostrophes(items: list) -> list:
+    backtick_items = {item: link for item, link in items.items()
+                      if "`" in item}
+    apostrophe_items = {item: link for item, link in items.items()
+                        if "'" in item}
+    for item, link in backtick_items.items():
+        fixed_item_name = item.replace("`", "'")
+        if fixed_item_name not in items:
+            items[fixed_item_name] = link
+    for item, link in apostrophe_items.items():
+        fixed_item_name = item.replace("'", "`")
+        if fixed_item_name not in items:
+            items[fixed_item_name] = link
+    return items
+
+
 def load_item_data():
     with open(os.path.join(config.PROJECT_DIR,
                            'data', 'items.json')) as item_file:
         items = json.load(item_file)
-    backtick_items = {item: link for item, link in items.items()
-                      if "`" in item}
-    for item, link in backtick_items.items():
-        fixed_item_name = item.replace("`", "'")
-        if fixed_item_name not in items:
-            items[item.replace("`", "'")] = link
-    return items
+    return _duplicate_backtick_apostrophes(items)
 
 
 def load_spell_data():
     with open(os.path.join(config.PROJECT_DIR,
                            'data', 'spells.json')) as spell_file:
-        return json.load(spell_file)
+        spells = json.load(spell_file)
+    return _duplicate_backtick_apostrophes(spells)
 
 
 def setup_aho():

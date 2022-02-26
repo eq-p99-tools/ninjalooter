@@ -1211,7 +1211,7 @@ class RandomAuction(Auction):
             roll = "0"
         try:
             win_text = (
-                "/{channel} " + config.GRATS_MESSAGE_ROLL
+                "/{channel} ~" + config.GRATS_MESSAGE_ROLL
             ).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
                 player=player, item=self.item.name,

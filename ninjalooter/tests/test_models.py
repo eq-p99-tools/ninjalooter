@@ -263,6 +263,22 @@ class TestModels(base.NLTestBase):
             "/GU ~[Golden Jasper Earring] ROLL 12345 NOW!",
             auc.bid_text())
 
+    def test_RandomAuction_model_win_text(self):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        config.NUMBERS = ['12345']
+        auc = models.RandomAuction(itemdrop)
+
+        config.PRIMARY_BID_CHANNEL = 'auc'
+
+        auc.add(10, "Bill")
+        auc.add(20, "Tom")
+        auc.add(5, "James")
+
+        self.assertEqual(
+            "/AUC ~Gratss Tom on [Copper Disc] with 20 / 12345!",
+            auc.win_text())
+
     def test_get_next_number(self):
         models.config.NUMBERS = [10, 20, 30]
         models.config.LAST_NUMBER = 0
