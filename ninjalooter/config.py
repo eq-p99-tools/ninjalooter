@@ -9,7 +9,7 @@ import semver
 SEMVER = semver.VersionInfo(
     major=1,
     minor=14,
-    patch=9,
+    patch=10,
 )
 VERSION = str(SEMVER)
 
@@ -260,7 +260,8 @@ MATCH_KILL = re.compile(
     r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
 MATCH_RAIDTICK = re.compile(
     TIMESTAMP +
-    r".*RAIDTICK.*"
+    r".*RAIDTICK.*",
+    flags=re.IGNORECASE
 )
 MATCH_CREDITT = re.compile(
     TIMESTAMP +
