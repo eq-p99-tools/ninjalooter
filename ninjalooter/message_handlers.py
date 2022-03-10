@@ -127,7 +127,10 @@ def handle_end_who(match: re.Match, window: wx.Frame,
             60 * 60, raidtick_reminder_alert)
         config.RAIDTICK_ALERT_TIMER.start()
     log_entry = models.WhoLog(
-        parsed_time, copy.copy(config.LAST_WHO_SNAPSHOT), raidtick_who, zone)
+        time=parsed_time,
+        log=copy.copy(config.LAST_WHO_SNAPSHOT),
+        raidtick=raidtick_who,
+        zone=zone)
     if raidtick_who:
         # Give audio confirmation of the RaidTick detection
         utils.alert_sound(config.NEW_RAIDTICK_SOUND)
