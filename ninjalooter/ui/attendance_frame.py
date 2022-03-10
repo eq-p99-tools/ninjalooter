@@ -94,7 +94,7 @@ class AttendanceFrame(wx.Window):
         creditt_box = wx.BoxSizer(wx.HORIZONTAL)
         creditt_list = ObjectListView.ObjectListView(
             pane_2, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(650, 200))
+            size=wx.Size(680, 200))
         creditt_box.Add(creditt_list, flag=wx.EXPAND | wx.ALL)
         # creditt_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditCreditt)
         self.creditt_list = creditt_list
@@ -126,7 +126,7 @@ class AttendanceFrame(wx.Window):
         gratss_box = wx.BoxSizer(wx.HORIZONTAL)
         gratss_list = ObjectListView.ObjectListView(
             pane_3, wx.ID_ANY, style=wx.LC_REPORT,
-            size=wx.Size(650, 200))
+            size=wx.Size(680, 200))
         gratss_box.Add(gratss_list, flag=wx.EXPAND | wx.ALL)
         # gratss_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditGratss)
         self.gratss_list = gratss_list
@@ -270,7 +270,7 @@ class AttendanceFrame(wx.Window):
 
 class AttendanceDetailWindow(wx.Frame):
     def __init__(self, item, parent=None, title="Attendance Record"):
-        wx.Frame.__init__(self, parent, title=title, size=(420, 800))
+        wx.Frame.__init__(self, parent, title=title, size=(505, 800))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.item = item
 
@@ -311,11 +311,17 @@ class AttendanceDetailWindow(wx.Frame):
 
         attendance_record.SetColumns([
             ObjectListView.ColumnDefn(
-                "Name", "left", 180, "name",
-                groupKeyGetter=attendanceGroupKey, fixedWidth=180),
+                "Name", "left", 160, "name",
+                groupKeyGetter=attendanceGroupKey, fixedWidth=160),
             ObjectListView.ColumnDefn(
-                "Guild", "left", 180, "guild",
-                groupKeyGetter=attendanceGroupKey, fixedWidth=180),
+                "Guild", "left", 140, "sortguild",
+                groupKeyGetter=attendanceGroupKey, fixedWidth=140),
+            ObjectListView.ColumnDefn(
+                "Level", "left", 40, "level",
+                groupKeyGetter=attendanceGroupKey, fixedWidth=40),
+            ObjectListView.ColumnDefn(
+                "Class", "left", 120, "sortclass",
+                groupKeyGetter=attendanceGroupKey, fixedWidth=120),
         ])
         attendance_list = list(item.log.values())
         attendance_record.SetObjects(attendance_list)

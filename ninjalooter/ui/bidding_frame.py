@@ -159,7 +159,7 @@ class BiddingFrame(wx.Window):
         active_buttonspacer = wx.StaticLine(pane_2)
         active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
         self.active_buttons_timespinner = wx.SpinCtrl(
-            pane_2, min=1, max=30, initial=1, size=(40, 22))
+            pane_2, min=1, max=30, initial=1, size=(44, 22))
         self.active_buttons_timespinner.SetToolTip("Minutes to add/remove")
         active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
         active_button_timeadd.SetToolTip("Add time to Auction")
@@ -172,7 +172,7 @@ class BiddingFrame(wx.Window):
         active_button_complete = wx.Button(pane_2, label="Complete")
         active_button_wiki = wx.Button(pane_2, label="Wiki?")
         active_cb_bid_target = wx.ComboBox(
-            pane_2, size=wx.Size(70, 22),
+            pane_2, size=wx.Size(73, 22),
             choices=list(config.BID_CHANNEL_OPTIONS),
             value=config.PRIMARY_BID_CHANNEL,
             style=wx.CB_READONLY)
@@ -183,8 +183,9 @@ class BiddingFrame(wx.Window):
         active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_button_wiki, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_cb_bid_target, flag=wx.TOP, border=6)
+        active_buttons_box.Add(active_button_wiki, flag=wx.TOP | wx.BOTTOM,
+                               border=6)
+        active_buttons_box.Add(active_cb_bid_target, flag=wx.LEFT, border=1)
 
         active_button_undo.Bind(wx.EVT_BUTTON, self.UndoStart)
         active_button_timeadd.Bind(wx.EVT_BUTTON, self.AucTimeDelta)

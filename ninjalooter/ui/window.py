@@ -71,7 +71,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 
 class MainWindow(wx.Frame):
     def __init__(self, parent=None, title="NinjaLooter EQ Loot Manager"):
-        wx.Frame.__init__(self, parent, title=title, size=(850, 800))
+        wx.Frame.__init__(self, parent, title=title, size=(855, 800))
         icon = wx.Icon()
         icon.CopyFromBitmap(
             wx.Bitmap(os.path.join(

@@ -67,6 +67,14 @@ class Player(DictEquals):
     def __str__(self):
         return self.__repr__()
 
+    @property
+    def sortclass(self):
+        return self.pclass or ""
+
+    @property
+    def sortguild(self):
+        return self.guild or ""
+
     # helper function - true if War, Pal, or SK
     def is_tank(self):
         return self.pclass in constants.TANKS
