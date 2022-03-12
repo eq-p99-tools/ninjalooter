@@ -138,7 +138,7 @@ class BiddingFrame(wx.Window):
             ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players",
                                       fixedWidth=90),
             ObjectListView.ColumnDefn("Time Left", "left", 100,
-                                      "time_remaining_text",
+                                      "time_remaining_ui",
                                       fixedWidth=100),
         ])
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
@@ -456,6 +456,10 @@ class BiddingFrame(wx.Window):
         if e.EventObject.Label == "-":
             selected_object.start_time -= delta
         else:
+            if selected_object.time_remaining().seconds <= 0:
+                selected_object.start_time = (
+                        datetime.datetime.now() -
+                        datetime.timedelta(seconds=config.MIN_BID_TIME))
             selected_object.start_time += delta
 
     def CopyBidText(self, e: wx.Event):

@@ -270,7 +270,7 @@ class AttendanceFrame(wx.Window):
 
 class AttendanceDetailWindow(wx.Frame):
     def __init__(self, item, parent=None, title="Attendance Record"):
-        wx.Frame.__init__(self, parent, title=title, size=(505, 800))
+        wx.Frame.__init__(self, parent, title=title, size=(510, 800))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.item = item
 
@@ -320,8 +320,8 @@ class AttendanceDetailWindow(wx.Frame):
                 "Level", "left", 40, "level",
                 groupKeyGetter=attendanceGroupKey, fixedWidth=40),
             ObjectListView.ColumnDefn(
-                "Class", "left", 120, "sortclass",
-                groupKeyGetter=attendanceGroupKey, fixedWidth=120),
+                "Class", "left", 110, "sortclass",
+                groupKeyGetter=attendanceGroupKey, fixedWidth=110),
         ])
         attendance_list = list(item.log.values())
         attendance_record.SetObjects(attendance_list)

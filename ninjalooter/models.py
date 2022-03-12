@@ -1006,9 +1006,12 @@ class Auction(DictEquals):
         return max(min_bid_time - elapsed, datetime.timedelta(0))
 
     def time_remaining_text(self) -> str:
-        remaining = self.time_remaining()
-        if remaining.seconds <= 30:
+        if self.time_remaining().seconds <= 30:
             return "a few moments"
+        return self.time_remaining_ui()
+
+    def time_remaining_ui(self) -> str:
+        remaining = self.time_remaining()
         minutes = int(remaining.seconds / 60)
         seconds = remaining.seconds % 60
         if minutes:
