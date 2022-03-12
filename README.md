@@ -1,4 +1,4 @@
-NinjaLooter Loot Manager for EQ
+NinjaLooter Raid Manager for EQ
 ===============================
 
 Designed to handle looting for Plane of Sky with the Federation,
@@ -13,6 +13,10 @@ Bidding
 -------
 ![Bidding Tab](ninjalooter_bid_tab.png)
 
+Attendance Management
+---------------------
+![Attendance Management Tab](ninjalooter_attendance_tab.png)
+
 Population Rolls
 ----------------
 ![Population Roll Tab](ninjalooter_pop_tab.png)
@@ -20,6 +24,13 @@ Population Rolls
 Time of Death Tracking
 ----------------------
 ![Time of Death Tracking](ninjalooter_tod_tracking_tab.png)
+
+Testing
+=======
+
+Install `tox`
+
+Run: `tox -e [pep8,pylint,coverage]`
 
 Building
 ========

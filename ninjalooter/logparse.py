@@ -78,7 +78,7 @@ class ParseThread(threading.Thread):
         config.LATEST_LOGFILE = logfile
         config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
-        self.window.SetLabel("NinjaLooter EQ Loot Manager v{version} - {name}"
+        self.window.SetLabel("NinjaLooter EQ Raid Manager v{version} - {name}"
                              .format(version=config.VERSION, name=name))
         if logfile:
             utils.alert_message(
