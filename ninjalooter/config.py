@@ -260,7 +260,7 @@ MATCH_KILL = re.compile(
     r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
 MATCH_RAIDTICK = re.compile(
     TIMESTAMP +
-    r".*RAIDTICK.*",
+    r".*RAID ?TICK.*",
     flags=re.IGNORECASE
 )
 MATCH_CREDITT = re.compile(

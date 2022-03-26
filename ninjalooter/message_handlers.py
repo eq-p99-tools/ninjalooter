@@ -153,7 +153,7 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     pclass = match.group("class") or ""
     if pclass in extra_data.CLASS_TITLES:
         pclass = extra_data.CLASS_TITLES[pclass]
-    level = (match.group("level") or "??").strip()
+    level = (match.group("level") or "0").strip()
     if name not in config.PLAYER_DB:
         LOG.info("Adding player history for %s as guild %s",
                  name, guild)
