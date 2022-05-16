@@ -9,7 +9,7 @@ import semver
 SEMVER = semver.VersionInfo(
     major=1,
     minor=14,
-    patch=10,
+    patch=11,
 )
 VERSION = str(SEMVER)
 
@@ -143,8 +143,8 @@ NEW_RAIDTICK_SOUND = CONF.get(
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
-    fallback="Force of Will:Force of Will,Venerate,Black Lotus;"
-             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot;"
+    fallback="Force of Will:Force of Will,Venerate;"
+             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus;"
              "Kingdom:Kingdom,Karens of Karana;"
              "Seal Team:Seal Team"
 )
