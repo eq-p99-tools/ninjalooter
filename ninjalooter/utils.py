@@ -185,6 +185,9 @@ def setup_aho():
         config.TRIE.add(item)
     for spell in config.SPELLS:
         config.TRIE.add("SPELL: %s" % spell)
+    # Quick hack so I don't have to separate all the spells/songs
+    for spell in config.SPELLS:
+        config.TRIE.add("SONG: %s" % spell)
     config.TRIE.finalize()
 
 
