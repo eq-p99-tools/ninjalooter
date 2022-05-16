@@ -111,7 +111,7 @@ class MainWindow(wx.Frame):
         self.parser_thread.start()
 
         # Handle automatically switching characters
-        if sys.platform != "darwin":  # FileSystemWatcher is buggy on OSX
+        if sys.platform == "win32":  # FileSystemWatcher is buggy on Linux/OSX
             self.watcher = wx.FileSystemWatcher()
             self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
             if os.path.isdir(config.LOG_DIRECTORY):

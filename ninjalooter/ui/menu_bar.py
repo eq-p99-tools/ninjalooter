@@ -61,11 +61,11 @@ class MenuBar(wx.MenuBar):
 
         export_excel_mi = wx.MenuItem(
             file_menu, wx.ID_FLOPPY, '&Export to Excel\tCtrl+E')
-        export_excel_mi.Enable(config.ALLOW_EXCEL_EXPORT)
         export_bitmap = wx.Bitmap(os.path.join(
             config.PROJECT_DIR, "data", "icons", "excel.png"))
         export_excel_mi.SetBitmap(export_bitmap)
         file_menu.Append(export_excel_mi)
+        export_excel_mi.Enable(config.ALLOW_EXCEL_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnExportExcel, export_excel_mi)
 
         export_dkp_mi = wx.MenuItem(

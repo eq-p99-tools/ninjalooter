@@ -314,6 +314,27 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertListEqual([jerkin_2.name], items)
         self.assertEqual(2, len(config.PENDING_AUCTIONS))
 
+        # Teir'dal Sai
+        # NODROP filter off, droppable item
+        config.NODROP_ONLY = False
+        line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+                "'Teir'dal Sai'")
+        match = config.MATCH_DROP_GU.match(line)
+        with mock.patch('uuid.uuid4') as mock_uuid4:
+            mock_uuid4.return_value = jim_disc_1_uuid
+            items = list(message_handlers.handle_drop(match, 'window'))
+        self.assertEqual(1, len(items))
+        self.assertIn('Copper Disc', items)
+        self.assertEqual(2, len(config.PENDING_AUCTIONS))
+        self.assertListEqual(
+            [jim_belt_1, jim_disc_1],
+            config.PENDING_AUCTIONS)
+        mock_post_event.assert_called_once_with(
+            'window', models.DropEvent())
+        mock_post_event.reset_mock()
+        self.mock_playsound.assert_called_once()
+        self.mock_playsound.reset_mock()
+
     @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
