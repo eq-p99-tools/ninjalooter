@@ -44,6 +44,8 @@ def handle_creditt(match: re.Match, window: wx.Frame,
     user = match.group('from')
     message = match.group('message')
     raw_message = match.group(0)
+    raw_message = raw_message.replace("(", "{")
+    raw_message = raw_message.replace(")", "}")
     creddit_entry = models.CredittLog(time, user, message, raw_message)
     config.CREDITT_LOG.append(creddit_entry)
     wx.PostEvent(window, models.CredittEvent())
