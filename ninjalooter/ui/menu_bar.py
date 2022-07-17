@@ -50,6 +50,13 @@ class MenuBar(wx.MenuBar):
         self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
         self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
 
+        self.confirm_exit_mi = wx.MenuItem(
+            file_menu, wx.ID_ANY, 'Confirm Exit',
+            kind=wx.ITEM_CHECK)
+        file_menu.Append(self.confirm_exit_mi)
+        self.confirm_exit_mi.Check(config.CONFIRM_EXIT)
+        self.Bind(wx.EVT_MENU, self.ConfirmExit, self.confirm_exit_mi)
+
         file_menu.AppendSeparator()
 
         self.export_tz_mi = wx.MenuItem(
@@ -482,6 +489,12 @@ class MenuBar(wx.MenuBar):
         config.CONF.set(
             'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
         self.GetParent().UpdateAlwaysOnTop()
+        config.write()
+
+    def ConfirmExit(self, e: wx.MenuEvent):
+        config.CONFIRM_EXIT = self.confirm_exit_mi.IsChecked()
+        config.CONF.set(
+            'default', 'confirm_exit', str(config.CONFIRM_EXIT))
         config.write()
 
     def OnAutoSwapLogfile(self, e: wx.MenuEvent):

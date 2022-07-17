@@ -79,6 +79,7 @@ MIN_BID_TIME = CONF.getint("default", "min_bid_time", fallback=150) + 1
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
 NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
 ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
+CONFIRM_EXIT = CONF.getboolean("default", "confirm_exit", fallback=True)
 SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",
                                      fallback=False)
 HIDE_ROTS = CONF.getboolean("default", "hide_rots", fallback=False)

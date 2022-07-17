@@ -151,12 +151,15 @@ class MainWindow(wx.Frame):
                 self.GetWindowStyle() & ~wx.STAY_ON_TOP)
 
     def OnClose(self, e: wx.Event):
-        dlg = wx.MessageDialog(
-            self,
-            "Do you really want to close this application?",
-            "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        dlg.Destroy()
+        if config.CONFIRM_EXIT:
+            dlg = wx.MessageDialog(
+                self,
+                "Do you really want to close this application?",
+                "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            result = wx.ID_OK
         if result == wx.ID_OK:
             utils.clear_alerts()
             config.WX_TASKBAR_ICON.Destroy()
