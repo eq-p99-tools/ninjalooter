@@ -117,10 +117,13 @@ class PopulationFrame(wx.Window):
         population_preview_list.SetEmptyListMsg(
             "No pop data found.")
 
-        population_button_half = wx.Button(self, label="Halve")
+        population_button_half = wx.Button(self, label="1/2")
+        population_button_zero = wx.Button(self, label="Zero")
         population_button_reset = wx.Button(self, label="Reset")
         population_box_half_reset = wx.BoxSizer(wx.HORIZONTAL)
         population_box_half_reset.Add(population_button_half,
+                                      flag=wx.LEFT, border=5)
+        population_box_half_reset.Add(population_button_zero,
                                       flag=wx.LEFT, border=5)
         population_box_half_reset.Add(population_button_reset,
                                       flag=wx.LEFT, border=10)
@@ -139,6 +142,7 @@ class PopulationFrame(wx.Window):
                                    flag=wx.LEFT | wx.TOP, border=5)
 
         population_button_half.Bind(wx.EVT_BUTTON, self.HalvePopPreview)
+        population_button_zero.Bind(wx.EVT_BUTTON, self.ZeroPopPreview)
         population_button_reset.Bind(wx.EVT_BUTTON, self.ResetPopPreview)
         population_button_poptext.Bind(wx.EVT_BUTTON, self.CopyPopText)
         population_button_randtext.Bind(wx.EVT_BUTTON, self.CopyPopRandom)
@@ -206,6 +210,14 @@ class PopulationFrame(wx.Window):
             return
         sel_pop = int(selected_object.population)
         selected_object.population = str(math.ceil(sel_pop / 2))
+        self.population_preview_list.RefreshObject(selected_object)
+        self.CopyPopText(e)
+
+    def ZeroPopPreview(self, e: wx.Event):
+        selected_object = self.population_preview_list.GetSelectedObject()
+        if not selected_object:
+            return
+        selected_object.population = "0"
         self.population_preview_list.RefreshObject(selected_object)
         self.CopyPopText(e)
 

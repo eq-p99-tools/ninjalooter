@@ -75,7 +75,9 @@ def get_pop_numbers(source=None, extras=None) -> dict:
     if source is None:
         source = config.LAST_WHO_SNAPSHOT
     extras = extras or dict()
-    pops = {alliance: 0 for alliance in config.ALLIANCES}
+    pops = collections.OrderedDict()
+    for alliance in config.ALLIANCES:
+        pops[alliance] = 0
     pops.update(extras)
     for guild in [p.guild for p in source.values()]:
         alliance = config.ALLIANCE_MAP.get(guild)

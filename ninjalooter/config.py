@@ -1,3 +1,4 @@
+import collections
 import configparser
 import datetime
 import logging
@@ -143,12 +144,12 @@ NEW_RAIDTICK_SOUND = CONF.get(
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
-    fallback="Force of Will:Force of Will,Venerate;"
+    fallback="Seal Team:Seal Team;"
+             "Force of Will:Force of Will,Venerate;"
              "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus;"
-             "Kingdom:Kingdom,Karens of Karana;"
-             "Seal Team:Seal Team"
+             "Kingdom:Kingdom,Karens of Karana"
 )
-ALLIANCES = {}
+ALLIANCES = collections.OrderedDict()
 for alliance in CONF_ALLIANCES.split(";"):
     alliance, members = alliance.split(":")
     members = tuple(map(lambda x: x.strip(), members.split(",")))
