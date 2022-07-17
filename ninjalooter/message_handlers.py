@@ -1,5 +1,5 @@
 # pylint: disable=no-member,unused-argument
-
+import collections
 import copy
 import datetime
 import re
@@ -128,9 +128,12 @@ def handle_end_who(match: re.Match, window: wx.Frame,
         config.RAIDTICK_ALERT_TIMER = threading.Timer(
             60 * 60, raidtick_reminder_alert)
         config.RAIDTICK_ALERT_TIMER.start()
+    who_snapshot = collections.OrderedDict()
+    for name in sorted(config.LAST_WHO_SNAPSHOT):
+        who_snapshot[name] = config.PLAYER_DB[name]
     log_entry = models.WhoLog(
         time=parsed_time,
-        log=copy.copy(config.LAST_WHO_SNAPSHOT),
+        log=who_snapshot,
         raidtick=raidtick_who,
         zone=zone)
     if raidtick_who:
