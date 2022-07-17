@@ -9,8 +9,8 @@ import semver
 
 SEMVER = semver.VersionInfo(
     major=1,
-    minor=14,
-    patch=12,
+    minor=15,
+    patch=0,
 )
 VERSION = str(SEMVER)
 
