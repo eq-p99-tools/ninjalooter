@@ -10,7 +10,7 @@ import semver
 SEMVER = semver.VersionInfo(
     major=1,
     minor=15,
-    patch=0,
+    patch=1,
 )
 VERSION = str(SEMVER)
 
@@ -130,18 +130,18 @@ if not CONF.has_section("alerts"):
 
 NEW_DROP_SOUND = CONF.get(
     "alerts", "new_drop",
-    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.wav"))
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.mp3"))
 AUC_EXPIRING_SOUND = CONF.get(
     "alerts", "auction_expiring",
-    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "auc_expiring.wav"))
+    fallback=os.path.join(PROJECT_DIR, "data", "sounds", "auc_expiring.mp3"))
 RAIDTICK_REMINDER_SOUND = CONF.get(
     "alerts", "raidtick_reminder",
     fallback=os.path.join(PROJECT_DIR, "data", "sounds",
-                          "raidtick_reminder.wav"))
+                          "raidtick_reminder.mp3"))
 NEW_RAIDTICK_SOUND = CONF.get(
     "alerts", "new_raidtick",
     fallback=os.path.join(PROJECT_DIR, "data", "sounds",
-                          "new_raidtick.wav"))
+                          "new_raidtick.mp3"))
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
