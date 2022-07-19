@@ -173,8 +173,12 @@ class ChangeLog(wx.Frame):
         try:
             version, tag_data = autoupdate.get_release_from_github(
                 config.VERSION)
-        except:  # noqa
-            LOG.exception("Failed to fetch changelog data from GitHub.")
+        except Exception as e:  # noqa
+            if isinstance(e, KeyError) and 'tag_name' in e.args:
+                LOG.warning("This version is not yet released, no changelog "
+                            "data to fetch.")
+            else:
+                LOG.exception("Failed to fetch changelog data from GitHub.")
             return
         title = f"Changelog for {version}"
         wx.Frame.__init__(self, parent, title=title, size=(600, 400))
