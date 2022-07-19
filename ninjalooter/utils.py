@@ -577,7 +577,7 @@ def export_to_eqdkp(filename):
             tick_lines = []
             for member, player_obj in wholog.log.items():
                 guild = player_obj.guild
-                if config.RESTRICT_BIDS and guild not in \
+                if config.RESTRICT_EXPORT and guild not in \
                         config.ALLIANCES[config.DEFAULT_ALLIANCE]:
                     continue
                 level_class = None
@@ -695,21 +695,37 @@ def export_to_eqdkp(filename):
         first_sheet.write_string(sheet_rows[first_sheet.name], 0, creditt)
 
     # Loop through sheets and add loots to them
-    for sheet_timestamp in sheets:
-        sheet = sheets[sheet_timestamp]
-        # Write loots to the current sheet
-        for loot in closed_loots.copy():
-            loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
-            parsed_time = datetime_from_eq_format(loot_timestamp)
-            if sheet_timestamp == "Loot" or parsed_time < sheet_timestamp:
-                sheet_rows[sheet.name] += 1
-                sheet.write_string(sheet_rows[sheet.name], 0, loot)
-                closed_loots.remove(loot)
-
-    # Write any remaining loots to the last sheet
-    for loot in closed_loots:
-        sheet_rows[last_sheet.name] += 1
-        last_sheet.write_string(sheet_rows[last_sheet.name], 0, loot)
+    if config.TICK_BEFORE_LOOT:
+        for sheet_timestamp in reversed(sheets):
+            sheet = sheets[sheet_timestamp]
+            # Write loots after each tick, working backwards
+            for loot in closed_loots.copy():
+                loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
+                parsed_time = datetime_from_eq_format(loot_timestamp)
+                if sheet_timestamp == "Loot" or parsed_time > sheet_timestamp:
+                    sheet_rows[sheet.name] += 1
+                    sheet.write_string(sheet_rows[sheet.name], 0, loot)
+                    closed_loots.remove(loot)
+        # Write any remaining loots to the earliest sheet
+        first_sheet = list(sheets.values())[0]
+        for loot in closed_loots:
+            sheet_rows[first_sheet.name] += 1
+            first_sheet.write_string(sheet_rows[first_sheet.name], 0, loot)
+    else:
+        for sheet_timestamp in sheets:
+            sheet = sheets[sheet_timestamp]
+            # Write loots to the current sheet
+            for loot in closed_loots.copy():
+                loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
+                parsed_time = datetime_from_eq_format(loot_timestamp)
+                if sheet_timestamp == "Loot" or parsed_time < sheet_timestamp:
+                    sheet_rows[sheet.name] += 1
+                    sheet.write_string(sheet_rows[sheet.name], 0, loot)
+                    closed_loots.remove(loot)
+        # Write any remaining loots to the last sheet
+        for loot in closed_loots:
+            sheet_rows[last_sheet.name] += 1
+            last_sheet.write_string(sheet_rows[last_sheet.name], 0, loot)
 
     # Save the workbook
     try:

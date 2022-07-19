@@ -77,7 +77,10 @@ GRATS_MESSAGE_ROLL = GRATS_MESSAGE_ROLL.strip("\"\'")
 MIN_DKP_OLD = CONF.getint("default", "min_dkp", fallback=1)
 MIN_BID_TIME = CONF.getint("default", "min_bid_time", fallback=150) + 1
 RESTRICT_BIDS = CONF.getboolean("default", "restrict_bids", fallback=False)
-NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=True)
+RESTRICT_EXPORT = CONF.getboolean("default", "restrict_export", fallback=True)
+NODROP_ONLY = CONF.getboolean("default", "nodrop_only", fallback=False)
+TICK_BEFORE_LOOT = CONF.getboolean("default", "tick_before_loot",
+                                   fallback=True)
 ALWAYS_ON_TOP = CONF.getboolean("default", "always_on_top", fallback=False)
 CONFIRM_EXIT = CONF.getboolean("default", "confirm_exit", fallback=True)
 SHOW_RAIDTICK_ONLY = CONF.getboolean("default", "raidtick_filter",

@@ -153,12 +153,19 @@ class MenuBar(wx.MenuBar):
             self.Bind(wx.EVT_MENU, self.OnSetBidChannel, channel_item)
         bidding_menu.AppendSubMenu(bid_chan_menu, '&Bid Channels')
 
-        self.restrict_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, '&Restrict to Alliance',
+        self.restrict_bids_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, 'Restrict Bids to Alliance',
             kind=wx.ITEM_CHECK)
-        bidding_menu.Append(self.restrict_mi)
-        self.restrict_mi.Check(config.RESTRICT_BIDS)
-        self.Bind(wx.EVT_MENU, self.OnRestrict, self.restrict_mi)
+        bidding_menu.Append(self.restrict_bids_mi)
+        self.restrict_bids_mi.Check(config.RESTRICT_BIDS)
+        self.Bind(wx.EVT_MENU, self.OnRestrictBids, self.restrict_bids_mi)
+
+        self.restrict_exports_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, '&Restrict Export to Alliance',
+            kind=wx.ITEM_CHECK)
+        bidding_menu.Append(self.restrict_exports_mi)
+        self.restrict_exports_mi.Check(config.RESTRICT_EXPORT)
+        self.Bind(wx.EVT_MENU, self.OnRestrictExport, self.restrict_exports_mi)
 
         self.nodrop_only_mi = wx.MenuItem(
             bidding_menu, wx.ID_ANY, '&Ignore Droppable Items',
@@ -166,6 +173,15 @@ class MenuBar(wx.MenuBar):
         bidding_menu.Append(self.nodrop_only_mi)
         self.nodrop_only_mi.Check(config.NODROP_ONLY)
         self.Bind(wx.EVT_MENU, self.OnNodropOnly, self.nodrop_only_mi)
+
+        self.tick_before_loot_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, 'Tick Before Loot (Quake Mode)',
+            kind=wx.ITEM_CHECK)
+        bidding_menu.Append(self.tick_before_loot_mi)
+        self.tick_before_loot_mi.Check(config.TICK_BEFORE_LOOT)
+        self.Bind(wx.EVT_MENU, self.OnTickBeforeLoot, self.tick_before_loot_mi)
+
+        bidding_menu.AppendSeparator()
 
         self.audio_alerts_mi = wx.MenuItem(
             bidding_menu, wx.ID_ANY, 'Use &Audio Alerts',
@@ -460,16 +476,28 @@ class MenuBar(wx.MenuBar):
             wx.PostEvent(self.GetParent(), models.AppClearEvent())
             utils.clear_alerts()
 
-    def OnRestrict(self, e: wx.MenuEvent):
-        config.RESTRICT_BIDS = self.restrict_mi.IsChecked()
+    def OnRestrictBids(self, e: wx.MenuEvent):
+        config.RESTRICT_BIDS = self.restrict_bids_mi.IsChecked()
         config.CONF.set(
             'default', 'restrict_bids', str(config.RESTRICT_BIDS))
+        config.write()
+
+    def OnRestrictExport(self, e: wx.MenuEvent):
+        config.RESTRICT_EXPORT = self.restrict_exports_mi.IsChecked()
+        config.CONF.set(
+            'default', 'restrict_export', str(config.RESTRICT_EXPORT))
         config.write()
 
     def OnNodropOnly(self, e: wx.MenuEvent):
         config.NODROP_ONLY = self.nodrop_only_mi.IsChecked()
         config.CONF.set(
             'default', 'nodrop_only', str(config.NODROP_ONLY))
+        config.write()
+
+    def OnTickBeforeLoot(self, e: wx.MenuEvent):
+        config.TICK_BEFORE_LOOT = self.tick_before_loot_mi.IsChecked()
+        config.CONF.set(
+            'default', 'tick_before_loot', str(config.TICK_BEFORE_LOOT))
         config.write()
 
     def OnAudioAlerts(self, e: wx.MenuEvent):
