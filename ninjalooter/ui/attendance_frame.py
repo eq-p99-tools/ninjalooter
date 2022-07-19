@@ -303,7 +303,8 @@ class AttendanceDetailWindow(wx.Frame):
         attendance_record = ObjectListView.GroupListView(
             self, wx.ID_ANY, style=wx.LC_REPORT,
             size=wx.Size(405, 1080), useExpansionColumn=True)
-        attendance_record.CopyObjectsToClipboard = self.CopyObjectsToClipboard
+        attendance_record.CopyObjectsToClipboard = (
+            self.CopyObjectsToClipboardAttendance)
         main_box.Add(attendance_record, flag=wx.EXPAND | wx.ALL)
         self.attendance_record = attendance_record
 
@@ -334,7 +335,7 @@ class AttendanceDetailWindow(wx.Frame):
                 self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
-    def CopyObjectsToClipboard(self, objects):
+    def CopyObjectsToClipboardAttendance(self, objects):
         """
         Put a textual representation of the given objects onto the clipboard.
 
@@ -345,26 +346,18 @@ class AttendanceDetailWindow(wx.Frame):
         if objects is None or len(objects) == 0:
             return
 
-        # Get all the values of the given rows into multi-list
-        rows = self.attendance_record._GetValuesAsMultiList(objects)
-
         # Make a text version of the values
         lines = [
             (f"[{self.item.eqtime()}] [ANONYMOUS] "
-             f"{x[0]} <{x[1]}> {{{x[2]} {x[3]}}}") for x in rows]
+             f"{x.name} <{x.guild}> {{{x.level} {x.pclass}}}")
+            for x in objects]
         txt = "\n".join(lines) + "\n"
 
-        # Make a html version on Windows
-        try:
-            lines = ["<td>" + "</td><td>".join(x) + "</td>" for x in rows]
-            html = "<table><tr>" + "</tr><tr>".join(lines) + "</tr></table>"
-            self.attendance_record._PutTextAndHtmlToClipboard(txt, html)
-        except ImportError:
-            cb = wx.Clipboard()
-            if cb.Open():
-                cb.SetData(wx.TextDataObject(txt))
-                cb.Flush()
-                cb.Close()
+        cb = wx.Clipboard()
+        if cb.Open():
+            cb.SetData(wx.TextDataObject(txt))
+            cb.Flush()
+            cb.Close()
 
     def OnRemovePlayer(self, e: wx.EVT_BUTTON):
         selected_player = self.attendance_record.GetSelectedObject()

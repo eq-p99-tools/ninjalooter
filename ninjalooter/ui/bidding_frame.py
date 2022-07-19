@@ -211,6 +211,8 @@ class BiddingFrame(wx.Window):
         history_list = ObjectListView.ObjectListView(
             pane_3, wx.ID_ANY, size=wx.Size(725, 1000),
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
+        history_list.CopyObjectsToClipboard = (
+            self.CopyObjectsToClipboardLoot)
         history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
         self.history_list = history_list
@@ -531,6 +533,29 @@ class BiddingFrame(wx.Window):
         if not selected_object:
             return
         ItemDetailWindow(selected_object, listbox, parent=self)
+
+    def CopyObjectsToClipboardLoot(self, objects):
+        """
+        Put a textual representation of the given objects onto the clipboard.
+
+        Custom version of the copy text from a tick line:
+
+        [Mon Jul 11 18:32:43 2022] You say, 'LOOT:  Item Player #'
+        """
+        if objects is None or len(objects) == 0:
+            return
+
+        # Make a text version of the values
+        lines = []
+        for auction in objects:
+            lines.append(utils.parse_auction_for_loot_export(auction))
+        txt = "\n".join(lines) + "\n"
+
+        cb = wx.Clipboard()
+        if cb.Open():
+            cb.SetData(wx.TextDataObject(txt))
+            cb.Flush()
+            cb.Close()
 
 
 class ItemDetailWindow(wx.Frame):

@@ -566,6 +566,29 @@ def export_to_excel(filename):
         return False
 
 
+def parse_auction_for_loot_export(auction):
+    highest = auction.highest()
+    if config.EXPORT_TIME_IN_EASTERN:
+        item_time = datetime_from_eq_format(
+            auction.item.timestamp, allow_eastern=False)
+        timestamp = datetime_to_eq_format(item_time)
+    else:
+        timestamp = auction.item.timestamp
+    if highest and isinstance(auction, models.DKPAuction):
+        winner, dkp = highest[0]
+        text = (
+            f"[{timestamp}] You say, 'LOOT: "
+            f" {auction.item.name} {winner} {dkp}'"
+        )
+    elif highest:
+        winner, _ = highest[0]
+        text = (
+            f"[{timestamp}] You say, 'LOOT: "
+            f" {auction.item.name} {winner} 0'"
+        )
+    return text
+
+
 def export_to_eqdkp(filename):
     LOG.info("Exporting to EQDKP file: %s", filename)
 
@@ -615,25 +638,7 @@ def export_to_eqdkp(filename):
     # Assemble all recorded loots into parsable format
     closed_loots = []
     for auction in config.HISTORICAL_AUCTIONS.values():
-        highest = auction.highest()
-        if config.EXPORT_TIME_IN_EASTERN:
-            item_time = datetime_from_eq_format(
-                auction.item.timestamp, allow_eastern=False)
-            timestamp = datetime_to_eq_format(item_time)
-        else:
-            timestamp = auction.item.timestamp
-        if highest and isinstance(auction, models.DKPAuction):
-            winner, dkp = highest[0]
-            closed_loots.append(
-                f"[{timestamp}] You say, 'LOOT: "
-                f" {auction.item.name} {winner} {dkp}'"
-            )
-        elif highest:
-            winner, _ = highest[0]
-            closed_loots.append(
-                f"[{timestamp}] You say, 'LOOT: "
-                f" {auction.item.name} {winner} 0'"
-            )
+        closed_loots.append(parse_auction_for_loot_export(auction))
 
     # Set up the workbook
     workbook = xlsxwriter.Workbook(
