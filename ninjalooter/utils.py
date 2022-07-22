@@ -658,7 +658,7 @@ def export_to_eqdkp(filename):
         tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group('time')
         parsed_time = datetime_from_eq_format(tick_timestamp)
         if tick_name:
-            sheet_name = tick_name
+            sheet_name = tick_name[:32]
         else:
             sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
         while sheet_name in workbook.sheetnames:
