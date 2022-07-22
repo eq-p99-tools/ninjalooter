@@ -22,15 +22,16 @@ a.datas += [('data/items.json', 'data/items.json', '.')]
 a.datas += [('data/spells.json', 'data/spells.json', '.')]
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 from ninjalooter import config
+CONSOLE_BUILD = bool(config.SEMVER.build)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
           a.datas,
           name='ninjalooter-%s' % config.VERSION,
-          debug=False,
+          debug=CONSOLE_BUILD,
           strip=False,
           upx=False,
           runtime_tmpdir=None,
-          console=False,
+          console=CONSOLE_BUILD,
           icon='data/icons/ninja_attack.ico')
