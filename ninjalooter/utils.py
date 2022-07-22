@@ -684,6 +684,8 @@ def export_to_eqdkp(filename):
 
     # Loop through sheets and add creditts to them
     for sheet_timestamp in reversed(sheets):
+        if sheet_timestamp == "Loot":
+            continue
         sheet = sheets[sheet_timestamp]
         # Write creditts after each tick, working backwards
         for creditt in creditt_messages.copy():
@@ -696,6 +698,8 @@ def export_to_eqdkp(filename):
 
     # Write any remaining creditts to the first sheet -- do we want this?
     for creditt in creditt_messages:
+        if first_sheet.name == "Loot":
+            break
         sheet_rows[first_sheet.name] += 1
         first_sheet.write_string(sheet_rows[first_sheet.name], 0, creditt)
 
