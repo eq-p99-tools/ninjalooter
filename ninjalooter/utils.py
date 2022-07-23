@@ -574,6 +574,7 @@ def parse_auction_for_loot_export(auction):
         timestamp = datetime_to_eq_format(item_time)
     else:
         timestamp = auction.item.timestamp
+    text = None
     if highest and isinstance(auction, models.DKPAuction):
         winner, dkp = highest[0]
         text = (
@@ -638,7 +639,9 @@ def export_to_eqdkp(filename):
     # Assemble all recorded loots into parsable format
     closed_loots = []
     for auction in config.HISTORICAL_AUCTIONS.values():
-        closed_loots.append(parse_auction_for_loot_export(auction))
+        loot_text = parse_auction_for_loot_export(auction)
+        if loot_text:
+            closed_loots.append(loot_text)
 
     # Set up the workbook
     workbook = xlsxwriter.Workbook(
