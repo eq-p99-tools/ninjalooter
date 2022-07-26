@@ -1247,6 +1247,7 @@ EVT_KILL = wx.NewId()
 EVT_CREDITT = wx.NewId()
 EVT_GRATSS = wx.NewId()
 EVT_CALC_RAIDGROUPS = wx.NewId()
+EVT_SHOW_RAID_OVERVIEW = wx.NewId()
 EVT_APP_CLEAR = wx.NewId()
 EVT_IGNORE = wx.NewId()
 
@@ -1336,6 +1337,14 @@ class CalcRaidGroupsEvent(LogEvent):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__()
         self.SetEventType(EVT_CALC_RAIDGROUPS)
+
+
+# pylint: disable=too-few-public-methods
+class ShowRaidOverviewEvent(LogEvent):
+    def __init__(self, wholog):
+        super().__init__()
+        self.wholog = wholog
+        self.SetEventType(EVT_SHOW_RAID_OVERVIEW)
 
 
 class AppClearEvent(LogEvent):  # pylint: disable=too-few-public-methods

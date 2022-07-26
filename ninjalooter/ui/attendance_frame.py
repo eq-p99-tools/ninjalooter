@@ -90,6 +90,12 @@ class AttendanceFrame(wx.Window):
         attendance_buttons_box.Add(
             attendance_use_raidgroups, border=5, flag=wx.ALL)
 
+        attendance_use_raid_ov = wx.Button(
+            pane_1, label="Show Raid Overview", size=(140, 22))
+        attendance_use_raid_ov.Bind(wx.EVT_BUTTON, self.OnShowRaidOverview)
+        attendance_buttons_box.Add(
+            attendance_use_raid_ov, border=5, flag=wx.ALL)
+
         # Creditt Log
         creditt_box = wx.BoxSizer(wx.HORIZONTAL)
         creditt_list = ObjectListView.ObjectListView(
@@ -226,6 +232,13 @@ class AttendanceFrame(wx.Window):
             config.RAID_GROUPS.build_groups(list(selected_tick.log.values()))
             wx.PostEvent(self.GetGrandParent(), models.CalcRaidGroupsEvent())
         print("raidgroups")
+
+    def OnShowRaidOverview(self, e: wx.Event):
+        selected_tick = self.attendance_list.GetSelectedObject()
+        if selected_tick:
+            wx.PostEvent(self.GetGrandParent(),
+                         models.ShowRaidOverviewEvent(selected_tick))
+        print("raid overview")
 
     def OnWhoHistory(self, e: models.WhoHistoryEvent):
         if self.attendance_button_raidtick.GetValue():
