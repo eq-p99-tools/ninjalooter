@@ -71,14 +71,15 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
         self._who_log = config.LAST_WHO_SNAPSHOT
         self._recalc_lists()
 
-    def onSize(self, evt):
+    def onSize(self, e: wx.EVT_SIZE):
         size = self.GetSize()
         vsize = self.GetVirtualSize()
 
         self.guild_cb_outer_box.SetMinSize((size[0] - 25, 0))
         self.SetVirtualSize((size[0], vsize[1]))
 
-        evt.Skip()
+        if e:
+            e.Skip()
 
     def OnLastWho(self, e: models.WhoEndEvent):
         print("Calc raid overview")
@@ -120,7 +121,8 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
                 )
             self.guild_cb_inner_box.Add(
                 guild_cb, flag=wx.LEFT | wx.TOP | wx.BOTTOM, border=6)
-        self.guild_cb_inner_box.Layout()
+        self.onSize(None)  # Trigger a resize to handle initialization
+
         for pclass, listview in self.class_olv_objects.items():
             listview.SetObjects(self._cached_class_rosters[pclass])
             listview.SortBy(1, False)
