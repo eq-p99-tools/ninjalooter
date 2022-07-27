@@ -57,7 +57,7 @@ class AttendanceFrame(wx.Window):
         ])
         attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         attendance_list.SetEmptyListMsg(
-            "No who log history.\nPlease type `/who` ingame.")
+            "No attendance history found.\nPlease type `/who` in-game.")
         attendance_list.SetToolTip(
             "Double left-click an attendance record to edit it in a detailed "
             "view.\n"
