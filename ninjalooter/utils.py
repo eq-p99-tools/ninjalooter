@@ -435,6 +435,7 @@ def store_state(backup=False):
         "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
         "RAID_OVERVIEW_GUILDS_ENABLED_CACHE":
             config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
+        "TAB_SELECTION": config.TAB_SELECTION,
     }
     with open(statefile_name, 'w') as ssfp:
         json.dump(json_state, ssfp, cls=JSONEncoder)

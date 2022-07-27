@@ -88,25 +88,33 @@ class MainWindow(wx.Frame):
         config.WX_TASKBAR_ICON = TaskBarIcon(self)
 
         # Notebook used to create a tabbed main interface
-        notebook = wx.Notebook(self, style=wx.LEFT)
+        self._notebook = wx.Notebook(self, style=wx.LEFT)
 
         # Bidding Frame
-        self.bidding_frame = bidding_frame.BiddingFrame(notebook)
+        self.bidding_frame = bidding_frame.BiddingFrame(
+            self._notebook)
 
         # Attendance Frame
-        self.attendance_frame = attendance_frame.AttendanceFrame(notebook)
+        self.attendance_frame = attendance_frame.AttendanceFrame(
+            self._notebook)
 
         # Population Frame
-        self.population_frame = population_frame.PopulationFrame(notebook)
+        self.population_frame = population_frame.PopulationFrame(
+            self._notebook)
 
         # Kill Times Frame
-        self.killtimes_frame = killtimes_frame.KillTimesFrame(notebook)
+        self.killtimes_frame = killtimes_frame.KillTimesFrame(
+            self._notebook)
 
         # Raid Groups Frame
-        self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(notebook)
+        self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(
+            self._notebook)
 
         # Raid Overview Frame
-        self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(notebook)
+        self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(
+            self._notebook)
+
+        self._notebook.SetSelection(config.TAB_SELECTION)
 
         self.Show(True)
         if config.ALWAYS_ON_TOP:
@@ -165,6 +173,7 @@ class MainWindow(wx.Frame):
         else:
             result = wx.ID_OK
         if result == wx.ID_OK:
+            config.TAB_SELECTION = self._notebook.GetSelection()
             utils.clear_alerts()
             config.WX_TASKBAR_ICON.Destroy()
             self.parser_thread.abort()
