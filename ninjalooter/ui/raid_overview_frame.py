@@ -33,7 +33,7 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
 
         # Set up boxes for each class
         self.class_olv_objects = {}
-        for pclass in sorted(constants.ALL_CLASSES):
+        for pclass in config.OVERVIEW_CLASS_ORDER:
             group_box = wx.BoxSizer(wx.VERTICAL)
             group_type_label = wx.StaticText(
                 self, label=pclass)

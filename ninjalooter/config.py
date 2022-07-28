@@ -7,6 +7,8 @@ import pathlib
 import re
 import semver
 
+from ninjalooter import constants
+
 SEMVER = semver.VersionInfo(
     major=1,
     minor=16,
@@ -95,6 +97,13 @@ ALLOW_EXCEL_EXPORT = CONF.getboolean("default", "allow_excel_export",
 EXPORT_TIME_IN_EASTERN = CONF.getboolean("default", "export_time_in_eastern",
                                          fallback=False)
 LAST_RUN_VERSION = CONF.get("default", "last_run_version", fallback=None)
+OVERVIEW_CLASS_ORDER = CONF.get(
+    "default", "overview_class_order",
+    fallback=', '.join(constants.ALL_CLASSES_RAID_IMPORTANCE))
+OVERVIEW_CLASS_ORDER = [
+    pclass.strip() for pclass in OVERVIEW_CLASS_ORDER.split(',')]
+CONF.set("default", "overview_class_order", ', '.join(OVERVIEW_CLASS_ORDER))
+
 
 if not CONF.has_section("min_dkp"):
     CONF.add_section("min_dkp")
