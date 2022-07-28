@@ -54,7 +54,7 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
             group_list.SetFilter(
                 ObjectListView.Filter.Predicate(self._guild_filter))
             group_box.Add(group_list)
-            self.class_olv_objects[pclass] = group_list
+            self.class_olv_objects[pclass] = group_list, group_type_label
             self.raid_overview_main_box.Add(
                 group_box, flag=wx.TOP | wx.LEFT, border=8)
 
@@ -123,9 +123,16 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
                 guild_cb, flag=wx.LEFT | wx.TOP | wx.BOTTOM, border=6)
         self.onSize(None)  # Trigger a resize to handle initialization
 
+        self._refresh_list_items()
+
+    def _refresh_list_items(self):
+        total = 0
         for pclass, listview in self.class_olv_objects.items():
-            listview.SetObjects(self._cached_class_rosters[pclass])
-            listview.SortBy(1, False)
+            listview[0].SetObjects(self._cached_class_rosters[pclass])
+            listview[0].SortBy(1, False)
+            class_count = len(listview[0].GetFilteredObjects())
+            listview[1].SetLabel(f"{pclass} ({class_count})")
+            total += class_count
 
     def _guild_filter(self, obj):
         if obj.guild in self._guilds_enabled:
@@ -145,12 +152,11 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
             if hasattr(checkbox, "IsChecked") and checkbox.IsChecked():
                 self._guilds_enabled.add(checkbox.GetLabel())
 
-        for pclass, listview in self.class_olv_objects.items():
-            listview.SetObjects(self._cached_class_rosters[pclass])
+        self._refresh_list_items()
 
         e.Skip()
 
     def OnClearApp(self, e: models.AppClearEvent):
         for pclass, listview in self.class_olv_objects.items():
-            listview.ClearAll()
+            listview[0].ClearAll()
         e.Skip()
