@@ -663,16 +663,24 @@ def export_to_eqdkp(filename):
     for tick_name, tick in raidtick_logs:
         tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group('time')
         parsed_time = datetime_from_eq_format(tick_timestamp)
+        alt_sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
         if tick_name:
             sheet_name = tick_name[:32]
+            # the following aren't allowed: []:*?/\
+            for c in '[]:?/\\':
+                sheet_name = sheet_name.replace(c, '-')
+            sheet_name = sheet_name.replace('*', '')
         else:
-            sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
+            sheet_name = alt_sheet_name
         while sheet_name in workbook.sheetnames:
             if sheet_name[-1] in map(str, range(10)):
                 sheet_name = sheet_name[:-1] + str(int(sheet_name[-1]) + 1)
             else:
                 sheet_name += " 2"
-        worksheet = workbook.add_worksheet(sheet_name)
+        try:
+            worksheet = workbook.add_worksheet(sheet_name)
+        except xlsxwriter.exceptions.InvalidWorksheetName:
+            worksheet = workbook.add_worksheet(alt_sheet_name)
         sheets[parsed_time] = worksheet
         # Write /who logs
         for row, line in enumerate(tick):

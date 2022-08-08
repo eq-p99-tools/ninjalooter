@@ -403,6 +403,10 @@ class AttendanceDetailWindow(wx.Frame):
     def OnClose(self, e: wx.EVT_CLOSE):
         self.item.raidtick = self.raidtick_checkbox.IsChecked()
         self.item.tick_name = self.name_textbox.GetValue()[:32]
+        # the following aren't allowed: []:*?/\
+        for c in '[]:?/\\':
+            self.item.tick_name = self.item.tick_name.replace(c, '-')
+        self.item.tick_name = self.item.tick_name.replace('*', '')
         self.GetParent().RefreshList()
         utils.store_state()
         self.Destroy()
