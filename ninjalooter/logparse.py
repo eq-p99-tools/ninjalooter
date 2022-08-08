@@ -1,3 +1,4 @@
+import datetime
 import os
 import threading
 import time
@@ -45,7 +46,12 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
         lfp.seek(0, os.SEEK_END)
         LOG.info("Logfile loaded: %s", logfile)
         while run.is_set():
-            lines = lfp.readlines()
+            try:
+                lines = lfp.readlines()
+            except UnicodeDecodeError:
+                LOG.warning("Bad character in log line at: %s",
+                            datetime.datetime.now())
+                continue
             last_rand_player = None
             for line in lines:
                 line = line.strip()
