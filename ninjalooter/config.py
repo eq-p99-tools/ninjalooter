@@ -251,6 +251,10 @@ MATCH_BID_GU = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) (tells the guild|say to your guild),"
     r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID_TELL = re.compile(
+    TIMESTAMP +
+    r"(?P<name>\w+) (-> \w+: |tells you, ')"
+    r"(?P<text>.*?(?P<bid>\d+(?!nd)).*)'?$")
 
 # Random Matchers
 MATCH_RAND1 = re.compile(
@@ -303,7 +307,8 @@ BID_CHANNEL_OPTIONS = {
     "ooc": MATCH_BID_OOC,
     "auc": MATCH_BID_AUC,
     "shout": MATCH_BID_SHOUT,
-    "gu": MATCH_BID_GU
+    "gu": MATCH_BID_GU,
+    "tell": MATCH_BID_TELL,
 }
 
 MATCH_DROP = CONF.get(

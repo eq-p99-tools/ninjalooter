@@ -540,6 +540,26 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertListEqual([('Jim', 12)], disc_auction.highest())
         mock_post_event.assert_not_called()
 
+        # Someone in the alliance bids on an active item via tell (windows off)
+        line = "[Sun Aug 16 22:47:31 2020] Jim tells you, 'Copper Disc 15 DKP'"
+        match = config.MATCH_BID_TELL.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertIn(('Jim', 15), disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
+
+        # Someone in the alliance bids on an active item via tell (windows on)
+        line = "[Sun Aug 16 22:47:31 2020] Jim -> You: Copper Disc 16 DKP"
+        match = config.MATCH_BID_TELL.match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertIn(('Jim', 16), disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
+
         config.ACTIVE_AUCTIONS.clear()
 
     @mock.patch('ninjalooter.utils.store_state')
