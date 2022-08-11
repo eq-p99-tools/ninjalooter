@@ -106,6 +106,31 @@ class TestMessageHandlers(base.NLTestBase):
             'window', models.WhoEvent('Jim', 'Cleric', '50', None))
         mock_post_event.reset_mock()
 
+    @mock.patch('wx.PostEvent')
+    def test_handle_end_who(self, mock_post_event):
+        config.LAST_WHO_SNAPSHOT = {
+            'Jim': models.Player('Jim', None, None, None)}
+        config.PLAYER_DB = {
+            'Jim': models.Player('Jim', "Wizard", 60, 'Guild')}
+        line = '[Sun Aug 16 22:46:32 2020] There is 1 player in Oggok.'
+        match = config.MATCH_END_WHO.match(line)
+
+        # REMEMBER_PLAYER_AFFILIATIONS: False
+        # Player data should simply be copied from the /who entry
+        config.ATTENDANCE_LOGS.clear()
+        config.REMEMBER_GUILD_AFFILIATION = False
+
+        message_handlers.handle_end_who(match, mock.ANY, skip_store=True)
+        self.assertIsNone(config.ATTENDANCE_LOGS[0].log['Jim'].guild)
+
+        # REMEMBER_PLAYER_AFFILIATIONS: True
+        # Player lookup should get data from playerDB
+        config.ATTENDANCE_LOGS.clear()
+        config.REMEMBER_GUILD_AFFILIATION = True
+
+        message_handlers.handle_end_who(match, mock.ANY, skip_store=True)
+        self.assertEqual('Guild', config.ATTENDANCE_LOGS[0].log['Jim'].guild)
+
     @mock.patch('ninjalooter.config.AUDIO_ALERTS', True)
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')

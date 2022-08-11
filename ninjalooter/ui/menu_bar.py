@@ -181,6 +181,13 @@ class MenuBar(wx.MenuBar):
         self.tick_before_loot_mi.Check(config.TICK_BEFORE_LOOT)
         self.Bind(wx.EVT_MENU, self.OnTickBeforeLoot, self.tick_before_loot_mi)
 
+        self.remember_guild_mi = wx.MenuItem(
+            bidding_menu, wx.ID_ANY, 'Remember &Guild Affiliations',
+            kind=wx.ITEM_CHECK)
+        bidding_menu.Append(self.remember_guild_mi)
+        self.remember_guild_mi.Check(config.REMEMBER_GUILD_AFFILIATION)
+        self.Bind(wx.EVT_MENU, self.OnRememberGuild, self.remember_guild_mi)
+
         bidding_menu.AppendSeparator()
 
         self.audio_alerts_mi = wx.MenuItem(
@@ -498,6 +505,13 @@ class MenuBar(wx.MenuBar):
         config.TICK_BEFORE_LOOT = self.tick_before_loot_mi.IsChecked()
         config.CONF.set(
             'default', 'tick_before_loot', str(config.TICK_BEFORE_LOOT))
+        config.write()
+
+    def OnRememberGuild(self, e: wx.MenuEvent):
+        config.REMEMBER_GUILD_AFFILIATION = self.remember_guild_mi.IsChecked()
+        config.CONF.set(
+            'default', 'remember_guild_affiliation',
+            str(config.REMEMBER_GUILD_AFFILIATION))
         config.write()
 
     def OnAudioAlerts(self, e: wx.MenuEvent):

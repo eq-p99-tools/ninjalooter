@@ -51,6 +51,8 @@ confirm_exit = False
 tick_before_loot = True
 # Set the order of classes (and which are visible) in the Raid Overview
 overview_class_order = Warrior, Cleric, Bard, Magician, Wizard, Monk, Shaman, Enchanter, Rogue, Necromancer, Shadow Knight, Paladin, Druid, Ranger
+# Cache and recall the guild affiliation of anonymous players
+remember_guild_affiliation = True
 
 [theme]
 safe_color = #CCE2CB

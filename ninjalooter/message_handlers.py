@@ -130,7 +130,11 @@ def handle_end_who(match: re.Match, window: wx.Frame,
         config.RAIDTICK_ALERT_TIMER.start()
     who_snapshot = collections.OrderedDict()
     for name in sorted(config.LAST_WHO_SNAPSHOT):
-        who_snapshot[name] = config.PLAYER_DB[name]
+        if config.REMEMBER_GUILD_AFFILIATION:
+            who_snapshot[name] = config.PLAYER_DB[name]
+        else:
+            who_snapshot[name] = config.LAST_WHO_SNAPSHOT[name]
+            print("Not remembering player: %s" % config.LAST_WHO_SNAPSHOT[name])
     log_entry = models.WhoLog(
         time=parsed_time,
         log=who_snapshot,
@@ -181,7 +185,12 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
 
     LOG.info("Adding player record for %s as guild %s",
              name, config.PLAYER_DB[name].guild)
-    config.LAST_WHO_SNAPSHOT[name] = config.PLAYER_DB[name]
+    if config.REMEMBER_GUILD_AFFILIATION:
+        config.LAST_WHO_SNAPSHOT[name] = config.PLAYER_DB[name]
+    else:
+        config.LAST_WHO_SNAPSHOT[name] = models.Player(
+            name, pclass, level, guild)
+        print("Not remembering player: %s" % config.LAST_WHO_SNAPSHOT[name])
     wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
     return True
 
