@@ -103,8 +103,8 @@ OVERVIEW_CLASS_ORDER = CONF.get(
 OVERVIEW_CLASS_ORDER = [
     pclass.strip() for pclass in OVERVIEW_CLASS_ORDER.split(',')]
 CONF.set("default", "overview_class_order", ', '.join(OVERVIEW_CLASS_ORDER))
-REMEMBER_GUILD_AFFILIATION = CONF.getboolean(
-    "default", "remember_guild_affiliation", fallback=True)
+REMEMBER_PLAYER_DATA = CONF.getboolean(
+    "default", "remember_player_data", fallback=True)
 
 
 if not CONF.has_section("min_dkp"):

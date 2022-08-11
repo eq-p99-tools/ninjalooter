@@ -115,18 +115,18 @@ class TestMessageHandlers(base.NLTestBase):
         line = '[Sun Aug 16 22:46:32 2020] There is 1 player in Oggok.'
         match = config.MATCH_END_WHO.match(line)
 
-        # REMEMBER_PLAYER_AFFILIATIONS: False
+        # REMEMBER_PLAYER_DATA: False
         # Player data should simply be copied from the /who entry
         config.ATTENDANCE_LOGS.clear()
-        config.REMEMBER_GUILD_AFFILIATION = False
+        config.REMEMBER_PLAYER_DATA = False
 
         message_handlers.handle_end_who(match, mock.ANY, skip_store=True)
         self.assertIsNone(config.ATTENDANCE_LOGS[0].log['Jim'].guild)
 
-        # REMEMBER_PLAYER_AFFILIATIONS: True
+        # REMEMBER_PLAYER_DATA: True
         # Player lookup should get data from playerDB
         config.ATTENDANCE_LOGS.clear()
-        config.REMEMBER_GUILD_AFFILIATION = True
+        config.REMEMBER_PLAYER_DATA = True
 
         message_handlers.handle_end_who(match, mock.ANY, skip_store=True)
         self.assertEqual('Guild', config.ATTENDANCE_LOGS[0].log['Jim'].guild)
