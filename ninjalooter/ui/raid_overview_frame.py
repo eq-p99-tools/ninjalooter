@@ -131,8 +131,11 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
             listview[0].SetObjects(self._cached_class_rosters[pclass])
             listview[0].SortBy(1, False)
             class_count = len(listview[0].GetFilteredObjects())
-            listview[1].SetLabel(f"{pclass} ({class_count})")
             total += class_count
+
+        for pclass, listview in self.class_olv_objects.items():
+            class_count = len(listview[0].GetFilteredObjects())
+            listview[1].SetLabel(f"{pclass} ({class_count} / {total})")
 
     def _guild_filter(self, obj):
         if obj.guild in self._guilds_enabled:
