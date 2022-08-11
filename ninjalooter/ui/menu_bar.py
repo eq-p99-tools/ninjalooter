@@ -123,15 +123,15 @@ class MenuBar(wx.MenuBar):
 
         bidding_menu.AppendSeparator()
 
-        alliance_menu = wx.Menu()
+        self.alliance_menu = wx.Menu()
         for alliance in config.ALLIANCES:
             alliance_item = wx.MenuItem(
-                alliance_menu, wx.ID_ANY, alliance, kind=wx.ITEM_RADIO)
-            alliance_menu.Append(alliance_item)
+                self.alliance_menu, wx.ID_ANY, alliance, kind=wx.ITEM_RADIO)
+            self.alliance_menu.Append(alliance_item)
             if config.DEFAULT_ALLIANCE == alliance:
                 alliance_item.Check()
             self.Bind(wx.EVT_MENU, self.OnSetAlliance, alliance_item)
-        bidding_menu.AppendSubMenu(alliance_menu, '&Alliance')
+        bidding_menu.AppendSubMenu(self.alliance_menu, '&Alliance')
 
         drop_chan_menu = wx.Menu()
         for channel in config.DROP_CHANNEL_OPTIONS:

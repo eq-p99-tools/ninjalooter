@@ -183,6 +183,17 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                  name, config.PLAYER_DB[name].guild, guild)
         config.PLAYER_DB[name].guild = guild
 
+    if name == config.PLAYER_NAME and guild:
+        alliance = config.ALLIANCE_MAP.get(guild)
+        if alliance:
+            LOG.info("Updating default alliance to match operator's guild")
+            for item in window.GetMenuBar().alliance_menu.GetMenuItems():
+                if item.GetItemLabelText() == alliance:
+                    item.Check()
+                    config.DEFAULT_ALLIANCE = alliance
+                    config.CONF.set('default', 'default_alliance', alliance)
+                    config.write()
+
     LOG.info("Adding player record for %s as guild %s",
              name, config.PLAYER_DB[name].guild)
     if config.REMEMBER_GUILD_AFFILIATION:
