@@ -131,7 +131,7 @@ def handle_end_who(match: re.Match, window: wx.Frame,
     who_snapshot = collections.OrderedDict()
     for name in sorted(config.LAST_WHO_SNAPSHOT):
         if config.REMEMBER_PLAYER_DATA:
-            who_snapshot[name] = config.PLAYER_DB[name]
+            who_snapshot[name] = copy.copy(config.PLAYER_DB[name])
         else:
             who_snapshot[name] = config.LAST_WHO_SNAPSHOT[name]
             print("Not remembering player: %s" % config.LAST_WHO_SNAPSHOT[name])
@@ -197,7 +197,7 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     LOG.info("Adding player record for %s as guild %s",
              name, config.PLAYER_DB[name].guild)
     if config.REMEMBER_PLAYER_DATA:
-        config.LAST_WHO_SNAPSHOT[name] = config.PLAYER_DB[name]
+        config.LAST_WHO_SNAPSHOT[name] = copy.copy(config.PLAYER_DB[name])
     else:
         config.LAST_WHO_SNAPSHOT[name] = models.Player(
             name, pclass, level, guild)

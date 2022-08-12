@@ -1,4 +1,6 @@
 # pylint: disable=no-member,invalid-name,unused-argument,duplicate-code
+import copy
+
 import ObjectListView
 import wx
 import wx.lib.splitter
@@ -377,7 +379,10 @@ class AttendanceDetailWindow(wx.Frame):
         if not selected_player:
             return
 
-        self.item.log.pop(selected_player.name)
+        try:
+            self.item.log.pop(selected_player.name)
+        except KeyError:
+            pass  # already removed a duplicate -- shouldn't happen anymore
         self.attendance_record.RemoveObject(selected_player)
         self.Update()
         utils.store_state()
@@ -391,14 +396,18 @@ class AttendanceDetailWindow(wx.Frame):
             return
 
         player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
-        player_record = models.Player(player_name, None, None, player_guild)
         if player_name in config.PLAYER_DB:
-            player_record = config.PLAYER_DB[player_name]
+            player_record = copy.copy(config.PLAYER_DB[player_name])
+            if not player_record.guild:
+                player_record.guild = player_guild
+        else:
+            player_record = models.Player(player_name, None, None, player_guild)
 
-        self.item.log[player_name] = player_record
-        self.attendance_record.AddObject(player_record)
-        self.attendance_record.Update()
-        utils.store_state()
+        if player_name not in self.item.log:
+            self.item.log[player_name] = player_record
+            self.attendance_record.AddObject(player_record)
+            self.attendance_record.Update()
+            utils.store_state()
 
     def OnClose(self, e: wx.EVT_CLOSE):
         self.item.raidtick = self.raidtick_checkbox.IsChecked()
