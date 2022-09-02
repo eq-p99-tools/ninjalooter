@@ -85,6 +85,13 @@ class MenuBar(wx.MenuBar):
 
         file_menu.AppendSeparator()
 
+        load_state_mi = wx.MenuItem(file_menu, wx.ID_ANY, '&Load State')
+        load_state_bitmap = wx.Bitmap(os.path.join(
+            config.PROJECT_DIR, "data", "icons", "reload.png"))
+        load_state_mi.SetBitmap(load_state_bitmap)
+        file_menu.Append(load_state_mi)
+        self.Bind(wx.EVT_MENU, self.OnLoadState, load_state_mi)
+
         replay_mi = wx.MenuItem(file_menu, wx.ID_OPEN, '&Replay Log File')
         replay_mi.Enable(False)
         replay_bitmap = wx.Bitmap(os.path.join(
@@ -208,6 +215,20 @@ class MenuBar(wx.MenuBar):
         self.Append(bidding_menu, '&Bidding')
 
         parent.SetMenuBar(self)
+
+    def OnLoadState(self, e: wx.MenuEvent):
+        LOG.info("Attempting to load a state.json file...")
+        openFileDialog = wx.FileDialog(
+            self.GetParent(), "Open Statefile", os.curdir, "",
+            "NL State File (state_*.json)|state_*.json", wx.FD_OPEN)
+
+        result = openFileDialog.ShowModal()
+        filename = openFileDialog.GetPath()
+        openFileDialog.Destroy()
+        if result != wx.ID_OK:
+            return
+        utils.load_state(filename)
+        wx.PostEvent(self.GetParent(), models.AppReloadEvent())
 
     def OnReplayLog(self, e: wx.MenuEvent):
         LOG.info("Attempting to replay an eqlog...")

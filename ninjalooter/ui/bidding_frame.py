@@ -18,6 +18,8 @@ class BiddingFrame(wx.Window):
         parent.GetParent().Connect(-1, -1, models.EVT_BID, self.OnBid)
         parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
                                    self.OnClearApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD,
+                                   self.OnReloadApp)
         #######################
         # Bidding Frame (Tab 1)
         #######################
@@ -517,6 +519,12 @@ class BiddingFrame(wx.Window):
 
     def OnBid(self, e: models.BidEvent):
         self.active_list.RefreshObject(e.item)
+
+    def OnReloadApp(self, e: models.AppReloadEvent):
+        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
+        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
+        e.Skip()
 
     def OnClearApp(self, e: models.AppClearEvent):
         config.PENDING_AUCTIONS.clear()

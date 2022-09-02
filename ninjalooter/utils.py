@@ -380,9 +380,9 @@ def get_first_timestamp(iterable_obj) -> datetime.datetime:
     return datetime.datetime.fromtimestamp(0)
 
 
-def load_state():
+def load_state(state_file=config.SAVE_STATE_FILE):
     try:
-        with open(config.SAVE_STATE_FILE, 'r') as ssfp:
+        with open(state_file, 'r') as ssfp:
             json_state = json.load(ssfp, cls=JSONDecoder)
         for key, value in json_state.items():
             # Handle conversion of history data prior to v1.14

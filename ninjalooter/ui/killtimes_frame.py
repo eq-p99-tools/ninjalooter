@@ -12,6 +12,8 @@ class KillTimesFrame(wx.Window):
         parent.GetParent().Connect(-1, -1, models.EVT_KILL, self.OnKill)
         parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
                                    self.OnClearApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD,
+                                   self.OnReloadApp)
 
         ###########################
         # Kill Timers Frame (Tab 4)
@@ -49,6 +51,10 @@ class KillTimesFrame(wx.Window):
 
     def OnKill(self, e: models.KillEvent):
         self.killtimers_list.SetObjects(config.KILL_TIMERS)
+
+    def OnReloadApp(self, e: models.AppReloadEvent):
+        self.killtimers_list.SetObjects(config.KILL_TIMERS)
+        e.Skip()
 
     def OnClearApp(self, e: models.AppClearEvent):
         config.KILL_TIMERS.clear()

@@ -21,6 +21,8 @@ class AttendanceFrame(wx.Window):
                                    self.OnGratss)
         parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
                                    self.OnClearApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD,
+                                   self.OnReloadApp)
 
         ##############################
         # Attendance Log Frame (Tab 2)
@@ -260,6 +262,12 @@ class AttendanceFrame(wx.Window):
         config.ATTENDANCE_LOGS.clear()
         config.CREDITT_LOG.clear()
         config.GRATSS_LOG.clear()
+        self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
+        self.creditt_list.SetObjects(config.CREDITT_LOG)
+        self.gratss_list.SetObjects(config.GRATSS_LOG)
+        e.Skip()
+
+    def OnReloadApp(self, e: models.AppReloadEvent):
         self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
         self.creditt_list.SetObjects(config.CREDITT_LOG)
         self.gratss_list.SetObjects(config.GRATSS_LOG)

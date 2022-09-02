@@ -13,6 +13,8 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
         super().__init__(parent, *args, **kwargs)
         parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
                                    self.OnClearApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD,
+                                   self.OnLastWho)
         parent.GetParent().Connect(-1, -1, models.EVT_SHOW_RAID_OVERVIEW,
                                    self.OnCalcRaidOverview)
         parent.GetParent().Connect(-1, -1, models.EVT_WHO_END,
