@@ -87,7 +87,7 @@ class MenuBar(wx.MenuBar):
 
         load_state_mi = wx.MenuItem(file_menu, wx.ID_ANY, '&Load State')
         load_state_bitmap = wx.Bitmap(os.path.join(
-            config.PROJECT_DIR, "data", "icons", "reload.png"))
+            config.PROJECT_DIR, "data", "icons", "import.png"))
         load_state_mi.SetBitmap(load_state_bitmap)
         file_menu.Append(load_state_mi)
         self.Bind(wx.EVT_MENU, self.OnLoadState, load_state_mi)
