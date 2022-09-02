@@ -88,6 +88,12 @@ class AttendanceFrame(wx.Window):
         attendance_buttons_box.Add(
             attendance_toggle_raidtick, border=5, flag=wx.ALL)
 
+        attendance_export_tick = wx.Button(
+            pane_1, label="Copy Tick to Clipboard", size=(140, 22))
+        attendance_export_tick.Bind(wx.EVT_BUTTON, self.OnExportTick)
+        attendance_buttons_box.Add(
+            attendance_export_tick, border=5, flag=wx.ALL)
+
         attendance_use_raidgroups = wx.Button(
             pane_1, label="Calculate Raid Groups", size=(140, 22))
         attendance_use_raidgroups.Bind(wx.EVT_BUTTON, self.OnCalcRaidGroups)
@@ -229,6 +235,27 @@ class AttendanceFrame(wx.Window):
             self.attendance_list.SetObjects(raidticks)
         else:
             self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
+
+    def OnExportTick(self, e: wx.Event):
+        selected_object = self.attendance_list.GetSelectedObject()
+
+        if selected_object is None or len(selected_object.log) == 0:
+            return
+
+        # Make a text version of the values
+        lines = [
+            (f"[{selected_object.eqtime()}] [ANONYMOUS] "
+             f"{x.name} <{x.guild}>" +
+             (f" {{{x.level} {x.pclass}}}" if x.level != 0 else "")
+             )
+            for x in selected_object.log.values()]
+        txt = "\n".join(lines) + "\n"
+
+        cb = wx.Clipboard()
+        if cb.Open():
+            cb.SetData(wx.TextDataObject(txt))
+            cb.Flush()
+            cb.Close()
 
     def OnCalcRaidGroups(self, e: wx.Event):
         selected_tick = self.attendance_list.GetSelectedObject()
