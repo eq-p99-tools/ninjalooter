@@ -161,5 +161,6 @@ class RaidOverviewFrame(scrolled.ScrolledPanel):
 
     def OnClearApp(self, e: models.AppClearEvent):
         for pclass, listview in self.class_olv_objects.items():
-            listview[0].ClearAll()
+            listview[0].SetObjects([])
+            listview[1].SetLabel(f"{pclass} (0 / 0)")
         e.Skip()
