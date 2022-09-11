@@ -593,6 +593,26 @@ def parse_auction_for_loot_export(auction):
     return text
 
 
+def parse_tick_for_export(wholog):
+    tick_time = wholog.eqtime(allow_eastern=True)
+    tick_lines = []
+    for member, player_obj in wholog.log.items():
+        guild = player_obj.guild
+        if config.RESTRICT_EXPORT and guild not in \
+                config.ALLIANCES[config.DEFAULT_ALLIANCE]:
+            continue
+        level_class = None
+        if player_obj.level:
+            level_class = f"{player_obj.level} {player_obj.pclass}"
+        tick_line = f"[{tick_time}] [ANONYMOUS] {member}"
+        if guild:
+            tick_line += f" <{guild}>"
+        if level_class:
+            tick_line += " {%s}" % level_class
+        tick_lines.append(tick_line)
+    return tick_lines
+
+
 def export_to_eqdkp(filename):
     LOG.info("Exporting to EQDKP file: %s", filename)
 
@@ -600,20 +620,7 @@ def export_to_eqdkp(filename):
     raidtick_logs = []
     for wholog in config.ATTENDANCE_LOGS:
         if wholog.raidtick:
-            tick_time = wholog.eqtime(allow_eastern=True)
-            tick_lines = []
-            for member, player_obj in wholog.log.items():
-                guild = player_obj.guild
-                if config.RESTRICT_EXPORT and guild not in \
-                        config.ALLIANCES[config.DEFAULT_ALLIANCE]:
-                    continue
-                level_class = None
-                if player_obj.level:
-                    level_class = f"{player_obj.level} {player_obj.pclass}"
-                tick_line = f"[{tick_time}] [ANONYMOUS] {member} <{guild}>"
-                if level_class:
-                    tick_line += " {%s}" % level_class
-                tick_lines.append(tick_line)
+            tick_lines = parse_tick_for_export(wholog)
             if tick_lines:
                 raidtick_logs.append((wholog.tick_name, tick_lines))
 

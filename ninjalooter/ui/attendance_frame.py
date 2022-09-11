@@ -237,19 +237,14 @@ class AttendanceFrame(wx.Window):
             self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
 
     def OnExportTick(self, e: wx.Event):
-        selected_object = self.attendance_list.GetSelectedObject()
+        wholog = self.attendance_list.GetSelectedObject()
 
-        if selected_object is None or len(selected_object.log) == 0:
+        if wholog is None or len(wholog.log) == 0:
             return
 
         # Make a text version of the values
-        lines = [
-            (f"[{selected_object.eqtime()}] [ANONYMOUS] "
-             f"{x.name} <{x.guild}>" +
-             (f" {{{x.level} {x.pclass}}}" if x.level != 0 else "")
-             )
-            for x in selected_object.log.values()]
-        txt = "\n".join(lines) + "\n"
+        tick_lines = utils.parse_tick_for_export(wholog)
+        txt = "\n".join(tick_lines) + "\n"
 
         cb = wx.Clipboard()
         if cb.Open():
