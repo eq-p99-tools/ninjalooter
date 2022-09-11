@@ -11,8 +11,8 @@ restrict_export = True
 nodrop_only = True
 # Hide non-raidtick entries in the Attendance Logs tab
 raidtick_filter = False
-alliances = Force of Will:Force of Will,Venerate,Black Lotus;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot;Kingdom:Kingdom,Karens of Karana;Seal Team:Seal Team
-default_alliance = Force of Will
+alliances = Good Guys:Good Guys,Seal Team,Force of Will;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot;Kingdom:Kingdom,Karens of Karana;
+default_alliance = Good Guys
 # Don't show rots in the Historic Auctions panel
 hide_rots = False
 # If an item is linked more than once in drop_cooldown seconds, ignore it

@@ -159,8 +159,7 @@ NEW_RAIDTICK_SOUND = CONF.get(
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
-    fallback="Seal Team:Seal Team;"
-             "Force of Will:Force of Will,Venerate;"
+    fallback="Good Guys:Good Guys,Seal Team,Force of Will;"
              "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus;"
              "Kingdom:Kingdom,Karens of Karana"
 )
@@ -171,6 +170,8 @@ for alliance in CONF_ALLIANCES.split(";"):
     ALLIANCES[alliance] = members
 DEFAULT_ALLIANCE = CONF.get("default", "default_alliance",
                             fallback=tuple(ALLIANCES.keys())[0])
+if DEFAULT_ALLIANCE not in ALLIANCES.keys():
+    DEFAULT_ALLIANCE = tuple(ALLIANCES.keys())[0]
 
 # Data store variables
 PENDING_AUCTIONS = list()
