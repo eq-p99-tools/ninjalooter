@@ -160,7 +160,7 @@ NEW_RAIDTICK_SOUND = CONF.get(
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Good Guys:Good Guys,Seal Team,Force of Will;"
-             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus;"
+             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki;"
              "Kingdom:Kingdom,Karens of Karana"
 )
 ALLIANCES = collections.OrderedDict()

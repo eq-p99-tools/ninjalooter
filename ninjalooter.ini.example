@@ -11,7 +11,7 @@ restrict_export = True
 nodrop_only = True
 # Hide non-raidtick entries in the Attendance Logs tab
 raidtick_filter = False
-alliances = Good Guys:Good Guys,Seal Team,Force of Will;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot;Kingdom:Kingdom,Karens of Karana;
+alliances = Good Guys:Good Guys,Seal Team,Force of Will;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki;Kingdom:Kingdom,Karens of Karana;
 default_alliance = Good Guys
 # Don't show rots in the Historic Auctions panel
 hide_rots = False
