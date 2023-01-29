@@ -12,7 +12,7 @@ from ninjalooter import constants
 SEMVER = semver.VersionInfo(
     major=1,
     minor=16,
-    patch=5,
+    patch=6,
 )
 VERSION = str(SEMVER)
 
