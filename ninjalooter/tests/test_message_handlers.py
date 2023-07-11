@@ -18,6 +18,7 @@ class TestMessageHandlers(base.NLTestBase):
     def test_handle_start_who(self, mock_post_event, mock_store_state):
         # Empty List, full /who
         config.LAST_WHO_SNAPSHOT = {}
+        config.REMEMBER_PLAYER_DATA = True
         for line in base.SAMPLE_ATTENDANCE_LOGS.splitlines():
             match = config.MATCH_WHO.match(line)
             if match:
@@ -119,6 +120,7 @@ class TestMessageHandlers(base.NLTestBase):
         # Player data should simply be copied from the /who entry
         config.ATTENDANCE_LOGS.clear()
         config.REMEMBER_PLAYER_DATA = False
+        config.DEFAULT_ALLIANCE = "VCR"
 
         message_handlers.handle_end_who(match, mock.ANY, skip_store=True)
         self.assertIsNone(config.ATTENDANCE_LOGS[0].log['Jim'].guild)
@@ -338,21 +340,28 @@ class TestMessageHandlers(base.NLTestBase):
         items = list(message_handlers.handle_drop(match, 'window'))
         self.assertListEqual([jerkin_2.name], items)
         self.assertEqual(2, len(config.PENDING_AUCTIONS))
+        mock_post_event.reset_mock()
+        self.mock_playsound.reset_mock()
 
-        # Teir'dal Sai
+        # Teir'dal Sai (testing apostrophes)
         # NODROP filter off, droppable item
         config.NODROP_ONLY = False
+        config.PENDING_AUCTIONS.clear()
         line = ("[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
                 "'Teir'dal Sai'")
+        jim_sai_1_uuid = "jim_sai_1_uuid"
+        jim_sai_1 = models.ItemDrop(
+            "Teir'dal Sai", 'Jim', 'Sun Aug 16 22:47:31 2020',
+            uuid=jim_sai_1_uuid)
         match = config.MATCH_DROP_GU.match(line)
         with mock.patch('uuid.uuid4') as mock_uuid4:
-            mock_uuid4.return_value = jim_disc_1_uuid
+            mock_uuid4.return_value = jim_sai_1_uuid
             items = list(message_handlers.handle_drop(match, 'window'))
         self.assertEqual(1, len(items))
-        self.assertIn('Copper Disc', items)
-        self.assertEqual(2, len(config.PENDING_AUCTIONS))
+        self.assertIn("Teir'dal Sai", items)
+        self.assertEqual(1, len(config.PENDING_AUCTIONS))
         self.assertListEqual(
-            [jim_belt_1, jim_disc_1],
+            [jim_sai_1],
             config.PENDING_AUCTIONS)
         mock_post_event.assert_called_once_with(
             'window', models.DropEvent())
