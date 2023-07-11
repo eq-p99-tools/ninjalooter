@@ -276,7 +276,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     guild = config.LAST_WHO_SNAPSHOT.get(name, models.Player(name)).guild
     alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
-    bid = int(match.group("bid"))
+    bid = float(match.group("bid"))
 
     if text.startswith("~"):
         return False

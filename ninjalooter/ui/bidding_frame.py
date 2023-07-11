@@ -602,10 +602,10 @@ class ItemDetailWindow(wx.Frame):
                     continue
                 if isinstance(self.item, models.RandomAuction):
                     bidder, bid = line.split(":")
-                    bid_data[bidder.strip()] = int(bid)
+                    bid_data[bidder.strip()] = float(bid)
                 else:
                     bid, bidder = line.split(":")
-                    bid_data[int(bid)] = bidder.strip()
+                    bid_data[float(bid)] = bidder.strip()
             data.clear()
             data.update(bid_data)
             self.listbox.RefreshObject(self.item)

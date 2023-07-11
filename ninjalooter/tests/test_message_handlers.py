@@ -533,6 +533,17 @@ class TestMessageHandlers(base.NLTestBase):
             'window', models.BidEvent(disc_auction))
         mock_post_event.reset_mock()
 
+        # Someone in the alliance bids on an active item with fractional DKP
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 10.5 DKP'")
+        match = config.MATCH_BID[1].match(line)
+        result = message_handlers.handle_bid(match, 'window')
+        self.assertTrue(result)
+        self.assertIn(('Jim', 10.5), disc_auction.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(disc_auction))
+        mock_post_event.reset_mock()
+
         # Someone in the alliance bids on an active item with wrong case
         line = ("[Sun Aug 16 22:47:31 2020] Pim auctions, "
                 "'copper DISC 11 DKP'")

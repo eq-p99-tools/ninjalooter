@@ -1041,12 +1041,12 @@ class DKPAuction(Auction):
         super().__init__(item, **kwargs)
         self.alliance = alliance
         if bids:
-            self.bids = {int(bid): name for bid, name in bids.items()}
+            self.bids = {float(bid): name for bid, name in bids.items()}
         else:
             self.bids = dict()
         self.min_dkp = min_dkp or self.item.min_dkp()
 
-    def add(self, number: int, player: str) -> bool:
+    def add(self, number: float, player: str) -> bool:
         if not number:
             # Not a real bid
             LOG.info("%s attempted to bid for %s but didn't post a number",
@@ -1054,17 +1054,17 @@ class DKPAuction(Auction):
             return False
         if isinstance(self.min_dkp, int) and number < self.min_dkp:
             # Bid too low
-            LOG.info("%s attempted to bid for %s but bid too low: %d < %d",
+            LOG.info("%s attempted to bid for %s but bid too low: %.1f < %d",
                      player, self.item, number, self.min_dkp)
             return False
         if not self.bids or number > max(self.bids):
             # Valid bid
             self.bids[number] = player
-            LOG.info("Bid added for %s: %s = %d",
+            LOG.info("Bid added for %s: %s = %.1f",
                      self.item, player, number)
             return True
         # Bid isn't higher than existing bids
-        LOG.info("%s attempted to bid for %s but bid too low: %d",
+        LOG.info("%s attempted to bid for %s but bid too low: %.1f",
                  player, self.item, number)
         return False
 

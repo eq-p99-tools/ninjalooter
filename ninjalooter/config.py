@@ -237,27 +237,28 @@ MATCH_DROP_GU = re.compile(
     r" '(?P<text>.*)'")
 
 # Bid Matchers
+BASE_BID = r"(?P<text>.*?(?P<bid>\d+(?!nd)(.\d)?).*)"
 MATCH_BID_SAY = re.compile(
     TIMESTAMP +
-    r"(?P<name>\w+) says?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    r"(?P<name>\w+) says?, '" + BASE_BID + "'")
 MATCH_BID_OOC = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) says? out of character, "
-    r"'(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    r"'" + BASE_BID + "'")
 MATCH_BID_AUC = re.compile(
     TIMESTAMP +
-    r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    r"(?P<name>\w+) auctions?, '" + BASE_BID + "'")
 MATCH_BID_SHOUT = re.compile(
     TIMESTAMP +
-    r"(?P<name>\w+) shouts?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    r"(?P<name>\w+) shouts?, '" + BASE_BID + "'")
 MATCH_BID_GU = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) (tells the guild|say to your guild),"
-    r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+    r" '" + BASE_BID + "'")
 MATCH_BID_TELL = re.compile(
     TIMESTAMP +
     r"(?P<name>\w+) (-> \w+: |tells you, ')"
-    r"(?P<text>.*?(?P<bid>\d+(?!nd)).*)'?$")
+    r"" + BASE_BID + "'?$")
 
 # Random Matchers
 MATCH_RAND1 = re.compile(
