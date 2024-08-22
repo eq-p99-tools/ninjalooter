@@ -11,7 +11,11 @@ restrict_export = True
 nodrop_only = True
 # Hide non-raidtick entries in the Attendance Logs tab
 raidtick_filter = False
-alliances = Good Guys:Good Guys;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath;Kingdom:Kingdom,Karens of Karana;
+alliances = Good Guys:Good Guys;Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;Kingdom:Kingdom,Karens of Karana;
+# Anything in `extra_alliances` is additive to the primary list, so
+# please configure this for temporary additions rather than changing the
+# main `alliances` config and you will continue to receive alliance updates
+extra_alliances = Castle:Some New Guild,Some Old Guild;New Alliance:Another Guild
 default_alliance = Good Guys
 # Don't show rots in the Historic Auctions panel
 hide_rots = False

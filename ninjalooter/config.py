@@ -160,14 +160,28 @@ NEW_RAIDTICK_SOUND = CONF.get(
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
     fallback="Good Guys:Good Guys;"
-             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath;"
+             "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;"
              "Kingdom:Kingdom,Karens of Karana"
+)
+CONF_EXTRA_ALLIANCES = CONF.get(
+    "default", "extra_alliances", fallback=""
 )
 ALLIANCES = collections.OrderedDict()
 for alliance in CONF_ALLIANCES.split(";"):
+    if ":" not in alliance:
+        continue
     alliance, members = alliance.split(":")
-    members = tuple(map(lambda x: x.strip(), members.split(",")))
+    members = set(map(lambda x: x.strip(), members.split(",")))
     ALLIANCES[alliance] = members
+for alliance in CONF_EXTRA_ALLIANCES.split(";"):
+    if ":" not in alliance:
+        continue
+    alliance, members = alliance.split(":")
+    members = set(map(lambda x: x.strip(), members.split(",")))
+    if alliance in ALLIANCES:
+        ALLIANCES[alliance].update(members)
+    else:
+        ALLIANCES[alliance] = members
 DEFAULT_ALLIANCE = CONF.get("default", "default_alliance",
                             fallback=tuple(ALLIANCES.keys())[0])
 if DEFAULT_ALLIANCE not in ALLIANCES.keys():
