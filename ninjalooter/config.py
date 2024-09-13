@@ -12,7 +12,7 @@ from ninjalooter import constants
 SEMVER = semver.VersionInfo(
     major=1,
     minor=16,
-    patch=8,
+    patch=9,
 )
 VERSION = str(SEMVER)
 
@@ -171,15 +171,17 @@ for alliance in CONF_ALLIANCES.split(";"):
     if ":" not in alliance:
         continue
     alliance, members = alliance.split(":")
-    members = set(map(lambda x: x.strip(), members.split(",")))
+    members = list(map(lambda x: x.strip(), members.split(",")))
     ALLIANCES[alliance] = members
 for alliance in CONF_EXTRA_ALLIANCES.split(";"):
     if ":" not in alliance:
         continue
     alliance, members = alliance.split(":")
-    members = set(map(lambda x: x.strip(), members.split(",")))
+    members = list(map(lambda x: x.strip(), members.split(",")))
     if alliance in ALLIANCES:
-        ALLIANCES[alliance].update(members)
+        for member in members:
+            if member not in ALLIANCES[alliance]:
+                ALLIANCES[alliance].append(member)
     else:
         ALLIANCES[alliance] = members
 DEFAULT_ALLIANCE = CONF.get("default", "default_alliance",
