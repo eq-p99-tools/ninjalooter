@@ -24,7 +24,10 @@ def run():
             LOG.exception(
                 "Failed to automatically update. Continuing with old version.")
 
-    extra_data.apply_sheet_overrides()
+    try:
+        extra_data.apply_sheet_overrides()
+    except Exception as e:
+        LOG.exception(f"Failed to fetch google sheet for overrides: {e}")
     extra_data.apply_custom_overrides()
     utils.load_state()
     window.MainWindow()

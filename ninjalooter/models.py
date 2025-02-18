@@ -935,6 +935,7 @@ class ItemDrop(DictEquals):
 class Auction(DictEquals):
     item = None
     start_time = None
+    end_time = None
     _alert_timer = None
 
     def __init__(self, item: ItemDrop, start_time=None, **_):
@@ -1027,6 +1028,7 @@ class Auction(DictEquals):
     def complete(self):
         if self._alert_timer:
             self._alert_timer.cancel()
+        self.end_time = datetime.datetime.now()
 
 
 class DKPAuction(Auction):

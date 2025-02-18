@@ -399,7 +399,11 @@ def load_state(state_file=config.SAVE_STATE_FILE):
                 for entry in value:
                     entry.log = {name: models.Player(name, guild=guild)
                                  for name, guild in entry.log.items()}
-
+            # Handle conversion of auction end data prior to v1.16.10
+            elif key == 'HISTORICAL_AUCTIONS':
+                for entry in value.values():
+                    if entry.end_time is None:
+                        entry.end_time = entry.start_time
             setattr(config, key, value)
         LOG.info("Loaded state.")
     except FileNotFoundError:
@@ -463,7 +467,10 @@ def export_to_excel(filename):
     for auc in config.HISTORICAL_AUCTIONS.values():
         dkp_auc = isinstance(auc, models.DKPAuction)
         auc_data = {
-            'time': datetime_from_eq_format(auc.item.timestamp),
+            'time': (auc.end_time + eastern_time_offset()
+                     if config.EXPORT_TIME_IN_EASTERN
+                     else auc.end_time),
+            # 'time': datetime_from_eq_format(auc.item.timestamp),
             'item': auc.name(),
             'winner': auc.highest_players(),
             'type': 'DKP' if dkp_auc else 'Random',
@@ -571,12 +578,13 @@ def export_to_excel(filename):
 
 def parse_auction_for_loot_export(auction):
     highest = auction.highest()
-    if config.EXPORT_TIME_IN_EASTERN:
-        item_time = datetime_from_eq_format(
-            auction.item.timestamp, allow_eastern=False)
-        timestamp = datetime_to_eq_format(item_time)
-    else:
-        timestamp = auction.item.timestamp
+    # if config.EXPORT_TIME_IN_EASTERN:
+    #     item_time = datetime_from_eq_format(
+    #         auction.item.timestamp, allow_eastern=False)
+    #     timestamp = datetime_to_eq_format(item_time)
+    # else:
+    #     timestamp = auction.item.timestamp
+    timestamp = datetime_to_eq_format(auction.end_time)
     text = None
     if highest and isinstance(auction, models.DKPAuction):
         winner, dkp = highest[0]

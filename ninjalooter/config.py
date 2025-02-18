@@ -12,7 +12,7 @@ from ninjalooter import constants
 SEMVER = semver.VersionInfo(
     major=1,
     minor=16,
-    patch=9,
+    patch=10,
 )
 VERSION = str(SEMVER)
 
@@ -95,7 +95,7 @@ AUTO_SWAP_LOGFILE = CONF.getboolean("default", "auto_swap_logfile",
 ALLOW_EXCEL_EXPORT = CONF.getboolean("default", "allow_excel_export",
                                      fallback=False)
 EXPORT_TIME_IN_EASTERN = CONF.getboolean("default", "export_time_in_eastern",
-                                         fallback=False)
+                                         fallback=True)
 LAST_RUN_VERSION = CONF.get("default", "last_run_version", fallback=None)
 OVERVIEW_CLASS_ORDER = CONF.get(
     "default", "overview_class_order",

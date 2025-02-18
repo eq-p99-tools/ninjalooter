@@ -35,3 +35,10 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=CONSOLE_BUILD,
           icon='data/icons/ninja_attack.ico')
+
+import zipfile
+import os
+
+os.chdir('dist')
+zipfile.ZipFile(f"ninjalooter-{config.VERSION}.zip", "w", zipfile.ZIP_DEFLATED).write(f"ninjalooter-{config.VERSION}.exe")
+os.chdir("..")

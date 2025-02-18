@@ -441,6 +441,7 @@ class BiddingFrame(wx.Window):
         selected_object = self.history_list.GetSelectedObject()
         if not selected_object:
             return
+        selected_object.end_time = None
         config.ACTIVE_AUCTIONS[selected_object.item.uuid] = (
             selected_object)
         config.HISTORICAL_AUCTIONS.pop(selected_object.item.uuid)
