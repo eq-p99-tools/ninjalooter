@@ -2,11 +2,15 @@
 
 block_cipher = None
 
+datas = [('data/icons', 'data/icons')]
+datas += [('data/sounds/*.mp3', 'data/sounds')]
+datas += [('data/items.json', 'data/items.json')]
+datas += [('data/spells.json', 'data/spells.json')]
 
 a = Analysis(['ninjalooter\\cmd\\run.py'],
-             pathex=['D:\\rm-you.github.com\\ninjalooter'],
+             pathex=[],
              binaries=[],
-             datas=[],
+             datas=datas,
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -15,11 +19,7 @@ a = Analysis(['ninjalooter\\cmd\\run.py'],
              win_private_assemblies=False,
              cipher=block_cipher
 )
-from glob import glob
-a.datas += [(filename, filename, '.') for filename in glob('data/icons/*')]
-a.datas += [(filename, filename, '.') for filename in glob('data/sounds/*.mp3')]
-a.datas += [('data/items.json', 'data/items.json', '.')]
-a.datas += [('data/spells.json', 'data/spells.json', '.')]
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 from ninjalooter import config
 CONSOLE_BUILD = bool(config.SEMVER.build)
