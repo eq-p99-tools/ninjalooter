@@ -12,7 +12,7 @@ from ninjalooter import constants
 SEMVER = semver.VersionInfo(
     major=1,
     minor=16,
-    patch=11,
+    patch=12,
 )
 VERSION = str(SEMVER)
 
@@ -159,9 +159,10 @@ NEW_RAIDTICK_SOUND = CONF.get(
 
 CONF_ALLIANCES = CONF.get(
     "default", "alliances",
-    fallback="Good Guys:Good Guys,Lineage;"
+    fallback="Good Guys:Good Guys;"
+             "Lineage:Lineage,Venerate,Syndicate,Smoking Lounge;"
              "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;"
-             "Kingdom:Kingdom,Karens of Karana"
+             "Kingdom:Kingdom,Karens of Karana;"
 )
 CONF_EXTRA_ALLIANCES = CONF.get(
     "default", "extra_alliances", fallback=""
