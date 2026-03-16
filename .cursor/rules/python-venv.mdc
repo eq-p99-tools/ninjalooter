@@ -1,0 +1,36 @@
+---
+description: Always use a Python virtual environment for any Python tooling
+alwaysApply: true
+---
+
+# Python Virtual Environment Rule
+
+Never run Python tools (pip, python, tox, pytest, etc.) outside of a virtual environment. The only exception is creating the venv itself.
+
+## Default venv location
+
+Use `.venv` in the project root unless one already exists elsewhere (e.g. `.tox`).
+
+## Creating a venv (if `.venv` doesn't exist)
+
+```bash
+python -m venv .venv
+```
+
+## Activating before any Python command
+
+On Windows (PowerShell):
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+On Unix/macOS:
+```bash
+source .venv/bin/activate
+```
+
+## Workflow
+
+1. Check if `.venv` exists; if not, create it.
+2. Activate the venv.
+3. Then run any Python tooling (pip install, python, tox, pytest, etc.).

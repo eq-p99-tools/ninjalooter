@@ -449,7 +449,7 @@ def eastern_time_offset():
     now = datetime.datetime.utcnow()
     here = now.astimezone().utcoffset()
     eastern = now.astimezone(pytz.timezone("US/Eastern")).utcoffset()
-    seconds = (eastern - here).seconds
+    seconds = (eastern - here).total_seconds()
     return datetime.timedelta(seconds=seconds)
 
 

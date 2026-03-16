@@ -1,9 +1,45 @@
+import datetime
 from unittest import mock
 import requests_mock
 
 from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
+
+
+class TestEasternTimeOffset(base.NLTestBase):
+    def _run_offset_test(self, local_hours, eastern_hours):
+        """Helper: mock local and Eastern UTC offsets, return eastern_time_offset()."""
+        with mock.patch('ninjalooter.utils.datetime') as mock_dt:
+            mock_dt.timedelta = datetime.timedelta
+            mock_now = mock.MagicMock()
+            mock_dt.datetime.utcnow.return_value = mock_now
+
+            local_offset = datetime.timedelta(hours=local_hours)
+            eastern_offset = datetime.timedelta(hours=eastern_hours)
+            mock_local = mock.MagicMock()
+            mock_local.utcoffset.return_value = local_offset
+            mock_eastern = mock.MagicMock()
+            mock_eastern.utcoffset.return_value = eastern_offset
+            mock_now.astimezone.side_effect = (
+                lambda tz=None: mock_local if tz is None else mock_eastern)
+
+            return utils.eastern_time_offset()
+
+    def test_offset_behind_eastern(self):
+        """User in US/Pacific (UTC-8) with Eastern at UTC-5: offset = +3h."""
+        result = self._run_offset_test(local_hours=-8, eastern_hours=-5)
+        self.assertEqual(result, datetime.timedelta(hours=3))
+
+    def test_offset_ahead_of_eastern(self):
+        """User in CET (UTC+1) with Eastern at UTC-5: offset = -6h."""
+        result = self._run_offset_test(local_hours=1, eastern_hours=-5)
+        self.assertEqual(result, datetime.timedelta(hours=-6))
+
+    def test_offset_already_eastern(self):
+        """User already in Eastern: offset = 0."""
+        result = self._run_offset_test(local_hours=-5, eastern_hours=-5)
+        self.assertEqual(result, datetime.timedelta(0))
 
 
 class TestUtils(base.NLTestBase):

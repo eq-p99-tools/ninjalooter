@@ -14,7 +14,8 @@ htmlcov/
 ninjalooter.ini
 build/
 dist/
-state.json
+state.json*
 *.zip
 *.xlsx
 *.json
+version_info.txt

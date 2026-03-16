@@ -1,6 +1,14 @@
 # -*- mode: python -*-
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(SPEC)))
 
-block_cipher = None
+from version_info import VERSION_INFO_TEMPLATE
+from ninjalooter import config
+
+# Write version info for this build
+with open('version_info.txt', 'w', encoding='utf-8') as _vf:
+    _vf.write(VERSION_INFO_TEMPLATE)
 
 datas = [('data/icons', 'data/icons')]
 datas += [('data/sounds/*.mp3', 'data/sounds')]
@@ -17,12 +25,12 @@ a = Analysis(['ninjalooter\\cmd\\run.py'],
              excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
-             cipher=block_cipher
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-from ninjalooter import config
+pyz = PYZ(a.pure, a.zipped_data)
+
 CONSOLE_BUILD = bool(config.SEMVER.build)
+
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -34,11 +42,14 @@ exe = EXE(pyz,
           upx=False,
           runtime_tmpdir=None,
           console=CONSOLE_BUILD,
-          icon='data/icons/ninja_attack.ico')
+          icon='data/icons/ninja_attack.ico',
+          version='version_info.txt')
 
 import zipfile
 import os
 
 os.chdir('dist')
-zipfile.ZipFile(f"ninjalooter-{config.VERSION}.zip", "w", zipfile.ZIP_DEFLATED).write(f"ninjalooter-{config.VERSION}.exe")
+zipfile.ZipFile(
+    f"ninjalooter-{config.VERSION}.zip", "w", zipfile.ZIP_DEFLATED
+).write(f"ninjalooter-{config.VERSION}.exe")
 os.chdir("..")
