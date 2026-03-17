@@ -15,8 +15,15 @@ from ninjalooter import config, constants, extra_data, logger
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
 
+MIN_DKP_RANDOM = -1
+MIN_DKP_BANK = -2
+MIN_DKP_UNKNOWN = -3
+FEW_MOMENTS_THRESHOLD = 30
+
 
 class DictEquals:
+    __hash__ = None
+
     def __getitem__(self, key):
         """Support subscript access for ObjectListView3 compatibility."""
         return getattr(self, key)
@@ -689,31 +696,31 @@ class Raid(DictEquals):
         # 1-3 groups: All General
         if full_groups_needed == 1:
             self.groups.append(Group(constants.GT_GENERAL))
-        if full_groups_needed == 2:
+        if full_groups_needed == 2:  # noqa: PLR2004
             self.groups.append(Group(constants.GT_GENERAL))
             self.groups.append(Group(constants.GT_GENERAL))
-        if full_groups_needed == 3:
+        if full_groups_needed == 3:  # noqa: PLR2004
             self.groups.append(Group(constants.GT_GENERAL))
             self.groups.append(Group(constants.GT_GENERAL))
             self.groups.append(Group(constants.GT_GENERAL))
 
         # 4 groups: General, Tank, Cleric, Pull
-        if full_groups_needed >= 4:
+        if full_groups_needed >= 4:  # noqa: PLR2004
             self.groups.append(Group(constants.GT_GENERAL))
             self.groups.append(Group(constants.GT_TANK))
             self.groups.append(Group(constants.GT_CLERIC))
             self.groups.append(Group(constants.GT_PULL))
 
         # 5 groups: General, Tank, Cleric, Pull, Tank
-        if full_groups_needed >= 5:
+        if full_groups_needed >= 5:  # noqa: PLR2004
             self.groups.append(Group(constants.GT_TANK))
 
         # 6 groups: General, Tank, Cleric, Pull, Tank, Cleric
-        if full_groups_needed >= 6:
+        if full_groups_needed >= 6:  # noqa: PLR2004
             self.groups.append(Group(constants.GT_CLERIC))
 
         # 7+ groups: General, Tank, Cleric, Pull, Tank, Cleric, (n - 6) General
-        if full_groups_needed >= 7:
+        if full_groups_needed >= 7:  # noqa: PLR2004
             cnt = 7
             while cnt <= full_groups_needed:
                 self.groups.append(Group(constants.GT_GENERAL))
@@ -885,11 +892,11 @@ class ItemDrop(DictEquals):
             return self.min_dkp_override
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name, {})
         minimum = extra_item_data.get("min_dkp", config.MIN_DKP)
-        if minimum == -1:
+        if minimum == MIN_DKP_RANDOM:
             return "Random"
-        if minimum == -2:
+        if minimum == MIN_DKP_BANK:
             return "Bank"
-        if minimum == -3:
+        if minimum == MIN_DKP_UNKNOWN:
             return "???"
         return minimum
 
@@ -967,7 +974,7 @@ class Auction(DictEquals):
         return max(min_bid_time - elapsed, datetime.timedelta(0))
 
     def time_remaining_text(self) -> str:
-        if self.time_remaining().seconds <= 30:
+        if self.time_remaining().seconds <= FEW_MOMENTS_THRESHOLD:
             return "a few moments"
         return self.time_remaining_ui()
 
@@ -1223,6 +1230,8 @@ EVT_IGNORE = wx.NewId()
 
 
 class LogEvent(wx.PyEvent):
+    __hash__ = None
+
     def __eq__(self, other):
         return isinstance(other, self.__class__)
 
@@ -1234,6 +1243,8 @@ class DropEvent(LogEvent):  # pylint: disable=too-few-public-methods
 
 
 class BidEvent(LogEvent):  # pylint: disable=too-few-public-methods
+    __hash__ = None
+
     def __init__(self, item):
         super().__init__()
         self.item = item
@@ -1244,6 +1255,8 @@ class BidEvent(LogEvent):  # pylint: disable=too-few-public-methods
 
 
 class WhoEvent(LogEvent):
+    __hash__ = None
+
     def __init__(self, name, pclass, level, guild):
         super().__init__()
         self.SetEventType(EVT_WHO)

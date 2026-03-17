@@ -1132,8 +1132,7 @@ EXTRA_ITEM_DATA = pydicti.Dicti(
 
 def apply_sheet_overrides():
     if config.MIN_DKP_SHEET_URL:
-        # pylint: disable=import-outside-toplevel
-        from ninjalooter import utils
+        from ninjalooter import utils  # noqa: PLC0415
 
         data = utils.fetch_google_sheet_data(config.MIN_DKP_SHEET_URL)
         if data:

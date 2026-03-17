@@ -3,6 +3,7 @@
 import collections
 import csv
 import datetime
+import http
 import inspect
 import json
 import os
@@ -760,7 +761,7 @@ def fetch_google_sheet_data(url):
     # Get the data in CSV format
     new_url = ("https://docs.google.com/spreadsheets/d/{id}/export?format=csv").format(id=sheet_id)
     req = requests.get(new_url, timeout=10)
-    if req.status_code != 200:
+    if req.status_code != http.HTTPStatus.OK:
         LOG.error("Couldn't fetch spreadsheet `%s`: %d", sheet_id, req.status_code)
         return None
 

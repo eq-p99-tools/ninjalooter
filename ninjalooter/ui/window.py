@@ -4,7 +4,6 @@ import os.path
 import sys
 
 import markdown2
-import ObjectListView3 as ObjectListView
 import semver
 import wx
 import wx.html

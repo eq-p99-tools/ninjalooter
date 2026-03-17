@@ -44,32 +44,30 @@ def replay_logs(replay_lines, progress_dialog):
             LOG.debug("User cancelled log replay.")
             break
 
-        line = line.strip()
+        current_line = line.strip()
         if last_rand_player:
-            line = line + last_rand_player
+            current_line = current_line + last_rand_player
             last_rand_player = None
         result = None
-        for matcher in SELF_MESSAGE_MATCHERS:
-            match = matcher.match(line)
+        for matcher, match_func in SELF_MESSAGE_MATCHERS.items():
+            match = matcher.match(current_line)
             if match:
-                match_func = SELF_MESSAGE_MATCHERS[matcher]
                 try:
                     result = match_func(match, progress_dialog.Parent, True)
                 except Exception:
-                    LOG.exception("Failed to parse SELF line: %s", line)
+                    LOG.exception("Failed to parse SELF line: %s", current_line)
         if result:
-            LOG.debug("Handled SELF line: %s", line)
+            LOG.debug("Handled SELF line: %s", current_line)
             continue
 
-        for matcher in logparse.LOG_MATCHERS:
-            match = matcher.match(line)
+        for matcher, match_func in logparse.LOG_MATCHERS.items():
+            match = matcher.match(current_line)
             if match:
-                match_func = logparse.LOG_MATCHERS[matcher]
                 result = match_func(match, progress_dialog.Parent, True)
                 if matcher == config.MATCH_RAND1:
                     last_rand_player = result
         if result:
-            LOG.debug("Handled line: %s", line)
+            LOG.debug("Handled line: %s", current_line)
     LOG.info("Finished log replay!")
     config.PLAYER_NAME = old_charname
     utils.store_state()

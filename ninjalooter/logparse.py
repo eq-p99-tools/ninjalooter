@@ -51,22 +51,21 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
                 # picks up data appended by another process.
                 lfp.seek(pos)
             last_rand_player = None
-            for line in lines:
-                line = line.strip()
+            for raw_line in lines:
+                current_line = raw_line.strip()
                 if last_rand_player:
-                    line = line + last_rand_player
+                    current_line = current_line + last_rand_player
                     last_rand_player = None
                 result = None
-                for matcher in LOG_MATCHERS:
-                    match = matcher.match(line)
+                for matcher, match_func in LOG_MATCHERS.items():
+                    match = matcher.match(current_line)
                     if match:
-                        match_func = LOG_MATCHERS[matcher]
                         result = match_func(match, window)
                         if matcher == config.MATCH_RAND1:
                             last_rand_player = result
                         break
                 if result:
-                    LOG.debug("Handled line: %s", line)
+                    LOG.debug("Handled line: %s", current_line)
             time.sleep(0.1)
 
 

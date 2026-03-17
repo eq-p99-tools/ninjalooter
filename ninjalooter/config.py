@@ -15,7 +15,7 @@ SEMVER = semver.VersionInfo(
     minor=17,
     patch=0,
     prerelease="rc2",
-    build='console',
+    build=None,
 )
 VERSION = str(SEMVER)
 
@@ -110,6 +110,7 @@ AUDIO_ALERTS = CONF.getboolean("alerts", "audio_enabled", fallback=True)
 TEXT_ALERTS = CONF.getboolean("alerts", "text_enabled", fallback=True)
 SECOND_MAIN_REMINDER_DKP = CONF.getint("alerts", "second_main_reminder_dkp", fallback=None)
 ALT_REMINDER_DKP = CONF.getint("alerts", "alt_reminder_dkp", fallback=None)
+MAX_RAIDTICK_REMINDERS = CONF.getint("alerts", "max_raidtick_reminders", fallback=5)
 if not CONF.has_section("alerts"):
     CONF.add_section("alerts")
     CONF.set("alerts", "audio_enabled", str(AUDIO_ALERTS))
@@ -138,28 +139,29 @@ CONF_ALLIANCES = CONF.get(
     "alliances",
     fallback="Good Guys:Good Guys;"
     "Lineage:Lineage,Venerate,Syndicate,Smoking Lounge;"
-    "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;"
+    "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,"
+    "Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;"
     "Kingdom:Kingdom,Karens of Karana;",
 )
 CONF_EXTRA_ALLIANCES = CONF.get("default", "extra_alliances", fallback="")
 ALLIANCES = collections.OrderedDict()
-for alliance in CONF_ALLIANCES.split(";"):
-    if ":" not in alliance:
+for alliance_entry in CONF_ALLIANCES.split(";"):
+    if ":" not in alliance_entry:
         continue
-    alliance, members = alliance.split(":")
+    alliance_name, members = alliance_entry.split(":")
     members = list(map(lambda x: x.strip(), members.split(",")))
-    ALLIANCES[alliance] = members
-for alliance in CONF_EXTRA_ALLIANCES.split(";"):
-    if ":" not in alliance:
+    ALLIANCES[alliance_name] = members
+for alliance_entry in CONF_EXTRA_ALLIANCES.split(";"):
+    if ":" not in alliance_entry:
         continue
-    alliance, members = alliance.split(":")
+    alliance_name, members = alliance_entry.split(":")
     members = list(map(lambda x: x.strip(), members.split(",")))
-    if alliance in ALLIANCES:
+    if alliance_name in ALLIANCES:
         for member in members:
-            if member not in ALLIANCES[alliance]:
-                ALLIANCES[alliance].append(member)
+            if member not in ALLIANCES[alliance_name]:
+                ALLIANCES[alliance_name].append(member)
     else:
-        ALLIANCES[alliance] = members
+        ALLIANCES[alliance_name] = members
 DEFAULT_ALLIANCE = CONF.get("default", "default_alliance", fallback=tuple(ALLIANCES.keys())[0])
 if DEFAULT_ALLIANCE not in ALLIANCES.keys():
     DEFAULT_ALLIANCE = tuple(ALLIANCES.keys())[0]
