@@ -1,5 +1,5 @@
 # pylint: disable=no-member,invalid-name,unused-argument
-import ObjectListView
+import ObjectListView3 as ObjectListView
 import wx
 
 from ninjalooter import config, models

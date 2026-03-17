@@ -4,12 +4,12 @@ import os.path
 import sys
 
 import markdown2
-import ObjectListView
+import ObjectListView3 as ObjectListView
 import semver
 import wx
 import wx.html
 
-from ninjalooter import autoupdate, config, logger, logparse, overrides, utils
+from ninjalooter import autoupdate, config, logger, logparse, utils
 from ninjalooter.ui import (
     attendance_frame,
     bidding_frame,
@@ -22,10 +22,6 @@ from ninjalooter.ui import (
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
-# Monkeypatch ObjectListView to fix a character encoding bug (PR upstream?)
-# pylint: disable=protected-access
-ObjectListView.ObjectListView._HandleTypingEvent = overrides._HandleTypingEvent
-ObjectListView.ObjectListView._HandleSize = overrides._HandleSize
 
 
 class TaskBarIcon(wx.adv.TaskBarIcon):

@@ -2,7 +2,7 @@
 # pylint: disable=too-many-locals,too-many-statements
 import math
 
-import ObjectListView
+import ObjectListView3 as ObjectListView
 import wx
 
 from ninjalooter import config, models, utils

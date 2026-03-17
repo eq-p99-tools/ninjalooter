@@ -1,6 +1,6 @@
 ahocorapy
 wxPython
-ObjectListView
+ObjectListView3
 pyperclip
 python-dateutil
 XlsxWriter

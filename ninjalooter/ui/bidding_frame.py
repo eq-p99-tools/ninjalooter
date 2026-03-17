@@ -2,7 +2,7 @@
 # pylint: disable=too-many-locals,too-many-statements
 import datetime
 
-import ObjectListView
+import ObjectListView3 as ObjectListView
 import wx
 import wx.lib.splitter
 
