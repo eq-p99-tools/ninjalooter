@@ -1013,7 +1013,7 @@ class DKPAuction(Auction):
         super().__init__(item, **kwargs)
         self.alliance = alliance
         if bids:
-            self.bids = {int(bid): name for bid, name in bids.items()}
+            self.bids = {int(float(bid)): name for bid, name in bids.items()}
         else:
             self.bids = dict()
         self.min_dkp = min_dkp or self.item.min_dkp()

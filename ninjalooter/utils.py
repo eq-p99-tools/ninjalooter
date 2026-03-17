@@ -720,7 +720,8 @@ def export_to_eqdkp(filename):
                     sheet.write_string(sheet_rows[sheet.name], 0, loot)
                     closed_loots.remove(loot)
         # Write any remaining loots to the earliest sheet
-        first_sheet = list(sheets.values())[0]
+        if sheets:
+            first_sheet = list(sheets.values())[0]
         for loot in closed_loots:
             sheet_rows[first_sheet.name] += 1
             first_sheet.write_string(sheet_rows[first_sheet.name], 0, loot)

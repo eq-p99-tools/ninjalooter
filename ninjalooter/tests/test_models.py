@@ -158,6 +158,14 @@ class TestModels(base.NLTestBase):
         loaded_auc = json.loads(auc_json, cls=utils.JSONDecoder)
         self.assertEqual(auc, loaded_auc)
 
+    def test_DKPAuction_model_float_bid_keys(self):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.DKPAuction(
+            itemdrop, 'VCR', bids={"1.0": "Peter", "5.0": "Paul"})
+        self.assertEqual("Peter", auc.bids[1])
+        self.assertEqual("Paul", auc.bids[5])
+
     def test_DKPAuction_model_bid_text(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")

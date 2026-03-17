@@ -388,7 +388,11 @@ class MenuBar(wx.MenuBar):
             filename = filename + ".xlsx"
         saveFileDialog.Destroy()
         if result == wx.ID_OK:
-            result = utils.export_to_excel(filename)
+            try:
+                result = utils.export_to_excel(filename)
+            except Exception:
+                LOG.exception("Unexpected error during Excel export.")
+                result = False
             if not result:
                 dlg = wx.MessageDialog(
                     self,
@@ -427,7 +431,11 @@ class MenuBar(wx.MenuBar):
             filename = filename + ".xlsx"
         saveFileDialog.Destroy()
         if result == wx.ID_OK:
-            result = utils.export_to_eqdkp(filename)
+            try:
+                result = utils.export_to_eqdkp(filename)
+            except Exception:
+                LOG.exception("Unexpected error during EQDKPlus export.")
+                result = False
             if not result:
                 dlg = wx.MessageDialog(
                     self,
