@@ -1,3 +1,0 @@
-ruff
-coverage
-requests-mock

@@ -30,10 +30,14 @@ def run():
     app.MainLoop()
 
 
-if __name__ == "__main__":
+def main():
     try:
         run()
     except:  # noqa
         with open("nl-crash-log.txt", "w") as f:
             traceback.print_exc(file=f)
         raise
+
+
+if __name__ == "__main__":
+    main()

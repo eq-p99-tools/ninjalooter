@@ -1,3 +1,54 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ninjalooter"
+version = "0.1.0"
+description = "Track loot drops/bidding for raids"
+authors = [
+    { name = "Adam Harwell" },
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "ahocorapy",
+    "wxPython",
+    "ObjectListView3",
+    "pyperclip",
+    "python-dateutil",
+    "XlsxWriter",
+    "pydicti",
+    "playsound==1.2.2",
+    "requests",
+    "semver",
+    "markdown2",
+    "pytz",
+]
+
+[project.optional-dependencies]
+test = [
+    "ruff",
+    "coverage",
+    "requests-mock",
+]
+
+[project.scripts]
+ninjalooter = "ninjalooter.cmd.run:main"
+
+[tool.setuptools.packages.find]
+include = ["ninjalooter*"]
+
+[tool.setuptools.package-data]
+ninjalooter = ["../data/**/*"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py38"
