@@ -17,6 +17,10 @@ LOG = logger.getLogger(__name__)
 
 
 class DictEquals:
+    def __getitem__(self, key):
+        """Support subscript access for ObjectListView3 compatibility."""
+        return getattr(self, key)
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
