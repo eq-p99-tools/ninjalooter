@@ -1,6 +1,7 @@
 # pylint: disable=no-member,too-many-lines
 
 from __future__ import annotations
+
 import datetime
 import math
 import threading
@@ -9,10 +10,7 @@ import uuid as uuid_lib
 import dateutil.parser
 import wx
 
-from ninjalooter import config
-from ninjalooter import constants
-from ninjalooter import extra_data
-from ninjalooter import logger
+from ninjalooter import config, constants, extra_data, logger
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -22,19 +20,13 @@ class DictEquals:
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        self_dict = {key: self.__dict__[key] for key in self.__dict__
-                     if not key.startswith("_")}
-        other_dict = {key: other.__dict__[key] for key in other.__dict__
-                      if not key.startswith("_")}
+        self_dict = {key: self.__dict__[key] for key in self.__dict__ if not key.startswith("_")}
+        other_dict = {key: other.__dict__[key] for key in other.__dict__ if not key.startswith("_")}
         return self_dict == other_dict
 
     def to_json(self):
-        json_dict = {key: self.__dict__[key] for key in self.__dict__
-                     if not key.startswith("_")}
-        return {
-            'json_type': self.__class__.__name__,
-            **json_dict
-        }
+        json_dict = {key: self.__dict__[key] for key in self.__dict__ if not key.startswith("_")}
+        return {"json_type": self.__class__.__name__, **json_dict}
 
     @classmethod
     def from_json(cls, **kwargs) -> DictEquals:
@@ -57,12 +49,12 @@ class Player(DictEquals):
         self.guild = guild
 
     def __repr__(self):
-        return (
-            "Player({name}, pclass={pclass}, level={level}, guild={guild})"
-            .format(name=f"'{self.name}'",
-                    pclass=f"'{self.pclass}'" if self.pclass else "None",
-                    level=f"'{self.level}'" if self.level else "None",
-                    guild=f"'{self.guild}'" if self.guild else "None"))
+        return "Player({name}, pclass={pclass}, level={level}, guild={guild})".format(
+            name=f"'{self.name}'",
+            pclass=f"'{self.pclass}'" if self.pclass else "None",
+            level=f"'{self.level}'" if self.level else "None",
+            guild=f"'{self.guild}'" if self.guild else "None",
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -142,6 +134,7 @@ class Player(DictEquals):
 
 class Group(DictEquals):
     """Class to represent an EQ Group"""
+
     # info to support assigning a score to this group reflecting how
     # well it matches a target profile
     MAX_SLOT = 100  # slot filled with an exact match
@@ -157,11 +150,10 @@ class Group(DictEquals):
         self.max_group_score = 0
 
     def __repr__(self):
-        rv = '{:<10} Members: ({}): '.format(self.group_type,
-                                             len(self.player_list))
+        rv = "{:<10} Members: ({}): ".format(self.group_type, len(self.player_list))
         for p in self.player_list:
-            rv += p.name + ', '
-        rv += '(SA score: {})'.format(self.max_group_score)
+            rv += p.name + ", "
+        rv += "(SA score: {})".format(self.max_group_score)
         return rv
 
     def tank_score(self) -> int:
@@ -204,9 +196,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add scores for top two tanks to group score, and remove top two
         # tanks from available_list
@@ -242,9 +232,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -274,9 +262,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target from
         # available_list
@@ -306,9 +292,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove top target from
         # available_list
@@ -322,8 +306,7 @@ class Group(DictEquals):
         # points for having someone in a slot, rather than an empty slot
         # however, try to avoid duplicates of the classes already added
         for p in available_list:
-            if not (p.is_tank() or p.is_priest() or
-                    p.is_bard() or p.is_enchanter()):
+            if not (p.is_tank() or p.is_priest() or p.is_bard() or p.is_enchanter()):
                 self.group_score += self.MIN_SLOT
 
         # return the sum of the player scores, as matched against the ideal
@@ -366,9 +349,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add scores for top two tanks to group score, and remove top five
         # clerics from available_list
@@ -404,9 +385,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -455,9 +434,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add scores for top two tanks to group score, and remove top three
         # monks from available_list
@@ -489,9 +466,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -521,9 +496,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -553,9 +526,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -604,9 +575,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -636,9 +605,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -668,9 +635,7 @@ class Group(DictEquals):
                 target_list.append((player_score, p))
 
         # sort target list to find highest-scoring targets
-        sorted_target_list = sorted(target_list,
-                                    key=lambda x: x[0],
-                                    reverse=True)
+        sorted_target_list = sorted(target_list, key=lambda x: x[0], reverse=True)
 
         # add score for top target to group score, and remove target
         # from available_list
@@ -684,8 +649,7 @@ class Group(DictEquals):
         # points for having someone in a slot, rather than an empty slot
         # however, try to avoid duplicates of the classes already added
         for p in available_list:
-            if not (p.is_priest() or p.is_tank() or
-                    p.is_shaman() or p.is_enchanter()):
+            if not (p.is_priest() or p.is_tank() or p.is_shaman() or p.is_enchanter()):
                 self.group_score += self.MIN_SLOT
 
         # penalize scores for players in General groups compared to the
@@ -752,14 +716,16 @@ class Raid(DictEquals):
                 cnt += 1
 
         # now sort the groups into a sensible order
-        sort_order = {constants.GT_PULL: 0,
-                      constants.GT_TANK: 1,
-                      constants.GT_CLERIC: 2,
-                      constants.GT_GENERAL: 3}
+        sort_order = {
+            constants.GT_PULL: 0,
+            constants.GT_TANK: 1,
+            constants.GT_CLERIC: 2,
+            constants.GT_GENERAL: 3,
+        }
         self.groups.sort(key=lambda val: sort_order[val.group_type])
 
     def __repr__(self):
-        return '\n'.join([str(g) for g in self.groups])
+        return "\n".join([str(g) for g in self.groups])
 
 
 class CredittLog(DictEquals):
@@ -776,8 +742,7 @@ class CredittLog(DictEquals):
 
     def target(self) -> str:
         try:
-            message_cleaned = (self.message.lower().split('creditt')[1]
-                               .strip().capitalize())
+            message_cleaned = self.message.lower().split("creditt")[1].strip().capitalize()
         except:  # noqa
             message_cleaned = self.message
         return message_cleaned
@@ -797,8 +762,9 @@ class GratssLog(DictEquals):
 
     def target(self) -> str:
         try:
-            message_cleaned = (self.message.lower().split('gratss')[1]
-                               .split(' ')[1].strip().capitalize())
+            message_cleaned = (
+                self.message.lower().split("gratss")[1].split(" ")[1].strip().capitalize()
+            )
         except:  # noqa
             message_cleaned = self.message
         return message_cleaned
@@ -823,8 +789,8 @@ class WhoLog(DictEquals):
         # import at runtime rather than on load to avoid circular error
         # pylint: disable=import-outside-toplevel
         from ninjalooter import utils
-        return utils.datetime_to_eq_format(
-            self.time, allow_eastern=allow_eastern)
+
+        return utils.datetime_to_eq_format(self.time, allow_eastern=allow_eastern)
 
     def raidtick_display(self):
         return "✔️" if self.raidtick else ""  # or "❌"?
@@ -854,7 +820,7 @@ class WhoLog(DictEquals):
 
     @classmethod
     def from_json(cls, **kwargs) -> DictEquals:
-        kwargs['time'] = dateutil.parser.parse(kwargs['time'])
+        kwargs["time"] = dateutil.parser.parse(kwargs["time"])
         return cls(**kwargs)
 
 
@@ -888,8 +854,7 @@ class ItemDrop(DictEquals):
     uuid = None
     min_dkp_override = None
 
-    def __init__(self, name, reporter, timestamp, uuid=None,
-                 min_dkp_override=None):
+    def __init__(self, name, reporter, timestamp, uuid=None, min_dkp_override=None):
         self.name = name
         self.reporter = reporter
         self.timestamp = timestamp
@@ -904,21 +869,21 @@ class ItemDrop(DictEquals):
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
         if not extra_item_data:
             return ""
-        classes = extra_item_data.get('classes', [])
-        return ', '.join(map(lambda x: x.strip(), classes))
+        classes = extra_item_data.get("classes", [])
+        return ", ".join(map(lambda x: x.strip(), classes))
 
     def droppable(self) -> str:
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name)
         if not extra_item_data:
             return ""
-        nodrop = extra_item_data.get('nodrop', False)
+        nodrop = extra_item_data.get("nodrop", False)
         return "NO" if nodrop else "Yes"
 
     def min_dkp(self) -> int:
         if self.min_dkp_override:
             return self.min_dkp_override
         extra_item_data = extra_data.EXTRA_ITEM_DATA.get(self.name, {})
-        minimum = extra_item_data.get('min_dkp', config.MIN_DKP)
+        minimum = extra_item_data.get("min_dkp", config.MIN_DKP)
         if minimum == -1:
             return "Random"
         if minimum == -2:
@@ -929,7 +894,8 @@ class ItemDrop(DictEquals):
 
     def __str__(self):
         return "{name} ({reporter} @ {time})".format(
-            name=self.name, reporter=self.reporter, time=self.timestamp)
+            name=self.name, reporter=self.reporter, time=self.timestamp
+        )
 
 
 class Auction(DictEquals):
@@ -946,8 +912,7 @@ class Auction(DictEquals):
             self.start_time = datetime.datetime.now()
 
         if self.time_remaining().seconds > 0:
-            self._alert_timer = threading.Timer(
-                self.time_remaining().seconds, self._do_alert)
+            self._alert_timer = threading.Timer(self.time_remaining().seconds, self._do_alert)
             config.AUCTION_ALERT_TIMERS.append(self._alert_timer)
             self._alert_timer.start()
 
@@ -955,9 +920,9 @@ class Auction(DictEquals):
         # import at runtime rather than on load to avoid circular error
         # pylint: disable=import-outside-toplevel
         from ninjalooter import utils
+
         utils.alert_message(
-            "Auction Ending Soon",
-            "The auction for '%s' is ending soon!" % self.item.name
+            "Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name
         )
         config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
         utils.alert_sound(config.AUC_EXPIRING_SOUND)
@@ -985,7 +950,7 @@ class Auction(DictEquals):
         players = []
         for one in self.highest():
             players.append(one[0])
-        players = ', '.join(players)
+        players = ", ".join(players)
         return players or ""
 
     def name(self) -> str:
@@ -998,8 +963,7 @@ class Auction(DictEquals):
         return self.item.droppable()
 
     def get_target_min(self) -> str:
-        return getattr(self, 'number',
-                       getattr(self, 'min_dkp', config.MIN_DKP))
+        return getattr(self, "number", getattr(self, "min_dkp", config.MIN_DKP))
 
     def time_remaining(self) -> datetime.timedelta:
         elapsed = datetime.datetime.now() - self.start_time
@@ -1042,8 +1006,7 @@ class DKPAuction(Auction):
     _alt_cap_alerted = False
     _second_main_cap_alerted = False
 
-    def __init__(self, item: ItemDrop, alliance: str, bids=None,
-                 min_dkp=None, **kwargs):
+    def __init__(self, item: ItemDrop, alliance: str, bids=None, min_dkp=None, **kwargs):
         super().__init__(item, **kwargs)
         self.alliance = alliance
         if bids:
@@ -1055,23 +1018,25 @@ class DKPAuction(Auction):
     def add(self, number: int, player: str) -> bool:
         if not number:
             # Not a real bid
-            LOG.info("%s attempted to bid for %s but didn't post a number",
-                     player, self.item)
+            LOG.info("%s attempted to bid for %s but didn't post a number", player, self.item)
             return False
         if isinstance(self.min_dkp, int) and number < self.min_dkp:
             # Bid too low
-            LOG.info("%s attempted to bid for %s but bid too low: %d < %d",
-                     player, self.item, number, self.min_dkp)
+            LOG.info(
+                "%s attempted to bid for %s but bid too low: %d < %d",
+                player,
+                self.item,
+                number,
+                self.min_dkp,
+            )
             return False
         if not self.bids or number > max(self.bids):
             # Valid bid
             self.bids[number] = player
-            LOG.info("Bid added for %s: %s = %d",
-                     self.item, player, number)
+            LOG.info("Bid added for %s: %s = %d", self.item, player, number)
             return True
         # Bid isn't higher than existing bids
-        LOG.info("%s attempted to bid for %s but bid too low: %d",
-                 player, self.item, number)
+        LOG.info("%s attempted to bid for %s but bid too low: %d", player, self.item, number)
         return False
 
     def highest(self) -> list:
@@ -1084,17 +1049,16 @@ class DKPAuction(Auction):
 
     def bid_text(self) -> str:
         current_bid = self.highest_number()
-        classes = ' ({})'.format(self.classes()) if self.classes() else ""
-        if current_bid != 'None':
+        classes = " ({})".format(self.classes()) if self.classes() else ""
+        if current_bid != "None":
             try:
-                bid_message = (
-                    "/{channel} ~" + config.BID_MESSAGE_REMINDER
-                ).format(
+                bid_message = ("/{channel} ~" + config.BID_MESSAGE_REMINDER).format(
                     channel=config.PRIMARY_BID_CHANNEL.upper(),
                     player=self.highest_players(),
                     item=self.item.name,
                     number=current_bid,
-                    min=self.get_target_min(), classes=classes,
+                    min=self.get_target_min(),
+                    classes=classes,
                     time_remaining=self.time_remaining_text(),
                 )
             except KeyError:
@@ -1103,19 +1067,19 @@ class DKPAuction(Auction):
                     player=self.highest_players(),
                     item=self.item.name,
                     number=current_bid,
-                    min=self.get_target_min(), classes=classes,
+                    min=self.get_target_min(),
+                    classes=classes,
                     time_remaining=self.time_remaining_text(),
                 )
         else:
             try:
-                bid_message = (
-                    "/{channel} ~" + config.BID_MESSAGE_NEW
-                ).format(
+                bid_message = ("/{channel} ~" + config.BID_MESSAGE_NEW).format(
                     channel=config.PRIMARY_BID_CHANNEL.upper(),
                     player=None,
                     item=self.item.name,
                     number=None,
-                    min=self.get_target_min(), classes=classes,
+                    min=self.get_target_min(),
+                    classes=classes,
                     time_remaining=self.time_remaining_text(),
                 )
             except KeyError:
@@ -1124,19 +1088,22 @@ class DKPAuction(Auction):
                     player=None,
                     item=self.item.name,
                     number=None,
-                    min=self.get_target_min(), classes=classes,
+                    min=self.get_target_min(),
+                    classes=classes,
                     time_remaining=self.time_remaining_text(),
                 )
         if config.PRIMARY_BID_CHANNEL == "unset":
             # import at runtime rather than on load to avoid circular error
             # pylint: disable=import-outside-toplevel
             from ninjalooter import utils
+
             utils.alert_message(
                 "Default Bid Channel Unset",
                 "You don't have a default bidding channel set. Please set a "
                 "default bidding channel (to the right of the Active Auctions "
                 "section of the Bidding tab).",
-                msec=5000)
+                msec=5000,
+            )
         return bid_message
 
     def win_text(self) -> str:
@@ -1147,18 +1114,18 @@ class DKPAuction(Auction):
         if dkp == "None":
             dkp = "0"
         try:
-            grats_message = (
-                "/{channel} ~" + config.GRATS_MESSAGE_BID
-            ).format(
+            grats_message = ("/{channel} ~" + config.GRATS_MESSAGE_BID).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                player=player, number=dkp,
-                item=self.item.name
+                player=player,
+                number=dkp,
+                item=self.item.name,
             )
         except KeyError:
             grats_message = config.DEFAULT_GRATS_MESSAGE_BID.format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                player=player, number=dkp,
-                item=self.item.name
+                player=player,
+                number=dkp,
+                item=self.item.name,
             )
         return grats_message
 
@@ -1181,13 +1148,11 @@ class RandomAuction(Auction):
     def add(self, number: int, player: str) -> bool:
         if not number:
             # Not a real roll
-            LOG.info("%s attempted to roll for %s but didn't roll a number?",
-                     player, self.item)
+            LOG.info("%s attempted to roll for %s but didn't roll a number?", player, self.item)
             return False
         if player in self.rolls:
             # Player already rolled
-            LOG.info("Ignoring duplicate roll by %s for %s",
-                     player, self.item)
+            LOG.info("Ignoring duplicate roll by %s for %s", player, self.item)
             return False
         # Valid roll
         self.rolls[player] = number
@@ -1199,23 +1164,24 @@ class RandomAuction(Auction):
             LOG.debug("No rolls yet for %s", self.item)
             return list()
         high = max(self.rolls.values())
-        rollers = [(player, roll) for player, roll in self.rolls.items()
-                   if roll == high]
+        rollers = [(player, roll) for player, roll in self.rolls.items() if roll == high]
         return rollers
 
     def bid_text(self) -> str:
-        classes = ' ({})'.format(self.classes()) if self.classes() else ""
+        classes = " ({})".format(self.classes()) if self.classes() else ""
         try:
-            bid_text = (
-                "/{channel} ~" + config.ROLL_MESSAGE
-            ).format(
+            bid_text = ("/{channel} ~" + config.ROLL_MESSAGE).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                item=self.item.name, target=self.number, classes=classes
+                item=self.item.name,
+                target=self.number,
+                classes=classes,
             )
         except KeyError:
             bid_text = config.DEFAULT_ROLL_MESSAGE.format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                item=self.item.name, target=self.number, classes=classes
+                item=self.item.name,
+                target=self.number,
+                classes=classes,
             )
         return bid_text
 
@@ -1227,18 +1193,20 @@ class RandomAuction(Auction):
         if roll == "None":
             roll = "0"
         try:
-            win_text = (
-                "/{channel} ~" + config.GRATS_MESSAGE_ROLL
-            ).format(
+            win_text = ("/{channel} ~" + config.GRATS_MESSAGE_ROLL).format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                player=player, item=self.item.name,
-                roll=roll, target=self.number
+                player=player,
+                item=self.item.name,
+                roll=roll,
+                target=self.number,
             )
         except KeyError:
             win_text = config.DEFAULT_GRATS_MESSAGE_ROLL.format(
                 channel=config.PRIMARY_BID_CHANNEL.upper(),
-                player=player, item=self.item.name,
-                roll=roll, target=self.number
+                player=player,
+                item=self.item.name,
+                roll=roll,
+                target=self.number,
             )
         return win_text
 
@@ -1297,11 +1265,14 @@ class WhoEvent(LogEvent):
         if not isinstance(other, self.__class__):
             return False
         return (self.name, self.pclass, self.level, self.guild) == (
-                other.name, other.pclass, other.level, other.guild)
+            other.name,
+            other.pclass,
+            other.level,
+            other.guild,
+        )
 
     def __repr__(self):
-        return "WhoEvent({}, {}, {}, {})".format(
-            self.name, self.pclass, self.level, self.guild)
+        return "WhoEvent({}, {}, {}, {})".format(self.name, self.pclass, self.level, self.guild)
 
 
 class ClearWhoEvent(LogEvent):  # pylint: disable=too-few-public-methods

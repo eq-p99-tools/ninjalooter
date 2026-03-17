@@ -1,17 +1,12 @@
 import re
 
-from ninjalooter import config
-from ninjalooter import logger
-from ninjalooter import logparse
-from ninjalooter import message_handlers
-from ninjalooter import utils
+from ninjalooter import config, logger, logparse, message_handlers, utils
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
 
 MATCH_START_AUCTION_DKP = re.compile(
-    config.TIMESTAMP +
-    r"(?P<name>\w+) (tells the guild|say to your guild), '"
+    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
     r"\[(?P<item>.*?)\](?P<classes> \(.*?\))? - BID IN /GU"
     r"(, MIN (?P<min_dkp>\d+) DKP)?\. "
     r"You MUST include the item name in your bid! "
@@ -19,18 +14,15 @@ MATCH_START_AUCTION_DKP = re.compile(
     r"(?P<time_remaining>.*?)(\.|!).*'"
 )
 MATCH_END_AUCTION_DKP = re.compile(
-    config.TIMESTAMP +
-    r"(?P<name>\w+) (tells the guild|say to your guild), '"
+    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
     r"Gratss (?P<player>\w+) on \[(?P<item>.*?)] \((?P<number>\d+) DKP\)!.*'"
 )
 MATCH_START_AUCTION_RANDOM = re.compile(
-    config.TIMESTAMP +
-    r"(?P<name>\w+) (tells the guild|say to your guild), '"
+    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
     r"\[(?P<item>.*?)\](?P<classes> \(.*?\))? ROLL (?P<number>\d+) NOW!.*'"
 )
 MATCH_END_AUCTION_RANDOM = re.compile(
-    config.TIMESTAMP +
-    r"(?P<name>\w+) (tells the guild|say to your guild), '"
+    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
     r"Gratss (?P<player>\w+) on \[(?P<item>.*?)] with "
     r"(?P<number>\d+) / (?P<target>\d+)!.*'"
 )
@@ -48,8 +40,8 @@ def replay_logs(replay_lines, progress_dialog):
     last_rand_player = None
     for idx, line in enumerate(replay_lines):
         keep_going, _ = progress_dialog.Update(
-            idx, newmsg="Now parsing line %s of %s..." %
-                        (idx, total_picked_lines))
+            idx, newmsg="Now parsing line %s of %s..." % (idx, total_picked_lines)
+        )
         if not keep_going:
             LOG.debug("User cancelled log replay.")
             break

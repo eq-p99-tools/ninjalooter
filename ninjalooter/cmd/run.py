@@ -4,25 +4,21 @@ import traceback
 import wx
 import wx.html
 
-from ninjalooter import autoupdate
-from ninjalooter import extra_data
-from ninjalooter import logger
+from ninjalooter import autoupdate, extra_data, logger, utils
 from ninjalooter.ui import window
-from ninjalooter import utils
 
 LOG = logger.getLogger(__name__)
 
 
 def run():
     app = wx.App(False)
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         try:
             autoupdate.check_update()
         except SystemExit:
             return
         except:  # noqa
-            LOG.exception(
-                "Failed to automatically update. Continuing with old version.")
+            LOG.exception("Failed to automatically update. Continuing with old version.")
 
     try:
         extra_data.apply_sheet_overrides()

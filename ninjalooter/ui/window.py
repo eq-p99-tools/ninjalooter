@@ -9,19 +9,16 @@ import semver
 import wx
 import wx.html
 
-from ninjalooter import autoupdate
-from ninjalooter import config
-from ninjalooter import logger
-from ninjalooter import logparse
-from ninjalooter import overrides
-from ninjalooter.ui import attendance_frame
-from ninjalooter.ui import bidding_frame
-from ninjalooter.ui import killtimes_frame
-from ninjalooter.ui import menu_bar
-from ninjalooter.ui import population_frame
-from ninjalooter.ui import raidgroups_frame
-from ninjalooter.ui import raid_overview_frame
-from ninjalooter import utils
+from ninjalooter import autoupdate, config, logger, logparse, overrides, utils
+from ninjalooter.ui import (
+    attendance_frame,
+    bidding_frame,
+    killtimes_frame,
+    menu_bar,
+    population_frame,
+    raid_overview_frame,
+    raidgroups_frame,
+)
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -36,25 +33,24 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         self.frame = frame
         icon = wx.Icon()
         icon.CopyFromBitmap(
-            wx.Bitmap(os.path.join(
-                config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
-                      wx.BITMAP_TYPE_ANY))
+            wx.Bitmap(
+                os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
+                wx.BITMAP_TYPE_ANY,
+            )
+        )
         self.SetIcon(icon, "NinjaLooter " + config.VERSION)
         self.alwaysontop_mi = None
 
     def CreatePopupMenu(self):
         menu = wx.Menu()
 
-        self.alwaysontop_mi = wx.MenuItem(
-            menu, wx.ID_ANY, 'Always On Top',
-            kind=wx.ITEM_CHECK)
+        self.alwaysontop_mi = wx.MenuItem(menu, wx.ID_ANY, "Always On Top", kind=wx.ITEM_CHECK)
         menu.Append(self.alwaysontop_mi)
         self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
         self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
 
-        exit_mi = wx.MenuItem(menu, wx.ID_EXIT, 'Quit')
-        exit_bitmap = wx.Bitmap(os.path.join(
-            config.PROJECT_DIR, "data", "icons", "exit.png"))
+        exit_mi = wx.MenuItem(menu, wx.ID_EXIT, "Quit")
+        exit_bitmap = wx.Bitmap(os.path.join(config.PROJECT_DIR, "data", "icons", "exit.png"))
         exit_mi.SetBitmap(exit_bitmap)
         menu.Append(exit_mi)
         self.Bind(wx.EVT_MENU, self.frame.OnClose, exit_mi)
@@ -64,8 +60,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
     def OnAlwaysOnTop(self, e: wx.MenuEvent):
         config.ALWAYS_ON_TOP = self.alwaysontop_mi.IsChecked()
         self.frame.MenuBar.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
-        config.CONF.set(
-            'default', 'always_on_top', str(config.ALWAYS_ON_TOP))
+        config.CONF.set("default", "always_on_top", str(config.ALWAYS_ON_TOP))
         self.frame.UpdateAlwaysOnTop()
         config.write()
 
@@ -75,9 +70,11 @@ class MainWindow(wx.Frame):
         wx.Frame.__init__(self, parent, title=title, size=(855, 800))
         icon = wx.Icon()
         icon.CopyFromBitmap(
-            wx.Bitmap(os.path.join(
-                config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
-                      wx.BITMAP_TYPE_ANY))
+            wx.Bitmap(
+                os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
+                wx.BITMAP_TYPE_ANY,
+            )
+        )
         self.SetIcon(icon)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
@@ -91,28 +88,22 @@ class MainWindow(wx.Frame):
         self._notebook = wx.Notebook(self, style=wx.LEFT)
 
         # Bidding Frame
-        self.bidding_frame = bidding_frame.BiddingFrame(
-            self._notebook)
+        self.bidding_frame = bidding_frame.BiddingFrame(self._notebook)
 
         # Attendance Frame
-        self.attendance_frame = attendance_frame.AttendanceFrame(
-            self._notebook)
+        self.attendance_frame = attendance_frame.AttendanceFrame(self._notebook)
 
         # Population Frame
-        self.population_frame = population_frame.PopulationFrame(
-            self._notebook)
+        self.population_frame = population_frame.PopulationFrame(self._notebook)
 
         # Kill Times Frame
-        self.killtimes_frame = killtimes_frame.KillTimesFrame(
-            self._notebook)
+        self.killtimes_frame = killtimes_frame.KillTimesFrame(self._notebook)
 
         # Raid Groups Frame
-        self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(
-            self._notebook)
+        self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(self._notebook)
 
         # Raid Overview Frame
-        self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(
-            self._notebook)
+        self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(self._notebook)
 
         self._notebook.SetSelection(config.TAB_SELECTION)
 
@@ -128,8 +119,8 @@ class MainWindow(wx.Frame):
             self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
             if os.path.isdir(config.LOG_DIRECTORY):
                 self.watcher.Add(
-                    config.LOG_DIRECTORY,
-                    events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
+                    config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY
+                )
             config.WX_FILESYSTEM_WATCHER = self.watcher
 
         # Show Changelog on new version
@@ -156,18 +147,18 @@ class MainWindow(wx.Frame):
 
     def UpdateAlwaysOnTop(self):
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(
-                self.GetWindowStyle() | wx.STAY_ON_TOP)
+            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         else:
-            self.SetWindowStyle(
-                self.GetWindowStyle() & ~wx.STAY_ON_TOP)
+            self.SetWindowStyle(self.GetWindowStyle() & ~wx.STAY_ON_TOP)
 
     def OnClose(self, e: wx.Event):
         if config.CONFIRM_EXIT:
             dlg = wx.MessageDialog(
                 self,
                 "Do you really want to close this application?",
-                "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+                "Confirm Exit",
+                wx.OK | wx.CANCEL | wx.ICON_QUESTION,
+            )
             result = dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -184,12 +175,10 @@ class MainWindow(wx.Frame):
 class ChangeLog(wx.Frame):
     def __init__(self, parent=None):
         try:
-            version, tag_data = autoupdate.get_release_from_github(
-                config.VERSION)
+            version, tag_data = autoupdate.get_release_from_github(config.VERSION)
         except Exception as e:  # noqa
-            if isinstance(e, KeyError) and 'tag_name' in e.args:
-                LOG.warning("This version is not yet released, no changelog "
-                            "data to fetch.")
+            if isinstance(e, KeyError) and "tag_name" in e.args:
+                LOG.warning("This version is not yet released, no changelog data to fetch.")
             else:
                 LOG.exception("Failed to fetch changelog data from GitHub.")
             return
@@ -197,14 +186,13 @@ class ChangeLog(wx.Frame):
         wx.Frame.__init__(self, parent, title=title, size=(600, 400))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-        self.changelog_data = markdown2.markdown(tag_data['body'])
+        self.changelog_data = markdown2.markdown(tag_data["body"])
 
         self.html_win = wx.html.HtmlWindow(self)
         self.html_win.SetPage(self.changelog_data)
         self.html_win.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OpenURL)
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(
-                self.GetWindowStyle() | wx.STAY_ON_TOP)
+            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.html_win.SetBackgroundColour(wx.Colour("#eff7fa"))
         self.Show()
 

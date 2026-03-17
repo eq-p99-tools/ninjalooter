@@ -9,7 +9,6 @@ import os
 import re
 import webbrowser
 
-from ahocorapy import keywordtree
 import dateutil.parser
 import playsound
 import pyperclip
@@ -17,15 +16,14 @@ import pytz
 import requests
 import xlsxwriter
 import xlsxwriter.exceptions
+from ahocorapy import keywordtree
 
-from ninjalooter import config
-from ninjalooter import logger
-from ninjalooter import models
+from ninjalooter import config, logger, models
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
 
-RE_EQ_LOGFILE = re.compile(r'.*_(.*)_.*\.txt')
+RE_EQ_LOGFILE = re.compile(r".*_(.*)_.*\.txt")
 RE_TIMESTAMP = re.compile(config.TIMESTAMP)
 LOG.info("Project working directory: %s", config.PROJECT_DIR)
 
@@ -35,12 +33,10 @@ def ignore_pending_item(item: models.ItemDrop) -> None:
     config.PENDING_AUCTIONS.remove(item)
 
 
-def start_auction_dkp(item: models.ItemDrop,
-                      alliance="") -> models.DKPAuction:
+def start_auction_dkp(item: models.ItemDrop, alliance="") -> models.DKPAuction:
     names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
     if item.name in names:
-        LOG.warning("Item %s already pending bid, not starting another.",
-                    item.name)
+        LOG.warning("Item %s already pending bid, not starting another.", item.name)
         return None
     auc = models.DKPAuction(item, alliance)
     config.PENDING_AUCTIONS.remove(item)
@@ -52,8 +48,7 @@ def start_auction_dkp(item: models.ItemDrop,
 def start_auction_random(item: models.ItemDrop) -> models.RandomAuction:
     names = (item.name() for item in config.ACTIVE_AUCTIONS.values())
     if item.name in names:
-        LOG.warning("Item %s already pending roll, not starting another.",
-                    item.name)
+        LOG.warning("Item %s already pending roll, not starting another.", item.name)
         return None
     auc = models.RandomAuction(item)
     config.PENDING_AUCTIONS.remove(item)
@@ -107,13 +102,11 @@ def generate_pop_roll(source=None, extras=None) -> tuple:
         roll_text = "/shout " + roll_text
     else:
         frame = inspect.currentframe()
-        roll_text = '/tell Toald break in `{func}:{line}`'.format(
-            func=frame.f_code.co_name,
-            line=frame.f_lineno - 1
+        roll_text = "/tell Toald break in `{func}:{line}`".format(
+            func=frame.f_code.co_name, line=frame.f_lineno - 1
         )
     rand_text = "/random 1 {}".format(end)
-    LOG.info("Generated pop roll with %d players: %s",
-             start - 1, roll_text)
+    LOG.info("Generated pop roll with %d players: %s", start - 1, roll_text)
     return roll_text, rand_text
 
 
@@ -131,7 +124,7 @@ def get_latest_logfile(logdir: str) -> tuple:
     latest_file = None
     latest_file_time = 0
     char_name = None
-    if logdir.endswith('.txt'):
+    if logdir.endswith(".txt"):
         latest_file = logdir
     else:
         for root, _, files in os.walk(logdir):
@@ -149,10 +142,8 @@ def get_latest_logfile(logdir: str) -> tuple:
 
 
 def _duplicate_backtick_apostrophes(items: list) -> list:
-    backtick_items = {item: link for item, link in items.items()
-                      if "`" in item}
-    apostrophe_items = {item: link for item, link in items.items()
-                        if "'" in item}
+    backtick_items = {item: link for item, link in items.items() if "`" in item}
+    apostrophe_items = {item: link for item, link in items.items() if "'" in item}
     for item, link in backtick_items.items():
         fixed_item_name = item.replace("`", "'")
         if fixed_item_name not in items:
@@ -165,15 +156,13 @@ def _duplicate_backtick_apostrophes(items: list) -> list:
 
 
 def load_item_data():
-    with open(os.path.join(config.PROJECT_DIR,
-                           'data', 'items.json')) as item_file:
+    with open(os.path.join(config.PROJECT_DIR, "data", "items.json")) as item_file:
         items = json.load(item_file)
     return _duplicate_backtick_apostrophes(items)
 
 
 def load_spell_data():
-    with open(os.path.join(config.PROJECT_DIR,
-                           'data', 'spells.json')) as spell_file:
+    with open(os.path.join(config.PROJECT_DIR, "data", "spells.json")) as spell_file:
         spells = json.load(spell_file)
     return _duplicate_backtick_apostrophes(spells)
 
@@ -243,20 +232,19 @@ def compose_ranges(ranges: list, text: str) -> list:
     while True:
         if i < len(ranges) and starts[i] < ends[j]:
             if active == 0:
-                combined.append({'start': starts[i]})
+                combined.append({"start": starts[i]})
             active += 1
             i += 1
         elif j < len(ranges):
             active -= 1
             if active == 0:
-                combined[len(combined) - 1]['end'] = ends[j]
+                combined[len(combined) - 1]["end"] = ends[j]
             j += 1
         else:
             break
     combined_texts = []
     for item_range in combined:
-        combined_texts.append(
-            text[item_range['start']:item_range['end']])
+        combined_texts.append(text[item_range["start"] : item_range["end"]])
     return combined_texts
 
 
@@ -286,15 +274,13 @@ def get_active_item_names() -> list:
     return active_items
 
 
-def datetime_to_eq_format(
-        some_datetime: datetime.datetime, allow_eastern: bool = True) -> str:
+def datetime_to_eq_format(some_datetime: datetime.datetime, allow_eastern: bool = True) -> str:
     if config.EXPORT_TIME_IN_EASTERN and allow_eastern:
         some_datetime = some_datetime + eastern_time_offset()
     return some_datetime.strftime("%a %b %d %H:%M:%S %Y")
 
 
-def datetime_from_eq_format(
-        some_datetime: str, allow_eastern: bool = True) -> datetime.datetime:
+def datetime_from_eq_format(some_datetime: str, allow_eastern: bool = True) -> datetime.datetime:
     dt = dateutil.parser.parse(some_datetime)
     if config.EXPORT_TIME_IN_EASTERN and allow_eastern:
         dt = dt + eastern_time_offset()
@@ -333,7 +319,7 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
         return 0
 
     # find the middle timestamp
-    middle_index = int(len(lines)/2)
+    middle_index = int(len(lines) / 2)
     for item in lines[middle_index:]:
         middle_ts = get_timestamp(item)
         if middle_ts:
@@ -360,8 +346,7 @@ def find_timestamp(lines: list, timestamp: datetime.datetime) -> (int, None):
 def get_timestamp(logline: str) -> datetime.datetime:
     match = RE_TIMESTAMP.match(logline)
     if match:
-        return datetime_from_eq_format(
-            match.group("time"), allow_eastern=False)
+        return datetime_from_eq_format(match.group("time"), allow_eastern=False)
     return None
 
 
@@ -381,25 +366,24 @@ def get_first_timestamp(iterable_obj) -> datetime.datetime:
 
 def load_state(state_file=config.SAVE_STATE_FILE):
     try:
-        with open(state_file, 'r') as ssfp:
+        with open(state_file) as ssfp:
             json_state = json.load(ssfp, cls=JSONDecoder)
         for key, value in json_state.items():
             # Handle conversion of history data prior to v1.14
-            if key == 'PLAYER_AFFILIATIONS':
-                key = 'LAST_WHO_SNAPSHOT'  # noqa: PLW2901
-                value = {name: models.Player(name, guild=guild)
-                         for name, guild in value.items()}  # noqa: PLW2901
-            elif key == 'HISTORICAL_AFFILIATIONS':
-                key = 'PLAYER_DB'  # noqa: PLW2901
-                value = {name: models.Player(name, guild=guild)
-                         for name, guild in value.items()}  # noqa: PLW2901
-            elif key == 'WHO_LOG':
-                key = 'ATTENDANCE_LOGS'  # noqa: PLW2901
+            if key == "PLAYER_AFFILIATIONS":
+                key = "LAST_WHO_SNAPSHOT"  # noqa: PLW2901
+                value = {name: models.Player(name, guild=guild) for name, guild in value.items()}  # noqa: PLW2901
+            elif key == "HISTORICAL_AFFILIATIONS":
+                key = "PLAYER_DB"  # noqa: PLW2901
+                value = {name: models.Player(name, guild=guild) for name, guild in value.items()}  # noqa: PLW2901
+            elif key == "WHO_LOG":
+                key = "ATTENDANCE_LOGS"  # noqa: PLW2901
                 for entry in value:
-                    entry.log = {name: models.Player(name, guild=guild)
-                                 for name, guild in entry.log.items()}
+                    entry.log = {
+                        name: models.Player(name, guild=guild) for name, guild in entry.log.items()
+                    }
             # Handle conversion of auction end data prior to v1.16.10
-            elif key == 'HISTORICAL_AUCTIONS':
+            elif key == "HISTORICAL_AUCTIONS":
                 for entry in value.values():
                     if entry.end_time is None:
                         entry.end_time = entry.start_time
@@ -417,7 +401,7 @@ def store_state(backup=False):
     statefile_name = config.SAVE_STATE_FILE
     if backup and config.BACKUP_ON_CLEAR:
         now = datetime.datetime.now()
-        timestr = now.isoformat().replace(':', '-').split('.')[0]
+        timestr = now.isoformat().replace(":", "-").split(".")[0]
         statefile_name = "state_{}.json".format(timestr)
 
     json_state = {
@@ -436,11 +420,10 @@ def store_state(backup=False):
         "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
         "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
         "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
-        "RAID_OVERVIEW_GUILDS_ENABLED_CACHE":
-            config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
+        "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
         "TAB_SELECTION": config.TAB_SELECTION,
     }
-    with open(statefile_name, 'w') as ssfp:
+    with open(statefile_name, "w") as ssfp:
         json.dump(json_state, ssfp, cls=JSONEncoder)
 
 
@@ -457,34 +440,36 @@ def export_to_excel(filename):
 
     # Completed Auctions
     excel_data = {
-        'Completed Auctions': [],
-        'Kill Times': [],
-        'Creditt & Gratss': [],
+        "Completed Auctions": [],
+        "Kill Times": [],
+        "Creditt & Gratss": [],
     }
 
     # Prepare Completed Auctions
     for auc in config.HISTORICAL_AUCTIONS.values():
         dkp_auc = isinstance(auc, models.DKPAuction)
         auc_data = {
-            'time': (auc.end_time + eastern_time_offset()
-                     if config.EXPORT_TIME_IN_EASTERN
-                     else auc.end_time),
+            "time": (
+                auc.end_time + eastern_time_offset()
+                if config.EXPORT_TIME_IN_EASTERN
+                else auc.end_time
+            ),
             # 'time': datetime_from_eq_format(auc.item.timestamp),
-            'item': auc.name(),
-            'winner': auc.highest_players(),
-            'type': 'DKP' if dkp_auc else 'Random',
-            'bid': auc.highest_number() if dkp_auc else 'N/A',
+            "item": auc.name(),
+            "winner": auc.highest_players(),
+            "type": "DKP" if dkp_auc else "Random",
+            "bid": auc.highest_number() if dkp_auc else "N/A",
         }
-        excel_data['Completed Auctions'].append(auc_data)
+        excel_data["Completed Auctions"].append(auc_data)
 
     # Prepare Kill Times
     for killtime in config.KILL_TIMERS:
         killtime_data = {
-            'time': datetime_from_eq_format(killtime.time),
-            'mob': killtime.name,
-            'island': killtime.island(),
+            "time": datetime_from_eq_format(killtime.time),
+            "mob": killtime.name,
+            "island": killtime.island(),
         }
-        excel_data['Kill Times'].append(killtime_data)
+        excel_data["Kill Times"].append(killtime_data)
 
     # Get all raw creditt/gratss messages
     for creditt in config.CREDITT_LOG:
@@ -493,12 +478,13 @@ def export_to_excel(filename):
             m = config.MATCH_CREDITT.match(adjusted_message)
             if not m:
                 continue
-            time_part = m.groupdict()['time']
+            time_part = m.groupdict()["time"]
             new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False))
+                datetime_from_eq_format(time_part, allow_eastern=False)
+            )
             adjusted_message = adjusted_message.replace(time_part, new_time)
-        creditt_data = {'creditt/gratss': adjusted_message}
-        excel_data['Creditt & Gratss'].append(creditt_data)
+        creditt_data = {"creditt/gratss": adjusted_message}
+        excel_data["Creditt & Gratss"].append(creditt_data)
     # Get all raw creditt/gratss messages
     for gratss in config.GRATSS_LOG:
         adjusted_message = gratss.raw_message
@@ -506,17 +492,17 @@ def export_to_excel(filename):
             m = config.MATCH_GRATSS.match(adjusted_message)
             if not m:
                 continue
-            time_part = m.groupdict()['time']
+            time_part = m.groupdict()["time"]
             new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False))
+                datetime_from_eq_format(time_part, allow_eastern=False)
+            )
             adjusted_message = adjusted_message.replace(time_part, new_time)
-        gratss_data = {'creditt/gratss': adjusted_message}
-        excel_data['Creditt & Gratss'].append(gratss_data)
+        gratss_data = {"creditt/gratss": adjusted_message}
+        excel_data["Creditt & Gratss"].append(gratss_data)
 
     # Set up the workbook
-    workbook = xlsxwriter.Workbook(
-        filename, {'default_date_format': 'm/d/yyyy h:mm:ss AM/PM'})
-    bold = workbook.add_format({'bold': True})
+    workbook = xlsxwriter.Workbook(filename, {"default_date_format": "m/d/yyyy h:mm:ss AM/PM"})
+    bold = workbook.add_format({"bold": True})
 
     # Write "Basic Data" into the workbook
     for page, data in excel_data.items():
@@ -536,19 +522,16 @@ def export_to_excel(filename):
     for entry in config.ATTENDANCE_LOGS:
         if entry.log:
             if config.EXPORT_TIME_IN_EASTERN:
-                time_str = (
-                        entry.time + eastern_time_offset()
-                ).strftime('%Y.%m.%d %I.%M.%S %p')
+                time_str = (entry.time + eastern_time_offset()).strftime("%Y.%m.%d %I.%M.%S %p")
             else:
-                time_str = entry.time.strftime('%Y.%m.%d %I.%M.%S %p')
+                time_str = entry.time.strftime("%Y.%m.%d %I.%M.%S %p")
             worksheet_name = time_str
             worksheet_name_append = 0
             attendance_sheet = None
             while attendance_sheet is None:
                 try:
                     if worksheet_name_append > 0:
-                        worksheet_name = "{0} ({1})".format(
-                            time_str, worksheet_name_append)
+                        worksheet_name = "{0} ({1})".format(time_str, worksheet_name_append)
                     attendance_sheet = workbook.add_worksheet(worksheet_name)
                 except xlsxwriter.exceptions.DuplicateWorksheetName:
                     worksheet_name_append += 1
@@ -556,19 +539,22 @@ def export_to_excel(filename):
                     workbook.close()
                     return False
 
-            attendance_sheet.write_row(
-                0, 0, ('name', 'level', 'class', 'guild'), bold)
+            attendance_sheet.write_row(0, 0, ("name", "level", "class", "guild"), bold)
             attendance_sheet.set_column(0, 0, 18)
             attendance_sheet.set_column(1, 1, 8)
             attendance_sheet.set_column(2, 3, 18)
             row_num = 1
             for name, player_obj in entry.log.items():
                 attendance_sheet.write_row(
-                    row_num, 0,
-                    (name,
-                     player_obj.level if player_obj.level != 0 else "",
-                     player_obj.pclass,
-                     player_obj.guild))
+                    row_num,
+                    0,
+                    (
+                        name,
+                        player_obj.level if player_obj.level != 0 else "",
+                        player_obj.pclass,
+                        player_obj.guild,
+                    ),
+                )
                 row_num += 1
             attendance_sheet.autofilter(0, 0, row_num - 1, 3)
 
@@ -592,16 +578,10 @@ def parse_auction_for_loot_export(auction):
     text = None
     if highest and isinstance(auction, models.DKPAuction):
         winner, dkp = highest[0]
-        text = (
-            f"[{timestamp}] You say, 'LOOT: "
-            f" {auction.item.name} {winner} {dkp}'"
-        )
+        text = f"[{timestamp}] You say, 'LOOT:  {auction.item.name} {winner} {dkp}'"
     elif highest:
         winner, _ = highest[0]
-        text = (
-            f"[{timestamp}] You say, 'LOOT: "
-            f" {auction.item.name} {winner} 0'"
-        )
+        text = f"[{timestamp}] You say, 'LOOT:  {auction.item.name} {winner} 0'"
     return text
 
 
@@ -610,8 +590,7 @@ def parse_tick_for_export(wholog):
     tick_lines = []
     for member, player_obj in wholog.log.items():
         guild = player_obj.guild
-        if config.RESTRICT_EXPORT and guild not in \
-                config.ALLIANCES[config.DEFAULT_ALLIANCE]:
+        if config.RESTRICT_EXPORT and guild not in config.ALLIANCES[config.DEFAULT_ALLIANCE]:
             continue
         level_class = None
         if player_obj.level:
@@ -644,9 +623,10 @@ def export_to_eqdkp(filename):
             m = config.MATCH_CREDITT.match(adjusted_message)
             if not m:
                 continue
-            time_part = m.groupdict()['time']
+            time_part = m.groupdict()["time"]
             new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False))
+                datetime_from_eq_format(time_part, allow_eastern=False)
+            )
             adjusted_message = adjusted_message.replace(time_part, new_time)
         creditt_messages.append(adjusted_message)
     gratss_messages = []
@@ -656,9 +636,10 @@ def export_to_eqdkp(filename):
             m = config.MATCH_GRATSS.match(adjusted_message)
             if not m:
                 continue
-            time_part = m.groupdict()['time']
+            time_part = m.groupdict()["time"]
             new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False))
+                datetime_from_eq_format(time_part, allow_eastern=False)
+            )
             adjusted_message = adjusted_message.replace(time_part, new_time)
         gratss_messages.append(adjusted_message)
 
@@ -670,8 +651,7 @@ def export_to_eqdkp(filename):
             closed_loots.append(loot_text)
 
     # Set up the workbook
-    workbook = xlsxwriter.Workbook(
-        filename, {'default_date_format': 'm/d/yyyy h:mm:ss AM/PM'})
+    workbook = xlsxwriter.Workbook(filename, {"default_date_format": "m/d/yyyy h:mm:ss AM/PM"})
     sheets = collections.OrderedDict()
     sheet_rows = {}
 
@@ -684,22 +664,22 @@ def export_to_eqdkp(filename):
 
     # Create a page per raidtick
     for tick_name, tick in raidtick_logs:
-        tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group('time')
+        tick_timestamp = re.match(config.TIMESTAMP, tick[0]).group("time")
         parsed_time = datetime_from_eq_format(tick_timestamp)
-        alt_sheet_name = parsed_time.strftime('%Y.%m.%d %I.%M.%S %p')
+        alt_sheet_name = parsed_time.strftime("%Y.%m.%d %I.%M.%S %p")
         if tick_name:
             sheet_name = tick_name[:32]
             # the following aren't allowed: []:*?/\
-            for c in '[]:?/\\':
-                sheet_name = sheet_name.replace(c, '-')
-            sheet_name = sheet_name.replace('*', '')
+            for c in "[]:?/\\":
+                sheet_name = sheet_name.replace(c, "-")
+            sheet_name = sheet_name.replace("*", "")
         else:
             sheet_name = alt_sheet_name
         while sheet_name in workbook.sheetnames:
-            suffix_match = re.search(r'(\d+)$', sheet_name)
+            suffix_match = re.search(r"(\d+)$", sheet_name)
             if suffix_match:
                 num = int(suffix_match.group(1))
-                sheet_name = sheet_name[:suffix_match.start()] + str(num + 1)
+                sheet_name = sheet_name[: suffix_match.start()] + str(num + 1)
             else:
                 sheet_name += " 2"
         try:
@@ -728,7 +708,7 @@ def export_to_eqdkp(filename):
         sheet = sheets[sheet_timestamp]
         # Write creditts after each tick, working backwards
         for creditt in creditt_messages.copy():
-            cred_timestamp = re.match(config.TIMESTAMP, creditt).group('time')
+            cred_timestamp = re.match(config.TIMESTAMP, creditt).group("time")
             parsed_time = datetime_from_eq_format(cred_timestamp)
             if parsed_time > sheet_timestamp:
                 sheet_rows[sheet.name] += 1
@@ -748,7 +728,7 @@ def export_to_eqdkp(filename):
             sheet = sheets[sheet_timestamp]
             # Write loots after each tick, working backwards
             for loot in closed_loots.copy():
-                loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
+                loot_timestamp = re.match(config.TIMESTAMP, loot).group("time")
                 parsed_time = datetime_from_eq_format(loot_timestamp)
                 if sheet_timestamp == "Loot" or parsed_time > sheet_timestamp:
                     sheet_rows[sheet.name] += 1
@@ -764,7 +744,7 @@ def export_to_eqdkp(filename):
             sheet = sheets[sheet_timestamp]
             # Write loots to the current sheet
             for loot in closed_loots.copy():
-                loot_timestamp = re.match(config.TIMESTAMP, loot).group('time')
+                loot_timestamp = re.match(config.TIMESTAMP, loot).group("time")
                 parsed_time = datetime_from_eq_format(loot_timestamp)
                 if sheet_timestamp == "Loot" or parsed_time < sheet_timestamp:
                     sheet_rows[sheet.name] += 1
@@ -794,13 +774,10 @@ def fetch_google_sheet_data(url):
     sheet_id = match.group(1)
 
     # Get the data in CSV format
-    new_url = (
-        "https://docs.google.com/spreadsheets/d/{id}/export?format=csv"
-    ).format(id=sheet_id)
+    new_url = ("https://docs.google.com/spreadsheets/d/{id}/export?format=csv").format(id=sheet_id)
     req = requests.get(new_url)
     if req.status_code != 200:
-        LOG.error("Couldn't fetch spreadsheet `%s`: %d",
-                  sheet_id, req.status_code)
+        LOG.error("Couldn't fetch spreadsheet `%s`: %d", sheet_id, req.status_code)
         return None
 
     # Load the csv
@@ -827,24 +804,26 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
                     mindkp_row = -2
                 else:
                     mindkp_row = -3
-            item = {'min_dkp': mindkp_row}
+            item = {"min_dkp": mindkp_row}
             try:
                 if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
-                    item['classes'] = list(map(
-                        lambda x: x.strip(),
-                        row[config.MIN_DKP_RESTR_COL].split(",")))
+                    item["classes"] = list(
+                        map(lambda x: x.strip(), row[config.MIN_DKP_RESTR_COL].split(","))
+                    )
             except:  # noqa
-                LOG.warning("Couldn't parse column `%s` for row: %s",
-                            config.MIN_DKP_DROP_COL, row)
+                LOG.warning("Couldn't parse column `%s` for row: %s", config.MIN_DKP_DROP_COL, row)
             try:
                 if config.MIN_DKP_DROP_COL and row[config.MIN_DKP_DROP_COL]:
-                    item['nodrop'] = row[
-                        config.MIN_DKP_DROP_COL
-                    ].strip().lower() not in (
-                        'y', 'yes', 't', 'true', 'on', '1')
+                    item["nodrop"] = row[config.MIN_DKP_DROP_COL].strip().lower() not in (
+                        "y",
+                        "yes",
+                        "t",
+                        "true",
+                        "on",
+                        "1",
+                    )
             except:  # noqa
-                LOG.warning("Couldn't parse column `%s` for row: %s",
-                            config.MIN_DKP_DROP_COL, row)
+                LOG.warning("Couldn't parse column `%s` for row: %s", config.MIN_DKP_DROP_COL, row)
             output[row[config.MIN_DKP_NAME_COL]] = item
         except:  # noqa
             LOG.warning("Couldn't parse row: %s", row)
@@ -853,12 +832,9 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
 
 
 def add_sample_data():
-    copper_disc = models.ItemDrop(
-        'Copper Disc', 'Bob', 'Mon Aug 17 07:15:39 2020')
-    platinum_disc1 = models.ItemDrop(
-        'Platinum Disc', 'Jim', 'Mon Aug 17 07:16:05 2020')
-    platinum_disc2 = models.ItemDrop(
-        'Platinum Disc', 'Bill', 'Mon Aug 17 07:16:05 2020')
+    copper_disc = models.ItemDrop("Copper Disc", "Bob", "Mon Aug 17 07:15:39 2020")
+    platinum_disc1 = models.ItemDrop("Platinum Disc", "Jim", "Mon Aug 17 07:16:05 2020")
+    platinum_disc2 = models.ItemDrop("Platinum Disc", "Bill", "Mon Aug 17 07:16:05 2020")
     config.PENDING_AUCTIONS.append(copper_disc)
     config.PENDING_AUCTIONS.append(platinum_disc1)
     config.PENDING_AUCTIONS.append(platinum_disc2)
@@ -877,13 +853,12 @@ class JSONEncoder(json.JSONEncoder):
 # Mutated from https://github.com/AlexisGomes/JsonEncoder/
 class JSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(
-            self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):  # pylint: disable=method-hidden
         if isinstance(obj, dict):
-            if 'json_type' in obj:
-                json_type = obj.pop('json_type')
+            if "json_type" in obj:
+                json_type = obj.pop("json_type")
                 model_type = getattr(models, json_type, None)
                 if model_type and issubclass(model_type, models.DictEquals):
                     return model_type.from_json(**obj)

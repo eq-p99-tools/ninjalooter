@@ -1,8 +1,7 @@
-import random
 import math
+import random
 
-from ninjalooter import constants
-from ninjalooter import models
+from ninjalooter import constants, models
 
 
 class GroupBuilder:
@@ -11,6 +10,7 @@ class GroupBuilder:
     Uses Simulated Annealing to search for an optimized match of (available
     raid classes) to (ideal raid groups and classes)
     """
+
     INITIAL_ANNEAL_TEMP = 1500.0
     COOLING_RATE = 0.9
     INNER_LOOP_X = 10
@@ -40,13 +40,11 @@ class GroupBuilder:
         # SA iteration outer loop_count
         converged = False
         while not converged:
-
             # do 'INNER_LOOP_X * player_count' random moves and see how many
             # result in improvements
             accepted_moves = 0
             loop_count = self.INNER_LOOP_X * player_count
             while loop_count > 0:
-
                 # swap two random players
                 from_pos = random.randrange(player_count)
 
@@ -57,14 +55,15 @@ class GroupBuilder:
 
                 # do the swap
                 master_player_list[to_pos], master_player_list[from_pos] = (
-                    master_player_list[from_pos], master_player_list[to_pos])
+                    master_player_list[from_pos],
+                    master_player_list[to_pos],
+                )
 
                 # fill the groups with the revised player list
                 player_ndx = 0
                 group_ndx = 0
                 gg = None
                 while player_ndx < player_count:
-
                     # use mod function to know when to get next group
                     if (player_ndx % 6) == 0:
                         gg = self.raid.groups[group_ndx]
@@ -92,7 +91,7 @@ class GroupBuilder:
                     new_score += gg.group_score
 
                 # in this case, higher scores = better
-                chance = math.exp(-1.0*abs((new_score-current_score))/temp)
+                chance = math.exp(-1.0 * abs(new_score - current_score) / temp)
                 rv = random.random()
 
                 # always accept an improved score
@@ -112,10 +111,10 @@ class GroupBuilder:
 
                 # if we aren't going to accept the swap, then undo it
                 else:
-                    (master_player_list[to_pos],
-                     master_player_list[from_pos]) = (
+                    (master_player_list[to_pos], master_player_list[from_pos]) = (
                         master_player_list[from_pos],
-                        master_player_list[to_pos])
+                        master_player_list[to_pos],
+                    )
 
                 # inner loop counter
                 loop_count -= 1

@@ -7,8 +7,7 @@ import wx
 
 
 def _HandleTypingEvent(self, evt):
-    """
-    """
+    """ """
     if self.GetItemCount() == 0 or self.GetColumnCount() == 0:
         return False
 
@@ -27,8 +26,7 @@ def _HandleTypingEvent(self, evt):
     # sorted column, and there is a sorted column and it is searchable,
     # we use that
     # one, otherwise we fallback to the primary column
-    if self.typingSearchesSortColumn and self.GetSortColumn(
-    ) and self.GetSortColumn().isSearchable:
+    if self.typingSearchesSortColumn and self.GetSortColumn() and self.GetSortColumn().isSearchable:
         searchColumn = self.GetSortColumn()
     else:
         searchColumn = self.GetPrimaryColumn()

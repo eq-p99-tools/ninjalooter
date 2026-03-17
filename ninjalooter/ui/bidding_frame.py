@@ -6,9 +6,7 @@ import ObjectListView
 import wx
 import wx.lib.splitter
 
-from ninjalooter import config
-from ninjalooter import models
-from ninjalooter import utils
+from ninjalooter import config, models, utils
 
 
 class BiddingFrame(wx.Window):
@@ -16,16 +14,15 @@ class BiddingFrame(wx.Window):
         super().__init__(parent, *args, **kwargs)
         parent.GetParent().Connect(-1, -1, models.EVT_DROP, self.OnDrop)
         parent.GetParent().Connect(-1, -1, models.EVT_BID, self.OnBid)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR,
-                                   self.OnClearApp)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD,
-                                   self.OnReloadApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR, self.OnClearApp)
+        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD, self.OnReloadApp)
         #######################
         # Bidding Frame (Tab 1)
         #######################
         # bidding_frame = wx.Window(notebook)
         bidding_splitter = wx.lib.splitter.MultiSplitterWindow(
-            self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
+            self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER
+        )
         bidding_splitter.SetOrientation(wx.VERTICAL)
         pane_1 = wx.Panel(bidding_splitter, wx.ID_ANY)
         pane_2 = wx.Panel(bidding_splitter, wx.ID_ANY)
@@ -38,46 +35,38 @@ class BiddingFrame(wx.Window):
         # ----------------
         # Pending Loot Box
         # ----------------
-        pending_label = wx.StaticText(
-            pane_1, label="Pending Drops", style=wx.ALIGN_LEFT)
+        pending_label = wx.StaticText(pane_1, label="Pending Drops", style=wx.ALIGN_LEFT)
         pending_label.SetFont(label_font)
-        bidding_main_box1.Add(
-            pending_label, flag=wx.LEFT | wx.TOP, border=10)
+        bidding_main_box1.Add(pending_label, flag=wx.LEFT | wx.TOP, border=10)
         pending_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box1.Add(
-            pending_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        bidding_main_box1.Add(pending_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         pending_list = ObjectListView.ObjectListView(
-            pane_1, wx.ID_ANY, size=wx.Size(725, 1000),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
+            pane_1, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+        )
         pending_box.Add(pending_list, flag=wx.EXPAND)
         pending_list.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.UpdateMinDKP)
         pending_list.Bind(wx.EVT_LEFT_DCLICK, self.OnIgnorePending)
         self.pending_list = pending_list
 
-        pending_list.SetColumns([
-            ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp",
-                                      fixedWidth=170),
-            ObjectListView.ColumnDefn("Reporter", "left", 95, "reporter",
-                                      fixedWidth=95),
-            ObjectListView.ColumnDefn("Item", "left", 225, "name",
-                                      fixedWidth=225),
-            ObjectListView.ColumnDefn("Min. DKP", "center", 61, "min_dkp",
-                                      fixedWidth=61),
-            ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes",
-                                      fixedWidth=85),
-            ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
-                                      fixedWidth=70),
-        ])
+        pending_list.SetColumns(
+            [
+                ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp", fixedWidth=170),
+                ObjectListView.ColumnDefn("Reporter", "left", 95, "reporter", fixedWidth=95),
+                ObjectListView.ColumnDefn("Item", "left", 225, "name", fixedWidth=225),
+                ObjectListView.ColumnDefn("Min. DKP", "center", 61, "min_dkp", fixedWidth=61),
+                ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes", fixedWidth=85),
+                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
+            ]
+        )
         pending_list.SetObjects(config.PENDING_AUCTIONS)
         pending_list.SetEmptyListMsg("No drops pending.")
         pending_list.SetToolTip("Double click an item to ignore it")
 
         # Buttons
         pending_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        pending_box.Add(pending_buttons_box,
-                        flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        pending_box.Add(pending_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
         pending_button_ignore = wx.Button(pane_1, label="Ignore")
         pending_button_dkp = wx.Button(pane_1, label="DKP Bid")
@@ -90,15 +79,13 @@ class BiddingFrame(wx.Window):
         # pending_buttons_box.Add(pending_buttonspacer, flag=wx.TOP, border=10)
         pending_buttons_box.Add(pending_button_wiki, flag=wx.TOP, border=10)
         min_dkp_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
-        min_dkp_label = wx.StaticText(
-            pane_1, label="Min. DKP")
+        min_dkp_label = wx.StaticText(pane_1, label="Min. DKP")
         min_dkp_label.SetFont(min_dkp_font)
         min_dkp_spinner = wx.SpinCtrl(pane_1, value=str(config.MIN_DKP))
         min_dkp_spinner.SetRange(0, 10000)
         min_dkp_spinner.Bind(wx.EVT_SPINCTRL, self.OnMinDkpSpin)
         self.min_dkp_spinner = min_dkp_spinner
-        pending_buttons_box.Add(min_dkp_label,
-                                flag=wx.TOP | wx.LEFT, border=10)
+        pending_buttons_box.Add(min_dkp_label, flag=wx.TOP | wx.LEFT, border=10)
         pending_buttons_box.Add(min_dkp_spinner, flag=wx.LEFT, border=10)
 
         pending_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnorePending)
@@ -109,59 +96,50 @@ class BiddingFrame(wx.Window):
         # ---------------
         # Active Loot Box
         # ---------------
-        active_label = wx.StaticText(
-            pane_2, label="Active Auctions", style=wx.ALIGN_LEFT)
+        active_label = wx.StaticText(pane_2, label="Active Auctions", style=wx.ALIGN_LEFT)
         active_label.SetFont(label_font)
-        bidding_main_box2.Add(
-            active_label, flag=wx.LEFT | wx.TOP, border=10)
+        bidding_main_box2.Add(active_label, flag=wx.LEFT | wx.TOP, border=10)
         active_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box2.Add(
-            active_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        bidding_main_box2.Add(active_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         active_list = ObjectListView.ObjectListView(
-            pane_2, wx.ID_ANY, size=wx.Size(725, 1000),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
+            pane_2, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+        )
         active_box.Add(active_list, flag=wx.EXPAND)
         active_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowActiveDetail)
         self.active_list = active_list
 
-        active_list.SetColumns([
-            ObjectListView.ColumnDefn("Item", "left", 215, "name",
-                                      fixedWidth=215),
-            ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes",
-                                      fixedWidth=95),
-            ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
-                                      fixedWidth=70),
-            ObjectListView.ColumnDefn("Rand/Min", "left", 70, "get_target_min",
-                                      fixedWidth=70),
-            ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number",
-                                      fixedWidth=65),
-            ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players",
-                                      fixedWidth=90),
-            ObjectListView.ColumnDefn("Time Left", "left", 100,
-                                      "time_remaining_ui",
-                                      fixedWidth=100),
-        ])
+        active_list.SetColumns(
+            [
+                ObjectListView.ColumnDefn("Item", "left", 215, "name", fixedWidth=215),
+                ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
+                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
+                ObjectListView.ColumnDefn("Rand/Min", "left", 70, "get_target_min", fixedWidth=70),
+                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number", fixedWidth=65),
+                ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players", fixedWidth=90),
+                ObjectListView.ColumnDefn(
+                    "Time Left", "left", 100, "time_remaining_ui", fixedWidth=100
+                ),
+            ]
+        )
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         active_list.SetEmptyListMsg("No auctions pending.")
-        active_list.SetToolTip(
-            "Double click an auction to edit bid the history")
+        active_list.SetToolTip("Double click an auction to edit bid the history")
         self.active_list_refresh_timer = wx.Timer(self, id=1)
-        self.Bind(wx.EVT_TIMER, self.refresh_active_list,
-                  self.active_list_refresh_timer)
+        self.Bind(wx.EVT_TIMER, self.refresh_active_list, self.active_list_refresh_timer)
         self.active_list_refresh_timer.Start(1000)
 
         # Buttons
         active_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        active_box.Add(active_buttons_box,
-                       flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        active_box.Add(active_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
         active_button_undo = wx.Button(pane_2, label="Undo")
         active_buttonspacer = wx.StaticLine(pane_2)
         active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
         self.active_buttons_timespinner = wx.SpinCtrl(
-            pane_2, min=1, max=30, initial=1, size=(44, 22))
+            pane_2, min=1, max=30, initial=1, size=(44, 22)
+        )
         self.active_buttons_timespinner.SetToolTip("Minutes to add/remove")
         active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
         active_button_timeadd.SetToolTip("Add time to Auction")
@@ -174,19 +152,21 @@ class BiddingFrame(wx.Window):
         active_button_complete = wx.Button(pane_2, label="Complete")
         active_button_wiki = wx.Button(pane_2, label="Wiki?")
         active_cb_bid_target = wx.ComboBox(
-            pane_2, size=wx.Size(73, 22),
+            pane_2,
+            size=wx.Size(73, 22),
             choices=list(config.BID_CHANNEL_OPTIONS),
             value=config.PRIMARY_BID_CHANNEL,
-            style=wx.CB_READONLY)
-        active_cb_bid_target.SetToolTip("Selected channel will be used for "
-                                        "Auction clipboard messages")
+            style=wx.CB_READONLY,
+        )
+        active_cb_bid_target.SetToolTip(
+            "Selected channel will be used for Auction clipboard messages"
+        )
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
         active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_button_wiki, flag=wx.TOP | wx.BOTTOM,
-                               border=6)
+        active_buttons_box.Add(active_button_wiki, flag=wx.TOP | wx.BOTTOM, border=6)
         active_buttons_box.Add(active_cb_bid_target, flag=wx.LEFT, border=1)
 
         active_button_undo.Bind(wx.EVT_BUTTON, self.UndoStart)
@@ -200,49 +180,38 @@ class BiddingFrame(wx.Window):
         # -------------------
         # Historical Loot Box
         # -------------------
-        history_label = wx.StaticText(
-            pane_3, label="Historical Auctions", style=wx.ALIGN_LEFT)
+        history_label = wx.StaticText(pane_3, label="Historical Auctions", style=wx.ALIGN_LEFT)
         history_label.SetFont(label_font)
-        bidding_main_box3.Add(
-            history_label, flag=wx.LEFT | wx.TOP, border=10)
+        bidding_main_box3.Add(history_label, flag=wx.LEFT | wx.TOP, border=10)
         history_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box3.Add(
-            history_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        bidding_main_box3.Add(history_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
         # List
         history_list = ObjectListView.ObjectListView(
-            pane_3, wx.ID_ANY, size=wx.Size(725, 1000),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
-        history_list.CopyObjectsToClipboard = (
-            self.CopyObjectsToClipboardLoot)
+            pane_3, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+        )
+        history_list.CopyObjectsToClipboard = self.CopyObjectsToClipboardLoot
         history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
         history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
         self.history_list = history_list
 
-        history_list.SetColumns([
-            ObjectListView.ColumnDefn("Item", "left", 240, "name",
-                                      fixedWidth=240),
-            ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes",
-                                      fixedWidth=95),
-            ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
-                                      fixedWidth=70),
-            ObjectListView.ColumnDefn("Rand/Min", "left", 65, "get_target_min",
-                                      fixedWidth=65),
-            ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number",
-                                      fixedWidth=65),
-            ObjectListView.ColumnDefn("Winner", "left", 108, "highest_players",
-                                      fixedWidth=108),
-        ])
-        history_list.SetObjects(
-            list(config.HISTORICAL_AUCTIONS.values()))
+        history_list.SetColumns(
+            [
+                ObjectListView.ColumnDefn("Item", "left", 240, "name", fixedWidth=240),
+                ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
+                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
+                ObjectListView.ColumnDefn("Rand/Min", "left", 65, "get_target_min", fixedWidth=65),
+                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number", fixedWidth=65),
+                ObjectListView.ColumnDefn("Winner", "left", 108, "highest_players", fixedWidth=108),
+            ]
+        )
+        history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
         history_list.SetEmptyListMsg("No auctions completed.")
-        history_list.SetToolTip(
-            "Double click an auction to edit bid the history")
+        history_list.SetToolTip("Double click an auction to edit bid the history")
 
         # Buttons
         history_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        history_box.Add(history_buttons_box,
-                        flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        history_box.Add(history_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
 
         history_button_undo = wx.Button(pane_3, label="Undo")
         history_buttonspacer = wx.StaticLine(pane_3)
@@ -277,9 +246,8 @@ class BiddingFrame(wx.Window):
         bidding_splitter.SetMinimumPaneSize(215)
         bidding_splitter.SetSashPosition(0, config.ACTIVE_SASH_POS)
         bidding_splitter.SetSashPosition(1, config.HISTORICAL_SASH_POS)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged,
-                  source=bidding_splitter)
-        parent.AddPage(self, 'Bidding')
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged, source=bidding_splitter)
+        parent.AddPage(self, "Bidding")
 
     def refresh_active_list(self, event):
         self.active_list.RefreshObjects(list(config.ACTIVE_AUCTIONS.values()))
@@ -292,14 +260,11 @@ class BiddingFrame(wx.Window):
         for idx, obj in enumerate(self.active_list.GetObjects()):
             remaining = obj.time_remaining().seconds
             if remaining < DANGER_ZONE:
-                self.active_list.SetItemBackgroundColour(
-                    idx, config.DANGER_COLOR)
+                self.active_list.SetItemBackgroundColour(idx, config.DANGER_COLOR)
             elif remaining < WARNING_ZONE:
-                self.active_list.SetItemBackgroundColour(
-                    idx, config.WARN_COLOR)
+                self.active_list.SetItemBackgroundColour(idx, config.WARN_COLOR)
             else:
-                self.active_list.SetItemBackgroundColour(
-                    idx, config.SAFE_COLOR)
+                self.active_list.SetItemBackgroundColour(idx, config.SAFE_COLOR)
 
     @staticmethod
     def OnSashChanged(e: wx.lib.splitter.MultiSplitterEvent):
@@ -311,16 +276,13 @@ class BiddingFrame(wx.Window):
 
     def OnHideRot(self, e: wx.Event):
         config.HIDE_ROTS = self.history_button_hiderot.IsChecked()
-        config.CONF.set(
-            'default', 'hide_rots', str(config.HIDE_ROTS))
+        config.CONF.set("default", "hide_rots", str(config.HIDE_ROTS))
         if config.HIDE_ROTS:
             # Filter by hiding rots
-            awarded_auctions = [
-                x for x in config.HISTORICAL_AUCTIONS.values() if x.highest()]
+            awarded_auctions = [x for x in config.HISTORICAL_AUCTIONS.values() if x.highest()]
             self.history_list.SetObjects(awarded_auctions)
         else:
-            self.history_list.SetObjects(
-                list(config.HISTORICAL_AUCTIONS.values()))
+            self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
         config.write()
 
     def UpdateMinDKP(self, e: wx.Event):
@@ -347,7 +309,9 @@ class BiddingFrame(wx.Window):
             self,
             "An item with this name is already pending auction.\n"
             "Please complete the existing auction before starting another.",
-            "Duplicate Auction", wx.OK | wx.ICON_ERROR)
+            "Duplicate Auction",
+            wx.OK | wx.ICON_ERROR,
+        )
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -359,8 +323,7 @@ class BiddingFrame(wx.Window):
         config.PENDING_AUCTIONS.append(selected_object.item)
         config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)
         self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(
-            list(config.ACTIVE_AUCTIONS.values()))
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         self.pending_list.SelectObject(selected_object.item)
         utils.store_state()
 
@@ -380,6 +343,7 @@ class BiddingFrame(wx.Window):
 
     def PickAuctionDKP(self, e: wx.Event):
         """This is no longer used, in favor of selecting a default alliance."""
+
         class MyPopupMenu(wx.Menu):
             def __init__(self, parent):
                 super().__init__()
@@ -399,8 +363,7 @@ class BiddingFrame(wx.Window):
             self.DialogDuplicate()
             return
         self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(
-            list(config.ACTIVE_AUCTIONS.values()))
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
         self.CopyBidText(e)
         utils.store_state()
@@ -414,8 +377,7 @@ class BiddingFrame(wx.Window):
             self.DialogDuplicate()
             return
         self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(
-            list(config.ACTIVE_AUCTIONS.values()))
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.SelectObject(auc)
         self.CopyBidText(e)
         utils.store_state()
@@ -425,13 +387,10 @@ class BiddingFrame(wx.Window):
         if not selected_object:
             return
         selected_object.complete()
-        config.HISTORICAL_AUCTIONS[selected_object.item.uuid] = (
-            selected_object)
+        config.HISTORICAL_AUCTIONS[selected_object.item.uuid] = selected_object
         config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)
-        self.active_list.SetObjects(
-            list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(
-            list(config.HISTORICAL_AUCTIONS.values()))
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
+        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
         self.OnHideRot(None)
         self.history_list.SelectObject(selected_object)
         self.CopyWinText(e)
@@ -442,13 +401,10 @@ class BiddingFrame(wx.Window):
         if not selected_object:
             return
         selected_object.end_time = None
-        config.ACTIVE_AUCTIONS[selected_object.item.uuid] = (
-            selected_object)
+        config.ACTIVE_AUCTIONS[selected_object.item.uuid] = selected_object
         config.HISTORICAL_AUCTIONS.pop(selected_object.item.uuid)
-        self.active_list.SetObjects(
-            list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(
-            list(config.HISTORICAL_AUCTIONS.values()))
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
+        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
         self.active_list.SelectObject(selected_object)
         utils.store_state()
 
@@ -456,15 +412,14 @@ class BiddingFrame(wx.Window):
         selected_object = self.active_list.GetSelectedObject()
         if not selected_object:
             return
-        delta = datetime.timedelta(
-            minutes=self.active_buttons_timespinner.Value)
+        delta = datetime.timedelta(minutes=self.active_buttons_timespinner.Value)
         if e.EventObject.Label == "-":
             selected_object.start_time -= delta
         else:
             if selected_object.time_remaining().seconds <= 0:
-                selected_object.start_time = (
-                        datetime.datetime.now() -
-                        datetime.timedelta(seconds=config.MIN_BID_TIME))
+                selected_object.start_time = datetime.datetime.now() - datetime.timedelta(
+                    seconds=config.MIN_BID_TIME
+                )
             selected_object.start_time += delta
 
     def CopyBidText(self, e: wx.Event):
@@ -508,8 +463,7 @@ class BiddingFrame(wx.Window):
     @staticmethod
     def SelectBidTarget(e: wx.EVT_COMBOBOX):
         config.PRIMARY_BID_CHANNEL = e.String
-        config.CONF.set(
-            'default', 'primary_bid_channel', config.PRIMARY_BID_CHANNEL)
+        config.CONF.set("default", "primary_bid_channel", config.PRIMARY_BID_CHANNEL)
         config.write()
 
     def OnDrop(self, e: models.DropEvent):
@@ -568,37 +522,37 @@ class BiddingFrame(wx.Window):
 
 
 class ItemDetailWindow(wx.Frame):
-    def __init__(self, item: models.Auction,
-                 listbox: ObjectListView.ObjectListView,
-                 parent=None, title="Item Detail"):
+    def __init__(
+        self,
+        item: models.Auction,
+        listbox: ObjectListView.ObjectListView,
+        parent=None,
+        title="Item Detail",
+    ):
         wx.Frame.__init__(self, parent, title=title, size=(400, 400))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.item = item
         self.listbox = listbox
         main_box = wx.BoxSizer(wx.HORIZONTAL)
 
-        text_area = wx.TextCtrl(self, style=wx.TE_MULTILINE,
-                                size=wx.Size(400, 400))
-        data = getattr(item, 'rolls', getattr(item, 'bids', dict()))
-        bids_or_rolls = [
-            "{}: {}".format(number, players)
-            for number, players in data.items()]
-        text_area.SetValue('\n'.join(bids_or_rolls))
+        text_area = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=wx.Size(400, 400))
+        data = getattr(item, "rolls", getattr(item, "bids", dict()))
+        bids_or_rolls = ["{}: {}".format(number, players) for number, players in data.items()]
+        text_area.SetValue("\n".join(bids_or_rolls))
         main_box.Add(text_area)
         self.bid_data = text_area
 
         self.SetSizer(main_box)
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(
-                self.GetWindowStyle() | wx.STAY_ON_TOP)
+            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
     def OnClose(self, e: wx.Event):
         text_data = self.bid_data.GetValue()
         bid_data = {}
-        data = getattr(self.item, 'rolls', getattr(self.item, 'bids', dict()))
+        data = getattr(self.item, "rolls", getattr(self.item, "bids", dict()))
         try:
-            for line in text_data.split('\n'):
+            for line in text_data.split("\n"):
                 if not line:
                     continue
                 if isinstance(self.item, models.RandomAuction):
@@ -616,29 +570,25 @@ class ItemDetailWindow(wx.Frame):
 
 
 class IgnoredItemsWindow(wx.Frame):
-    def __init__(self, parent=None,
-                 title="Ignored Auctions (Double Click to Restore)"):
+    def __init__(self, parent=None, title="Ignored Auctions (Double Click to Restore)"):
         wx.Frame.__init__(self, parent, title=title, size=(616, 600))
         self.GetParent().Connect(-1, -1, models.EVT_IGNORE, self.OnRefresh)
         main_box = wx.BoxSizer(wx.HORIZONTAL)
 
         ignored_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 1080),
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
+            self, wx.ID_ANY, size=wx.Size(600, 1080), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+        )
         main_box.Add(ignored_list, flag=wx.EXPAND)
 
-        ignored_list.SetColumns([
-            ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp",
-                                      fixedWidth=170),
-            ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter",
-                                      fixedWidth=80),
-            ObjectListView.ColumnDefn("Item", "left", 178, "name",
-                                      fixedWidth=178),
-            ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes",
-                                      fixedWidth=85),
-            ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable",
-                                      fixedWidth=70),
-        ])
+        ignored_list.SetColumns(
+            [
+                ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp", fixedWidth=170),
+                ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter", fixedWidth=80),
+                ObjectListView.ColumnDefn("Item", "left", 178, "name", fixedWidth=178),
+                ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes", fixedWidth=85),
+                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
+            ]
+        )
         ignored_list.SetObjects(config.IGNORED_AUCTIONS)
         ignored_list.SetEmptyListMsg("No drops ignored.")
         ignored_list.Bind(wx.EVT_LEFT_DCLICK, self.OnRestoreIgnored)
@@ -646,8 +596,7 @@ class IgnoredItemsWindow(wx.Frame):
 
         self.SetSizer(main_box)
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(
-                self.GetWindowStyle() | wx.STAY_ON_TOP)
+            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
         self.Show()
 
     def OnRefresh(self, e: models.IgnoreEvent):

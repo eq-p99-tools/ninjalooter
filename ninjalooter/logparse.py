@@ -5,10 +5,7 @@ import time
 
 import wx
 
-from ninjalooter import config
-from ninjalooter import logger
-from ninjalooter import message_handlers
-from ninjalooter import utils
+from ninjalooter import config, logger, message_handlers, utils
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -18,17 +15,19 @@ LOG_MATCHERS = {}
 
 def reset_matchers():
     LOG_MATCHERS.clear()
-    LOG_MATCHERS.update({
-        config.MATCH_START_WHO: message_handlers.handle_start_who,
-        config.MATCH_WHO: message_handlers.handle_who,
-        config.MATCH_END_WHO: message_handlers.handle_end_who,
-        config.MATCH_RAND1: message_handlers.handle_rand1,
-        config.MATCH_RAND2: message_handlers.handle_rand2,
-        config.MATCH_KILL: message_handlers.handle_kill,
-        config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
-        config.MATCH_CREDITT: message_handlers.handle_creditt,
-        config.MATCH_GRATSS: message_handlers.handle_gratss,
-    })
+    LOG_MATCHERS.update(
+        {
+            config.MATCH_START_WHO: message_handlers.handle_start_who,
+            config.MATCH_WHO: message_handlers.handle_who,
+            config.MATCH_END_WHO: message_handlers.handle_end_who,
+            config.MATCH_RAND1: message_handlers.handle_rand1,
+            config.MATCH_RAND2: message_handlers.handle_rand2,
+            config.MATCH_KILL: message_handlers.handle_kill,
+            config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
+            config.MATCH_CREDITT: message_handlers.handle_creditt,
+            config.MATCH_GRATSS: message_handlers.handle_gratss,
+        }
+    )
     for matcher in config.MATCH_BID:
         LOG_MATCHERS[matcher] = message_handlers.handle_bid
     for matcher in config.MATCH_DROP:
@@ -42,15 +41,14 @@ reset_matchers()
 def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
     if config.TRIE is None:
         utils.setup_aho()
-    with open(logfile, 'r') as lfp:
+    with open(logfile) as lfp:
         lfp.seek(0, os.SEEK_END)
         LOG.info("Logfile loaded: %s", logfile)
         while run.is_set():
             try:
                 lines = lfp.readlines()
             except UnicodeDecodeError:
-                LOG.warning("Bad character in log line at: %s",
-                            datetime.datetime.now())
+                LOG.warning("Bad character in log line at: %s", datetime.datetime.now())
                 continue
             last_rand_player = None
             for line in lines:
@@ -85,20 +83,21 @@ class ParseThread(threading.Thread):
         config.LATEST_LOGFILE = logfile
         config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
-        self.window.SetLabel("NinjaLooter EQ Raid Manager v{version} - {name}"
-                             .format(version=config.VERSION, name=name))
+        self.window.SetLabel(
+            "NinjaLooter EQ Raid Manager v{version} - {name}".format(
+                version=config.VERSION, name=name
+            )
+        )
         if logfile:
             utils.alert_message(
                 "Now monitoring logs for %s" % name,
-                "A recently modified logfile was detected: %s" %
-                os.path.basename(logfile)
+                "A recently modified logfile was detected: %s" % os.path.basename(logfile),
             )
             parse_logfile(logfile, self.window, self.loop_run)
         else:
             utils.alert_message(
                 "Not monitoring any logs",
-                "No logfile detected. Please configure your EQ Log Directory "
-                "via the File menu."
+                "No logfile detected. Please configure your EQ Log Directory via the File menu.",
             )
 
     def abort(self):
