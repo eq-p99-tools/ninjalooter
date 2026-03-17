@@ -531,7 +531,7 @@ def export_to_excel(filename):
             while attendance_sheet is None:
                 try:
                     if worksheet_name_append > 0:
-                        worksheet_name = "{0} ({1})".format(time_str, worksheet_name_append)
+                        worksheet_name = "{} ({})".format(time_str, worksheet_name_append)
                     attendance_sheet = workbook.add_worksheet(worksheet_name)
                 except xlsxwriter.exceptions.DuplicateWorksheetName:
                     worksheet_name_append += 1

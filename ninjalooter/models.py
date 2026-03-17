@@ -787,8 +787,7 @@ class WhoLog(DictEquals):
 
     def eqtime(self, allow_eastern=False) -> str:
         # import at runtime rather than on load to avoid circular error
-        # pylint: disable=import-outside-toplevel
-        from ninjalooter import utils
+        from ninjalooter import utils  # noqa: PLC0415
 
         return utils.datetime_to_eq_format(self.time, allow_eastern=allow_eastern)
 
@@ -918,8 +917,7 @@ class Auction(DictEquals):
 
     def _do_alert(self):
         # import at runtime rather than on load to avoid circular error
-        # pylint: disable=import-outside-toplevel
-        from ninjalooter import utils
+        from ninjalooter import utils  # noqa: PLC0415
 
         utils.alert_message(
             "Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name
@@ -1094,8 +1092,7 @@ class DKPAuction(Auction):
                 )
         if config.PRIMARY_BID_CHANNEL == "unset":
             # import at runtime rather than on load to avoid circular error
-            # pylint: disable=import-outside-toplevel
-            from ninjalooter import utils
+            from ninjalooter import utils  # noqa: PLC0415
 
             utils.alert_message(
                 "Default Bid Channel Unset",

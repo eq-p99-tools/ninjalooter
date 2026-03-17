@@ -25,6 +25,7 @@ LOG = logger.getLogger(__name__)
 # Monkeypatch ObjectListView to fix a character encoding bug (PR upstream?)
 # pylint: disable=protected-access
 ObjectListView.ObjectListView._HandleTypingEvent = overrides._HandleTypingEvent
+ObjectListView.ObjectListView._HandleSize = overrides._HandleSize
 
 
 class TaskBarIcon(wx.adv.TaskBarIcon):

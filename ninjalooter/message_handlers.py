@@ -131,7 +131,7 @@ def handle_end_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
             who_snapshot[name] = copy.copy(config.PLAYER_DB[name])
         else:
             who_snapshot[name] = config.LAST_WHO_SNAPSHOT[name]
-            print("Not remembering player: %s" % config.LAST_WHO_SNAPSHOT[name])
+            LOG.info("Not remembering player: %s", config.LAST_WHO_SNAPSHOT[name])
     log_entry = models.WhoLog(time=parsed_time, log=who_snapshot, raidtick=raidtick_who, zone=zone)
     if raidtick_who:
         # Give audio confirmation of the RaidTick detection
@@ -198,7 +198,7 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
         config.LAST_WHO_SNAPSHOT[name] = copy.copy(config.PLAYER_DB[name])
     else:
         config.LAST_WHO_SNAPSHOT[name] = models.Player(name, pclass, level, guild)
-        print("Not remembering player: %s" % config.LAST_WHO_SNAPSHOT[name])
+        LOG.info("Not remembering player: %s", config.LAST_WHO_SNAPSHOT[name])
     wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
     return True
 

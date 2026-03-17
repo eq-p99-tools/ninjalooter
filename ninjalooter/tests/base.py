@@ -137,6 +137,12 @@ class NLTestBase(unittest.TestCase):
         config.AUDIO_ALERTS = False
         config.ALLIANCES = SAMPLE_ALLIANCES
         config.ALLIANCE_MAP = SAMPLE_ALLIANCE_MAP
+        config.MIN_DKP = 1
+        config.DROP_COOLDOWN = 60
+        config.MATCH_BID = [
+            config.BID_CHANNEL_OPTIONS[chan]
+            for chan in ("say", "auc", "shout", "gu")
+        ]
 
         thread_patcher1 = mock.patch('threading.Timer')
         thread_patcher1.start()

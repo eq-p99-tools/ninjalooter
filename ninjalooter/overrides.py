@@ -55,3 +55,19 @@ def _HandleTypingEvent(self, evt):
     # timeNow)
 
     return True
+
+
+def _HandleSize(self, evt):
+    """Handle a size event, using integer division to avoid TypeError on Phoenix."""
+    self._PossibleFinishCellEdit()
+    evt.Skip()
+    self._ResizeSpaceFillingColumns()
+    sz = self.GetClientSize()
+    if 'phoenix' in wx.PlatformInfo:
+        self.stEmptyListMsg.SetSize(0, sz.GetHeight() // 3,
+                                    sz.GetWidth(),
+                                    sz.GetHeight())
+    else:
+        self.stEmptyListMsg.SetDimensions(0, sz.GetHeight() // 3,
+                                          sz.GetWidth(),
+                                          sz.GetHeight())

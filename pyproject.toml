@@ -1,0 +1,40 @@
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+exclude = [
+    ".git",
+    ".tox",
+    "venv",
+    ".venv",
+    "tests",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "PL",  # pylint
+    "UP",  # pyupgrade
+    "I",   # isort
+]
+ignore = [
+    "PLW0603",  # global-statement
+    "PLR0904",  # too-many-public-methods
+    "PLR0911",  # too-many-return-statements
+    "PLR0912",  # too-many-branches
+    "PLR0913",  # too-many-arguments
+    "PLR0914",  # too-many-locals
+    "PLR0915",  # too-many-statements
+    "PLW1514",  # unspecified-encoding
+    "E722",     # bare-except
+    "UP031",    # printf-string-formatting
+    "UP032",    # f-string
+]
+
+[tool.ruff.lint.isort]
+known-third-party = ["wx", "ObjectListView"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
