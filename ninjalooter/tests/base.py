@@ -134,15 +134,62 @@ SAMPLE_GSHEETS_MINDKP_JSON = {
 class NLTestBase(unittest.TestCase):
     def setUp(self) -> None:
         super(NLTestBase, self).setUp()
-        config.AUDIO_ALERTS = False
+
+        # Override alliance data with deterministic test values
         config.ALLIANCES = SAMPLE_ALLIANCES
         config.ALLIANCE_MAP = SAMPLE_ALLIANCE_MAP
-        config.MIN_DKP = 1
-        config.DROP_COOLDOWN = 60
+        config.DEFAULT_ALLIANCE = "VCR"
+
+        # Channel matchers — hardcode to defaults so user ini cannot leak
         config.MATCH_BID = [
             config.BID_CHANNEL_OPTIONS[chan]
             for chan in ("say", "auc", "shout", "gu")
         ]
+        config.MATCH_DROP = [
+            config.DROP_CHANNEL_OPTIONS[chan]
+            for chan in ("say", "ooc")
+        ]
+        config.PRIMARY_BID_CHANNEL = "auc"
+
+        # Auction / drop behaviour
+        config.MIN_DKP = 1
+        config.DROP_COOLDOWN = 60
+        config.MIN_BID_TIME = 151
+        config.NODROP_ONLY = False
+        config.RESTRICT_BIDS = False
+        config.RESTRICT_EXPORT = True
+        config.TICK_BEFORE_LOOT = True
+
+        # Message templates — use the compiled-in defaults so tests that
+        # assert on exact text never break because of a user's ini override.
+        config.BID_MESSAGE_NEW = config.DEFAULT_BID_MESSAGE_NEW
+        config.BID_MESSAGE_REMINDER = config.DEFAULT_BID_MESSAGE_REMINDER
+        config.GRATS_MESSAGE_BID = config.DEFAULT_GRATS_MESSAGE_BID
+        config.GRATS_MESSAGE_ROLL = config.DEFAULT_GRATS_MESSAGE_ROLL
+        config.ROLL_MESSAGE = config.DEFAULT_ROLL_MESSAGE
+
+        # Player / state
+        config.REMEMBER_PLAYER_DATA = True
+        config.EXPORT_TIME_IN_EASTERN = False
+        config.PLAYER_NAME = ""
+
+        # Alerts
+        config.AUDIO_ALERTS = False
+        config.TEXT_ALERTS = True
+        config.RAIDTICK_REMINDER_COUNT = 0
+
+        # Reset all mutable global state
+        config.PENDING_AUCTIONS = list()
+        config.IGNORED_AUCTIONS = list()
+        config.ACTIVE_AUCTIONS = dict()
+        config.HISTORICAL_AUCTIONS = dict()
+        config.LAST_WHO_SNAPSHOT = dict()
+        config.PLAYER_DB = dict()
+        config.ATTENDANCE_LOGS = list()
+        config.CREDITT_LOG = list()
+        config.GRATSS_LOG = list()
+        config.KILL_TIMERS = list()
+        config.AUCTION_ALERT_TIMERS = list()
 
         thread_patcher1 = mock.patch('threading.Timer')
         thread_patcher1.start()

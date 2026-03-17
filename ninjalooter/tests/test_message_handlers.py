@@ -1,6 +1,8 @@
 import datetime
 from unittest import mock
 
+import dateutil.parser
+
 from ninjalooter import config
 from ninjalooter import message_handlers
 from ninjalooter import models
@@ -721,3 +723,83 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertTrue(message_handlers.handle_creditt(match, 'window'))
 
         config.PLAYER_NAME = ""
+
+    @mock.patch('wx.PostEvent')
+    def test_handle_raidtick(self, mock_post_event):
+        old_raidtick = config.LAST_RAIDTICK
+        line = "[Sun Aug 16 22:47:31 2020] Jim tells the guild, 'RAIDTICK'"
+        match = config.MATCH_RAIDTICK.match(line)
+        self.assertIsNotNone(match)
+        result = message_handlers.handle_raidtick(match, 'window')
+        self.assertTrue(result)
+        self.assertEqual(
+            dateutil.parser.parse("Sun Aug 16 22:47:31 2020"),
+            config.LAST_RAIDTICK)
+        self.assertNotEqual(old_raidtick, config.LAST_RAIDTICK)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_kill(self, mock_post_event, mock_store_state):
+        line = "[Sun Aug 16 17:41:25 2020] an azarack has been slain by Peter!"
+        match = config.MATCH_KILL.match(line)
+        self.assertIsNotNone(match)
+        result = message_handlers.handle_kill(match, 'window')
+        self.assertTrue(result)
+        self.assertEqual(1, len(config.KILL_TIMERS))
+        self.assertEqual("an azarack", config.KILL_TIMERS[0].name)
+        mock_post_event.assert_called_once_with(
+            'window', models.KillEvent())
+
+    @mock.patch('wx.PostEvent')
+    def test_handle_rand1(self, mock_post_event):
+        line = "[Sun Aug 16 22:47:31 2020] **A Magic Die is rolled by Jim."
+        match = config.MATCH_RAND1.match(line)
+        self.assertIsNotNone(match)
+        result = message_handlers.handle_rand1(match, 'window')
+        self.assertEqual("Jim", result)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_rand2(self, mock_post_event, mock_store_state):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        config.PENDING_AUCTIONS.append(itemdrop)
+        auc = utils.start_auction_random(itemdrop)
+        target = auc.number
+
+        # Valid roll matching active auction target
+        line = (
+            "[Sun Aug 16 22:47:31 2020] "
+            "**It could have been any number from 0 to {to}, "
+            "but this time it turned up a 42.Peter"
+        ).format(to=target)
+        match = config.MATCH_RAND2.match(line)
+        self.assertIsNotNone(match)
+        result = message_handlers.handle_rand2(match, 'window')
+        self.assertTrue(result)
+        self.assertListEqual([('Peter', 42)], auc.highest())
+        mock_post_event.assert_called_once_with(
+            'window', models.BidEvent(auc))
+        mock_post_event.reset_mock()
+
+        # Invalid roll: from != 0
+        line = (
+            "[Sun Aug 16 22:47:31 2020] "
+            "**It could have been any number from 1 to {to}, "
+            "but this time it turned up a 99.Paul"
+        ).format(to=target)
+        match = config.MATCH_RAND2.match(line)
+        result = message_handlers.handle_rand2(match, 'window')
+        self.assertFalse(result)
+        mock_post_event.assert_not_called()
+
+        # Roll doesn't match any active auction target
+        line = (
+            "[Sun Aug 16 22:47:31 2020] "
+            "**It could have been any number from 0 to 9999, "
+            "but this time it turned up a 50.Mary"
+        )
+        match = config.MATCH_RAND2.match(line)
+        result = message_handlers.handle_rand2(match, 'window')
+        self.assertFalse(result)
+        mock_post_event.assert_not_called()

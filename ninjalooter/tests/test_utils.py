@@ -2,6 +2,7 @@ import datetime
 from unittest import mock
 import requests_mock
 
+from ninjalooter import config
 from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
@@ -162,3 +163,134 @@ class TestUtils(base.NLTestBase):
         data = utils.translate_sheet_csv_to_mindkp_json(
             base.SAMPLE_GSHEETS_DATA)
         self.assertEqual(base.SAMPLE_GSHEETS_MINDKP_JSON, data)
+
+    def test_compose_ranges_no_overlap(self):
+        text = "Alpha Beta Gamma"
+        ranges = [(0, 5), (6, 10), (11, 16)]
+        result = utils.compose_ranges(ranges, text)
+        self.assertEqual(["Alpha", "Beta", "Gamma"], result)
+
+    def test_compose_ranges_with_overlap(self):
+        text = "Belt of Iniquity"
+        ranges = [(0, 16), (5, 16)]
+        result = utils.compose_ranges(ranges, text)
+        self.assertEqual(["Belt of Iniquity"], result)
+
+    def test_compose_ranges_empty(self):
+        result = utils.compose_ranges([], "any text")
+        self.assertEqual([], result)
+
+    def test_get_items_from_text(self):
+        utils.setup_aho()
+        items = utils.get_items_from_text("Belt of Iniquity and Copper Disc here")
+        self.assertIn("Belt of Iniquity", items)
+        self.assertIn("Copper Disc", items)
+        self.assertEqual(2, len(items))
+
+    def test_get_items_from_text_no_match(self):
+        utils.setup_aho()
+        items = utils.get_items_from_text("just some random chatting")
+        self.assertEqual([], items)
+
+    def test_datetime_to_eq_format(self):
+        dt = datetime.datetime(2020, 8, 16, 22, 46, 32)
+        config.EXPORT_TIME_IN_EASTERN = False
+        result = utils.datetime_to_eq_format(dt)
+        self.assertEqual("Sun Aug 16 22:46:32 2020", result)
+
+    def test_datetime_from_eq_format(self):
+        config.EXPORT_TIME_IN_EASTERN = False
+        result = utils.datetime_from_eq_format("Sun Aug 16 22:46:32 2020")
+        self.assertEqual(datetime.datetime(2020, 8, 16, 22, 46, 32), result)
+
+    def test_datetime_roundtrip(self):
+        config.EXPORT_TIME_IN_EASTERN = False
+        dt = datetime.datetime(2020, 8, 16, 22, 46, 32)
+        eq_str = utils.datetime_to_eq_format(dt)
+        result = utils.datetime_from_eq_format(eq_str)
+        self.assertEqual(dt, result)
+
+    def test_get_timestamp(self):
+        line = "[Sun Aug 16 22:46:32 2020] Some log text here"
+        result = utils.get_timestamp(line)
+        self.assertIsNotNone(result)
+        self.assertEqual(datetime.datetime(2020, 8, 16, 22, 46, 32), result)
+
+    def test_get_timestamp_no_match(self):
+        result = utils.get_timestamp("no timestamp here")
+        self.assertIsNone(result)
+
+    def test_get_first_timestamp(self):
+        lines = [
+            "no timestamp",
+            "[Sun Aug 16 22:46:32 2020] first real line",
+            "[Sun Aug 16 22:47:00 2020] second line",
+        ]
+        result = utils.get_first_timestamp(lines)
+        self.assertEqual(datetime.datetime(2020, 8, 16, 22, 46, 32), result)
+
+    def test_get_first_timestamp_none(self):
+        result = utils.get_first_timestamp(["no timestamps at all"])
+        self.assertEqual(datetime.datetime.fromtimestamp(0), result)
+
+    def test_find_timestamp_empty(self):
+        self.assertIsNone(utils.find_timestamp([], datetime.datetime.now()))
+
+    def test_find_timestamp_no_timestamps_in_lines(self):
+        lines = ["no timestamps", "still none"]
+        self.assertIsNone(utils.find_timestamp(lines, datetime.datetime.now()))
+
+    def test_find_timestamp_target_before_all(self):
+        lines = [
+            "[Sun Aug 16 22:46:32 2020] line one",
+            "[Sun Aug 16 22:47:32 2020] line two",
+        ]
+        target = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        result = utils.find_timestamp(lines, target)
+        self.assertEqual(0, result)
+
+    def test_find_timestamp_target_after_all(self):
+        lines = [
+            "[Sun Aug 16 22:46:32 2020] line one",
+            "[Sun Aug 16 22:47:32 2020] line two",
+        ]
+        target = datetime.datetime(2020, 8, 16, 23, 0, 0)
+        self.assertIsNone(utils.find_timestamp(lines, target))
+
+    def test_find_timestamp_target_in_middle(self):
+        lines = [
+            "[Sun Aug 16 22:00:00 2020] early",
+            "[Sun Aug 16 22:30:00 2020] middle",
+            "[Sun Aug 16 23:00:00 2020] late",
+        ]
+        target = datetime.datetime(2020, 8, 16, 22, 30, 0)
+        result = utils.find_timestamp(lines, target)
+        self.assertIsNotNone(result)
+        self.assertGreaterEqual(result, 0)
+        self.assertLess(result, len(lines))
+
+    def test_ignore_pending_item(self):
+        item = models.ItemDrop('Copper Disc', 'Jim', 'timestamp')
+        config.PENDING_AUCTIONS.append(item)
+        self.assertEqual(1, len(config.PENDING_AUCTIONS))
+        self.assertEqual(0, len(config.IGNORED_AUCTIONS))
+
+        utils.ignore_pending_item(item)
+        self.assertEqual(0, len(config.PENDING_AUCTIONS))
+        self.assertEqual(1, len(config.IGNORED_AUCTIONS))
+        self.assertEqual(item, config.IGNORED_AUCTIONS[0])
+
+    def test_get_pending_item_names(self):
+        config.PENDING_AUCTIONS = [
+            models.ItemDrop('Copper Disc', 'Jim', 'ts'),
+            models.ItemDrop('Belt of Iniquity', 'Jim', 'ts'),
+        ]
+        result = utils.get_pending_item_names()
+        self.assertEqual(['copper disc', 'belt of iniquity'], result)
+
+    def test_get_active_item_names(self):
+        item = models.ItemDrop('Copper Disc', 'Jim', 'timestamp')
+        config.PENDING_AUCTIONS.append(item)
+        utils.start_auction_dkp(item, 'VCR')
+        result = utils.get_active_item_names()
+        self.assertEqual(['copper disc'], result)

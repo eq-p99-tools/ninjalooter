@@ -1,9 +1,11 @@
 import json
+from unittest import mock
 
 import dateutil.parser
 
 from ninjalooter import config
 from ninjalooter import constants
+from ninjalooter import extra_data
 from ninjalooter import models
 from ninjalooter.tests import base
 from ninjalooter import utils
@@ -246,7 +248,7 @@ class TestModels(base.NLTestBase):
     def test_RandomAuction_model_bid_text(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
-        config.NUMBERS = ['12345']
+        config.NUMBERS = [12345]
         auc = models.RandomAuction(itemdrop)
 
         config.PRIMARY_BID_CHANNEL = 'auc'
@@ -266,7 +268,7 @@ class TestModels(base.NLTestBase):
     def test_RandomAuction_model_win_text(self):
         item_name = 'Copper Disc'
         itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
-        config.NUMBERS = ['12345']
+        config.NUMBERS = [12345]
         auc = models.RandomAuction(itemdrop)
 
         config.PRIMARY_BID_CHANNEL = 'auc'
@@ -286,3 +288,127 @@ class TestModels(base.NLTestBase):
         self.assertEqual(20, models.get_next_number())
         self.assertEqual(30, models.get_next_number())
         self.assertEqual(10, models.get_next_number())
+
+    def test_Player_helpers(self):
+        warrior = models.Player("War", constants.WARRIOR, 60, "G")
+        self.assertTrue(warrior.is_tank())
+        self.assertTrue(warrior.is_war())
+        self.assertFalse(warrior.is_knight())
+        self.assertFalse(warrior.is_priest())
+        self.assertFalse(warrior.is_melee())
+        self.assertFalse(warrior.is_caster())
+
+        paladin = models.Player("Pal", constants.PALADIN, 60, "G")
+        self.assertTrue(paladin.is_tank())
+        self.assertFalse(paladin.is_war())
+        self.assertTrue(paladin.is_knight())
+
+        cleric = models.Player("Clr", constants.CLERIC, 60, "G")
+        self.assertTrue(cleric.is_priest())
+        self.assertTrue(cleric.is_cleric())
+        self.assertFalse(cleric.is_tank())
+
+        bard = models.Player("Brd", constants.BARD, 60, "G")
+        self.assertTrue(bard.is_melee())
+        self.assertTrue(bard.is_bard())
+        self.assertFalse(bard.is_caster())
+
+        wizard = models.Player("Wiz", constants.WIZARD, 60, "G")
+        self.assertTrue(wizard.is_caster())
+        self.assertTrue(wizard.is_wizard())
+        self.assertFalse(wizard.is_melee())
+
+        enchanter = models.Player("Enc", constants.ENCHANTER, 60, "G")
+        self.assertTrue(enchanter.is_enchanter())
+        self.assertTrue(enchanter.is_caster())
+
+        necro = models.Player("Nec", constants.NECROMANCER, 60, "G")
+        self.assertTrue(necro.is_necromancer())
+
+        monk = models.Player("Mnk", constants.MONK, 60, "G")
+        self.assertTrue(monk.is_monk())
+        self.assertTrue(monk.is_melee())
+
+        shaman = models.Player("Shm", constants.SHAMAN, 60, "G")
+        self.assertTrue(shaman.is_shaman())
+        self.assertTrue(shaman.is_priest())
+
+    def test_DKPAuction_win_text(self):
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        auc = models.DKPAuction(itemdrop, 'VCR', min_dkp=3)
+        config.PRIMARY_BID_CHANNEL = 'gu'
+
+        # No bids = ROT
+        self.assertEqual(
+            "/GU ~Gratss ROT on [Copper Disc] (0 DKP)!",
+            auc.win_text())
+
+        # With a bid
+        auc.add(10, 'Peter')
+        self.assertEqual(
+            "/GU ~Gratss Peter on [Copper Disc] (10 DKP)!",
+            auc.win_text())
+
+    def test_ItemDrop_min_dkp_sentinels(self):
+        saved = extra_data.EXTRA_ITEM_DATA.get("TestSentinelItem")
+
+        extra_data.EXTRA_ITEM_DATA["TestSentinelItem"] = {"min_dkp": -1}
+        item = models.ItemDrop("TestSentinelItem", "Bob", "ts")
+        self.assertEqual("Random", item.min_dkp())
+
+        extra_data.EXTRA_ITEM_DATA["TestSentinelItem"] = {"min_dkp": -2}
+        item = models.ItemDrop("TestSentinelItem", "Bob", "ts")
+        self.assertEqual("Bank", item.min_dkp())
+
+        extra_data.EXTRA_ITEM_DATA["TestSentinelItem"] = {"min_dkp": -3}
+        item = models.ItemDrop("TestSentinelItem", "Bob", "ts")
+        self.assertEqual("???", item.min_dkp())
+
+        if saved is None:
+            del extra_data.EXTRA_ITEM_DATA["TestSentinelItem"]
+        else:
+            extra_data.EXTRA_ITEM_DATA["TestSentinelItem"] = saved
+
+    def test_ItemDrop_min_dkp_override(self):
+        item = models.ItemDrop("Copper Disc", "Bob", "ts", min_dkp_override=50)
+        self.assertEqual(50, item.min_dkp())
+
+    def test_KillTimer_island(self):
+        kt_known = models.KillTimer("Mon Aug 17 07:15:39 2020", "an azarack")
+        self.assertEqual("2", kt_known.island())
+
+        kt_unknown = models.KillTimer("Mon Aug 17 07:15:39 2020", "Unknown Mob")
+        self.assertEqual("Other", kt_unknown.island())
+
+    def test_Group_tank_score(self):
+        group = models.Group(constants.GT_TANK)
+        war = models.Player("War", constants.WARRIOR, 60, "G")
+        clr = models.Player("Clr", constants.CLERIC, 60, "G")
+        brd = models.Player("Brd", constants.BARD, 60, "G")
+        group.player_list = [war, clr, brd]
+        score = group.tank_score()
+        self.assertGreater(score, 0)
+
+    def test_Group_cleric_score(self):
+        group = models.Group(constants.GT_CLERIC)
+        clr1 = models.Player("Clr1", constants.CLERIC, 60, "G")
+        clr2 = models.Player("Clr2", constants.CLERIC, 60, "G")
+        war = models.Player("War", constants.WARRIOR, 60, "G")
+        group.player_list = [clr1, clr2, war]
+        score = group.cleric_score()
+        self.assertGreater(score, 0)
+
+    def test_Group_general_score(self):
+        group = models.Group(constants.GT_GENERAL)
+        enc = models.Player("Enc", constants.ENCHANTER, 60, "G")
+        wiz = models.Player("Wiz", constants.WIZARD, 60, "G")
+        group.player_list = [enc, wiz]
+        score = group.general_score()
+        self.assertGreater(score, 0)
+
+    def test_Auction_time_remaining_ui(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        ui_text = auc.time_remaining_ui()
+        self.assertRegex(ui_text, r'\d+m\d+s|\d+s')
