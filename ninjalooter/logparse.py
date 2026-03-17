@@ -66,6 +66,7 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
                         result = match_func(match, window)
                         if matcher == config.MATCH_RAND1:
                             last_rand_player = result
+                        break
                 if result:
                     LOG.debug("Handled line: %s", line)
             time.sleep(0.1)

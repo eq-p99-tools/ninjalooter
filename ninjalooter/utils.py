@@ -3,7 +3,6 @@
 import collections
 import csv
 import datetime
-import distutils.util
 import inspect
 import json
 import os
@@ -387,15 +386,15 @@ def load_state(state_file=config.SAVE_STATE_FILE):
         for key, value in json_state.items():
             # Handle conversion of history data prior to v1.14
             if key == 'PLAYER_AFFILIATIONS':
-                key = 'LAST_WHO_SNAPSHOT'
+                key = 'LAST_WHO_SNAPSHOT'  # noqa: PLW2901
                 value = {name: models.Player(name, guild=guild)
-                         for name, guild in value.items()}
+                         for name, guild in value.items()}  # noqa: PLW2901
             elif key == 'HISTORICAL_AFFILIATIONS':
-                key = 'PLAYER_DB'
+                key = 'PLAYER_DB'  # noqa: PLW2901
                 value = {name: models.Player(name, guild=guild)
-                         for name, guild in value.items()}
+                         for name, guild in value.items()}  # noqa: PLW2901
             elif key == 'WHO_LOG':
-                key = 'ATTENDANCE_LOGS'
+                key = 'ATTENDANCE_LOGS'  # noqa: PLW2901
                 for entry in value:
                     entry.log = {name: models.Player(name, guild=guild)
                                  for name, guild in entry.log.items()}
@@ -492,6 +491,8 @@ def export_to_excel(filename):
         adjusted_message = creditt.raw_message
         if config.EXPORT_TIME_IN_EASTERN:
             m = config.MATCH_CREDITT.match(adjusted_message)
+            if not m:
+                continue
             time_part = m.groupdict()['time']
             new_time = datetime_to_eq_format(
                 datetime_from_eq_format(time_part, allow_eastern=False))
@@ -503,6 +504,8 @@ def export_to_excel(filename):
         adjusted_message = gratss.raw_message
         if config.EXPORT_TIME_IN_EASTERN:
             m = config.MATCH_GRATSS.match(adjusted_message)
+            if not m:
+                continue
             time_part = m.groupdict()['time']
             new_time = datetime_to_eq_format(
                 datetime_from_eq_format(time_part, allow_eastern=False))
@@ -527,7 +530,7 @@ def export_to_excel(filename):
             for row in data:
                 worksheet.write_row(row_num, 0, row.values())
                 row_num += 1
-            worksheet.autofilter(0, 0, len(data[0]), len(data[0].keys()) - 1)
+            worksheet.autofilter(0, 0, len(data), len(data[0].keys()) - 1)
 
     # Write Attendance Logs
     for entry in config.ATTENDANCE_LOGS:
@@ -550,6 +553,7 @@ def export_to_excel(filename):
                 except xlsxwriter.exceptions.DuplicateWorksheetName:
                     worksheet_name_append += 1
                 except Exception:
+                    workbook.close()
                     return False
 
             attendance_sheet.write_row(
@@ -638,6 +642,8 @@ def export_to_eqdkp(filename):
         adjusted_message = message.raw_message
         if config.EXPORT_TIME_IN_EASTERN:
             m = config.MATCH_CREDITT.match(adjusted_message)
+            if not m:
+                continue
             time_part = m.groupdict()['time']
             new_time = datetime_to_eq_format(
                 datetime_from_eq_format(time_part, allow_eastern=False))
@@ -648,6 +654,8 @@ def export_to_eqdkp(filename):
         adjusted_message = message.raw_message
         if config.EXPORT_TIME_IN_EASTERN:
             m = config.MATCH_GRATSS.match(adjusted_message)
+            if not m:
+                continue
             time_part = m.groupdict()['time']
             new_time = datetime_to_eq_format(
                 datetime_from_eq_format(time_part, allow_eastern=False))
@@ -688,8 +696,10 @@ def export_to_eqdkp(filename):
         else:
             sheet_name = alt_sheet_name
         while sheet_name in workbook.sheetnames:
-            if sheet_name[-1] in map(str, range(10)):
-                sheet_name = sheet_name[:-1] + str(int(sheet_name[-1]) + 1)
+            suffix_match = re.search(r'(\d+)$', sheet_name)
+            if suffix_match:
+                num = int(suffix_match.group(1))
+                sheet_name = sheet_name[:suffix_match.start()] + str(num + 1)
             else:
                 sheet_name += " 2"
         try:
@@ -828,8 +838,10 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
                             config.MIN_DKP_DROP_COL, row)
             try:
                 if config.MIN_DKP_DROP_COL and row[config.MIN_DKP_DROP_COL]:
-                    item['nodrop'] = not bool(distutils.util.strtobool(
-                        row[config.MIN_DKP_DROP_COL]))
+                    item['nodrop'] = row[
+                        config.MIN_DKP_DROP_COL
+                    ].strip().lower() not in (
+                        'y', 'yes', 't', 'true', 'on', '1')
             except:  # noqa
                 LOG.warning("Couldn't parse column `%s` for row: %s",
                             config.MIN_DKP_DROP_COL, row)
@@ -872,7 +884,7 @@ class JSONDecoder(json.JSONDecoder):
         if isinstance(obj, dict):
             if 'json_type' in obj:
                 json_type = obj.pop('json_type')
-                model_type = getattr(models, json_type)
+                model_type = getattr(models, json_type, None)
                 if model_type and issubclass(model_type, models.DictEquals):
                     return model_type.from_json(**obj)
 

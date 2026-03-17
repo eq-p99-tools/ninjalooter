@@ -1024,10 +1024,14 @@ class Auction(DictEquals):
     def cancel(self):
         if self._alert_timer:
             self._alert_timer.cancel()
+            if self._alert_timer in config.AUCTION_ALERT_TIMERS:
+                config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
 
     def complete(self):
         if self._alert_timer:
             self._alert_timer.cancel()
+            if self._alert_timer in config.AUCTION_ALERT_TIMERS:
+                config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
         self.end_time = datetime.datetime.now()
 
 

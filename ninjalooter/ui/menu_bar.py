@@ -252,7 +252,8 @@ class MenuBar(wx.MenuBar):
             first_time = utils.get_first_timestamp(loglines)
             last_time = utils.get_first_timestamp(reversed(loglines))
             LOG.info("%s -> %s", first_time, last_time)
-            if not first_time and last_time:
+            epoch = datetime.datetime.fromtimestamp(0)
+            if first_time == epoch or last_time == epoch:
                 raise ValueError()
         except (TypeError, ValueError):
             LOG.exception("Failed to find a first/last timestamp")

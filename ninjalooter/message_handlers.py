@@ -233,12 +233,14 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     skip = False
     for item in found_items:
         if item.lower() in utils.get_active_item_names():
-            LOG.debug("Skipping drop %s because it is already up for auction.")
+            LOG.debug("Skipping drop %s because it is already up for auction.",
+                      item)
             continue
         for pending in config.PENDING_AUCTIONS:
             pending_time = dateutil.parser.parse(pending.timestamp)
+            elapsed = (now - pending_time).total_seconds()
             if (item.lower() == pending.name.lower() and
-                    (now - pending_time).seconds < config.DROP_COOLDOWN):
+                    elapsed < config.DROP_COOLDOWN):
                 skip = True
                 LOG.debug("Skipping drop %s because of DROP_COOLDOWN config.",
                           item)

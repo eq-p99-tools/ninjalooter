@@ -658,6 +658,8 @@ class IgnoredItemsWindow(wx.Frame):
 
     def OnRestoreIgnored(self, e: wx.EVT_LEFT_DCLICK):
         item = self.ignored_list.GetSelectedObject()
+        if not item:
+            return
         config.IGNORED_AUCTIONS.remove(item)
         config.PENDING_AUCTIONS.append(item)
         self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
