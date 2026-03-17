@@ -1,3 +1,4 @@
+import datetime
 import json
 from unittest import mock
 
@@ -412,3 +413,216 @@ class TestModels(base.NLTestBase):
         auc = models.DKPAuction(item, 'VCR')
         ui_text = auc.time_remaining_ui()
         self.assertRegex(ui_text, r'\d+m\d+s|\d+s')
+
+    def test_Group_pull_score(self):
+        group = models.Group(constants.GT_PULL)
+        mnk1 = models.Player("Mnk1", constants.MONK, 60, "G")
+        mnk2 = models.Player("Mnk2", constants.MONK, 60, "G")
+        mag = models.Player("Mag", constants.MAGICIAN, 60, "G")
+        wiz = models.Player("Wiz", constants.WIZARD, 60, "G")
+        clr = models.Player("Clr", constants.CLERIC, 60, "G")
+        group.player_list = [mnk1, mnk2, mag, wiz, clr]
+        score = group.pull_score()
+        self.assertGreater(score, 0)
+
+    def test_Group_pull_score_empty(self):
+        group = models.Group(constants.GT_PULL)
+        group.player_list = []
+        score = group.pull_score()
+        self.assertEqual(0, score)
+
+    def test_Raid_add_empty_groups(self):
+        raid = models.Raid()
+
+        # 6 players -> 1 full group, all General
+        raid.add_empty_groups(6)
+        self.assertEqual(1, len(raid.groups))
+        types = [g.group_type for g in raid.groups]
+        self.assertEqual([constants.GT_GENERAL], types)
+
+        # 12 players -> 2 full groups, all General
+        raid.add_empty_groups(12)
+        self.assertEqual(2, len(raid.groups))
+        self.assertTrue(all(
+            g.group_type == constants.GT_GENERAL for g in raid.groups))
+
+        # 18 players -> 3 full groups, all General
+        raid.add_empty_groups(18)
+        self.assertEqual(3, len(raid.groups))
+
+        # 24 players -> 4 full groups: Pull, Tank, Cleric, General
+        raid.add_empty_groups(24)
+        self.assertEqual(4, len(raid.groups))
+        types = [g.group_type for g in raid.groups]
+        self.assertIn(constants.GT_TANK, types)
+        self.assertIn(constants.GT_CLERIC, types)
+        self.assertIn(constants.GT_PULL, types)
+        self.assertIn(constants.GT_GENERAL, types)
+
+        # 30 players -> 5 full groups: includes 2 tank groups
+        raid.add_empty_groups(30)
+        self.assertEqual(5, len(raid.groups))
+        types = [g.group_type for g in raid.groups]
+        self.assertEqual(2, types.count(constants.GT_TANK))
+
+        # 42+ players -> 7 full groups
+        raid.add_empty_groups(42)
+        self.assertEqual(7, len(raid.groups))
+
+    def test_Raid_add_empty_groups_partial(self):
+        raid = models.Raid()
+        # 7 players -> 1 full + 1 partial = 2 groups
+        raid.add_empty_groups(7)
+        self.assertEqual(2, len(raid.groups))
+
+    def test_Raid_repr(self):
+        raid = models.Raid()
+        raid.add_empty_groups(6)
+        text = repr(raid)
+        self.assertIn("General", text)
+
+    def test_Auction_cancel(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        timer = auc._alert_timer
+        self.assertIn(timer, config.AUCTION_ALERT_TIMERS)
+
+        auc.cancel()
+        timer.cancel.assert_called_once()
+        self.assertNotIn(timer, config.AUCTION_ALERT_TIMERS)
+
+    def test_Auction_complete(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        self.assertIsNone(auc.end_time)
+
+        auc.complete()
+        self.assertIsNotNone(auc.end_time)
+        self.assertIsInstance(auc.end_time, datetime.datetime)
+
+    def test_Auction_highest_number_and_players_no_bids(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        self.assertEqual("None", auc.highest_number())
+        self.assertEqual("", auc.highest_players())
+
+    def test_Auction_highest_number_and_players_with_bids(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR', min_dkp=1)
+        auc.add(5, 'Peter')
+        auc.add(10, 'Paul')
+        self.assertEqual(10, auc.highest_number())
+        self.assertEqual("Paul", auc.highest_players())
+
+    def test_Auction_highest_number_and_players_random(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.RandomAuction(item)
+        auc.add(50, 'Peter')
+        auc.add(50, 'Paul')
+        self.assertEqual(50, auc.highest_number())
+        players = auc.highest_players()
+        self.assertIn("Peter", players)
+        self.assertIn("Paul", players)
+
+    def test_Auction_get_target_min_dkp(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR', min_dkp=5)
+        self.assertEqual(5, auc.get_target_min())
+
+    def test_Auction_get_target_min_random(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        config.NUMBERS = [9999]
+        auc = models.RandomAuction(item)
+        self.assertEqual(9999, auc.get_target_min())
+
+    def test_Auction_time_remaining(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        auc.start_time = datetime.datetime.now() - datetime.timedelta(
+            seconds=60)
+        remaining = auc.time_remaining()
+        expected = config.MIN_BID_TIME - 60
+        self.assertAlmostEqual(
+            expected, remaining.total_seconds(), delta=2)
+
+    def test_Auction_time_remaining_expired(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        auc.start_time = datetime.datetime.now() - datetime.timedelta(
+            seconds=config.MIN_BID_TIME + 60)
+        remaining = auc.time_remaining()
+        self.assertEqual(datetime.timedelta(0), remaining)
+
+    def test_Auction_time_remaining_text(self):
+        item = models.ItemDrop("Copper Disc", "Jim", "timestamp")
+        auc = models.DKPAuction(item, 'VCR')
+        # Plenty of time left: should return formatted string
+        auc.start_time = datetime.datetime.now()
+        text = auc.time_remaining_text()
+        self.assertNotEqual("a few moments", text)
+        self.assertRegex(text, r'\d+m\d+s|\d+s')
+
+        # Nearly expired: should return "a few moments"
+        auc.start_time = datetime.datetime.now() - datetime.timedelta(
+            seconds=config.MIN_BID_TIME)
+        text = auc.time_remaining_text()
+        self.assertEqual("a few moments", text)
+
+    def test_WhoLog_alliance_count(self):
+        sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
+        wholog = models.WhoLog(
+            sometime, base.SAMPLE_LAST_WHO_SNAPSHOT)
+        count = wholog.alliance_count()
+        # VCR alliance has 6 members in sample data
+        self.assertEqual(6, count)
+
+    def test_WhoLog_populations(self):
+        sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
+        wholog = models.WhoLog(
+            sometime, base.SAMPLE_LAST_WHO_SNAPSHOT)
+        pop_text = wholog.populations()
+        self.assertIn("BL: 4", pop_text)
+        self.assertIn("Kingdom: 5", pop_text)
+        self.assertIn("VCR: 6", pop_text)
+        self.assertIn("//", pop_text)
+
+    def test_WhoLog_raidtick_display(self):
+        sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
+        tick_log = models.WhoLog(sometime, {}, raidtick=True)
+        self.assertTrue(len(tick_log.raidtick_display()) > 0)
+
+        no_tick_log = models.WhoLog(sometime, {}, raidtick=False)
+        self.assertEqual("", no_tick_log.raidtick_display())
+
+    def test_WhoLog_eqtime(self):
+        sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
+        wholog = models.WhoLog(sometime, {})
+        config.EXPORT_TIME_IN_EASTERN = False
+        eq_str = wholog.eqtime(allow_eastern=False)
+        self.assertIn("Aug", eq_str)
+        self.assertIn("2020", eq_str)
+
+    def test_DictEquals_subscript(self):
+        player = models.Player("Jim", constants.CLERIC, 50, "Guild")
+        self.assertEqual("Jim", player["name"])
+        self.assertEqual(constants.CLERIC, player["pclass"])
+        self.assertEqual(50, player["level"])
+        self.assertEqual("Guild", player["guild"])
+
+    def test_DictEquals_equality(self):
+        p1 = models.Player("Jim", constants.CLERIC, 50, "G")
+        p2 = models.Player("Jim", constants.CLERIC, 50, "G")
+        p3 = models.Player("Jim", constants.WIZARD, 50, "G")
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p1, p3)
+        self.assertNotEqual(p1, "not a player")
+
+    def test_DictEquals_to_json_from_json(self):
+        player = models.Player("Jim", constants.CLERIC, 50, "Guild")
+        json_dict = player.to_json()
+        self.assertEqual("Player", json_dict["json_type"])
+        self.assertEqual("Jim", json_dict["name"])
+
+        restored = models.Player.from_json(
+            name="Jim", pclass=constants.CLERIC, level=50, guild="Guild")
+        self.assertEqual(player, restored)

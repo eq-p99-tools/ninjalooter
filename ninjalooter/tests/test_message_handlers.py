@@ -4,6 +4,7 @@ from unittest import mock
 import dateutil.parser
 
 from ninjalooter import config
+from ninjalooter import logreplay
 from ninjalooter import message_handlers
 from ninjalooter import models
 from ninjalooter.tests import base
@@ -803,3 +804,245 @@ class TestMessageHandlers(base.NLTestBase):
         result = message_handlers.handle_rand2(match, 'window')
         self.assertFalse(result)
         mock_post_event.assert_not_called()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_dkp(self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        config.ACTIVE_AUCTIONS.clear()
+        config.HISTORICAL_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) - BID IN /GU, MIN 1 DKP. "
+            "You MUST include the item name in your bid! "
+            "Closing in 2m31s.'"
+        )
+        match = logreplay.MATCH_START_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertTrue(result)
+        self.assertNotIn(item, config.PENDING_AUCTIONS)
+        self.assertIn(item.uuid, config.ACTIVE_AUCTIONS)
+        auc = config.ACTIVE_AUCTIONS[item.uuid]
+        self.assertIsInstance(auc, models.DKPAuction)
+        self.assertEqual(1, auc.item.min_dkp_override)
+        window.bidding_frame.pending_list.SetObjects.assert_called_once()
+        window.bidding_frame.active_list.SetObjects.assert_called_once()
+        window.bidding_frame.active_list.SelectObject.assert_called_once_with(
+            auc)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_random(self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        config.ACTIVE_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) ROLL 1234 NOW!'"
+        )
+        match = logreplay.MATCH_START_AUCTION_RANDOM.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertTrue(result)
+        self.assertNotIn(item, config.PENDING_AUCTIONS)
+        self.assertIn(item.uuid, config.ACTIVE_AUCTIONS)
+        auc = config.ACTIVE_AUCTIONS[item.uuid]
+        self.assertIsInstance(auc, models.RandomAuction)
+        self.assertEqual(1234, auc.number)
+        window.bidding_frame.pending_list.SetObjects.assert_called_once()
+        window.bidding_frame.active_list.SetObjects.assert_called_once()
+        window.bidding_frame.active_list.SelectObject.assert_called_once_with(
+            auc)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_with_existing_bid(
+            self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        config.ACTIVE_AUCTIONS.clear()
+        config.HISTORICAL_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) - BID IN /GU. "
+            "You MUST include the item name in your bid! "
+            "Currently: `Peter` with 10 DKP - Closing in 2m00s!'"
+        )
+        match = logreplay.MATCH_START_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertTrue(result)
+        auc = config.ACTIVE_AUCTIONS[item.uuid]
+        self.assertIsInstance(auc, models.DKPAuction)
+        self.assertEqual('Peter', auc.bids[10])
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_not_pending(
+            self, mock_post_event, mock_store_state):
+        config.PENDING_AUCTIONS.clear()
+        config.ACTIVE_AUCTIONS.clear()
+        config.HISTORICAL_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) - BID IN /GU, MIN 1 DKP. "
+            "You MUST include the item name in your bid! "
+            "Closing in 2m31s.'"
+        )
+        match = logreplay.MATCH_START_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertFalse(result)
+        self.assertEqual(0, len(config.ACTIVE_AUCTIONS))
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_already_active(
+            self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        auc = utils.start_auction_dkp(item, 'VCR')
+        self.assertIn(item.uuid, config.ACTIVE_AUCTIONS)
+        config.HISTORICAL_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) - BID IN /GU. "
+            "You MUST include the item name in your bid! "
+            "Currently: `Peter` with 10 DKP - Closing in 2m00s!'"
+        )
+        match = logreplay.MATCH_START_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertFalse(result)
+        self.assertEqual(auc, config.ACTIVE_AUCTIONS[item.uuid])
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_start_restart_historical(
+            self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        auc = utils.start_auction_dkp(item, 'VCR')
+        auc.add(10, 'Peter')
+        config.HISTORICAL_AUCTIONS[item.uuid] = (
+            config.ACTIVE_AUCTIONS.pop(item.uuid))
+        self.assertEqual(0, len(config.ACTIVE_AUCTIONS))
+        self.assertEqual(1, len(config.HISTORICAL_AUCTIONS))
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'[Copper Disc] (DRU, SHD) - BID IN /GU. "
+            "You MUST include the item name in your bid! "
+            "Currently: `Peter` with 10 DKP - Closing in 2m00s!'"
+        )
+        match = logreplay.MATCH_START_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_start(match, window)
+
+        self.assertTrue(result)
+        self.assertIn(item.uuid, config.ACTIVE_AUCTIONS)
+        self.assertNotIn(item.uuid, config.HISTORICAL_AUCTIONS)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_end_dkp(self, mock_post_event, mock_store_state):
+        item = models.ItemDrop(
+            'Copper Disc', 'Jim', 'Sun Aug 16 22:47:31 2020')
+        config.PENDING_AUCTIONS.append(item)
+        auc = utils.start_auction_dkp(item, 'VCR')
+        auc.add(10, 'Peter')
+        config.HISTORICAL_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'Gratss Peter on [Copper Disc] (10 DKP)!'"
+        )
+        match = logreplay.MATCH_END_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_end(match, window)
+
+        self.assertTrue(result)
+        self.assertNotIn(item.uuid, config.ACTIVE_AUCTIONS)
+        self.assertIn(item.uuid, config.HISTORICAL_AUCTIONS)
+        window.bidding_frame.active_list.SetObjects.assert_called_once()
+        window.bidding_frame.history_list.SetObjects.assert_called_once()
+        window.bidding_frame.history_list.SelectObject.assert_called_once_with(
+            auc)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('wx.PostEvent')
+    def test_handle_auc_end_not_active(
+            self, mock_post_event, mock_store_state):
+        config.ACTIVE_AUCTIONS.clear()
+
+        line = (
+            "[Sun Aug 16 22:47:31 2020] Jim tells the guild, "
+            "'Gratss Peter on [Copper Disc] (10 DKP)!'"
+        )
+        match = logreplay.MATCH_END_AUCTION_DKP.match(line)
+        self.assertIsNotNone(match)
+
+        window = mock.MagicMock()
+        result = message_handlers.handle_auc_end(match, window)
+
+        self.assertFalse(result)
+
+    @mock.patch('ninjalooter.utils.alert_sound')
+    @mock.patch('ninjalooter.utils.alert_message')
+    def test_raidtick_reminder_alert(
+            self, mock_alert_message, mock_alert_sound):
+        config.RAIDTICK_REMINDER_COUNT = 0
+        config.MAX_RAIDTICK_REMINDERS = 3
+
+        message_handlers.raidtick_reminder_alert()
+        self.assertEqual(1, config.RAIDTICK_REMINDER_COUNT)
+        mock_alert_message.assert_called_once()
+        mock_alert_sound.assert_called_once()
+        mock_alert_message.reset_mock()
+        mock_alert_sound.reset_mock()
+
+        message_handlers.raidtick_reminder_alert()
+        self.assertEqual(2, config.RAIDTICK_REMINDER_COUNT)
+
+        message_handlers.raidtick_reminder_alert()
+        self.assertEqual(3, config.RAIDTICK_REMINDER_COUNT)
+        mock_alert_message.reset_mock()
+
+        # At max: should NOT increment further
+        message_handlers.raidtick_reminder_alert()
+        self.assertEqual(3, config.RAIDTICK_REMINDER_COUNT)
+        title_arg = mock_alert_message.call_args[0][0]
+        msg_arg = mock_alert_message.call_args[0][1]
+        self.assertIn("Reminder #4", title_arg)
+        self.assertIn("Next reminder: 10 minutes", msg_arg)

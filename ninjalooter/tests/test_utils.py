@@ -1,4 +1,7 @@
 import datetime
+import json
+import os
+import tempfile
 from unittest import mock
 import requests_mock
 
@@ -294,3 +297,97 @@ class TestUtils(base.NLTestBase):
         utils.start_auction_dkp(item, 'VCR')
         result = utils.get_active_item_names()
         self.assertEqual(['copper disc'], result)
+
+    def test_complete_old_auctions(self):
+        config.ACTIVE_AUCTIONS.clear()
+        config.HISTORICAL_AUCTIONS.clear()
+
+        old_item = models.ItemDrop('Copper Disc', 'Jim', 'ts')
+        config.PENDING_AUCTIONS.append(old_item)
+        old_auc = utils.start_auction_dkp(old_item, 'VCR')
+        old_auc.start_time = datetime.datetime.now() - datetime.timedelta(
+            hours=2)
+
+        new_item = models.ItemDrop('Platinum Disc', 'Jim', 'ts')
+        config.PENDING_AUCTIONS.append(new_item)
+        new_auc = utils.start_auction_dkp(new_item, 'VCR')
+        new_auc.start_time = datetime.datetime.now()
+
+        self.assertEqual(2, len(config.ACTIVE_AUCTIONS))
+
+        cutoff = datetime.datetime.now() - datetime.timedelta(hours=1)
+        utils.complete_old_auctions(cutoff)
+
+        self.assertNotIn(old_item.uuid, config.ACTIVE_AUCTIONS)
+        self.assertIn(old_item.uuid, config.HISTORICAL_AUCTIONS)
+        self.assertIn(new_item.uuid, config.ACTIVE_AUCTIONS)
+        self.assertNotIn(new_item.uuid, config.HISTORICAL_AUCTIONS)
+
+    def test_get_pop_numbers(self):
+        config.LAST_WHO_SNAPSHOT = base.SAMPLE_LAST_WHO_SNAPSHOT
+        pops = utils.get_pop_numbers()
+        self.assertEqual(4, pops['BL'])
+        self.assertEqual(5, pops['Kingdom'])
+        self.assertEqual(6, pops['VCR'])
+        self.assertEqual(0, pops['Seal Team'])
+
+    def test_get_pop_numbers_with_extras(self):
+        config.LAST_WHO_SNAPSHOT = base.SAMPLE_LAST_WHO_SNAPSHOT
+        pops = utils.get_pop_numbers(extras={'Other': 3})
+        self.assertEqual(3, pops['Other'])
+
+    def test_store_state(self):
+        config.PENDING_AUCTIONS = []
+        config.ACTIVE_AUCTIONS = {}
+        config.HISTORICAL_AUCTIONS = {}
+        config.ATTENDANCE_LOGS = []
+        config.KILL_TIMERS = []
+
+        with tempfile.NamedTemporaryFile(
+                mode='w', suffix='.json', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            old_save = config.SAVE_STATE_FILE
+            config.SAVE_STATE_FILE = tmp_path
+            utils.store_state()
+            config.SAVE_STATE_FILE = old_save
+
+            with open(tmp_path) as f:
+                data = json.load(f)
+            self.assertIn('PENDING_AUCTIONS', data)
+            self.assertIn('ACTIVE_AUCTIONS', data)
+            self.assertIn('HISTORICAL_AUCTIONS', data)
+            self.assertIn('ATTENDANCE_LOGS', data)
+            self.assertIn('PLAYER_DB', data)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_load_state(self):
+        item = models.ItemDrop('Copper Disc', 'Jim', 'ts')
+        json_state = {
+            'PENDING_AUCTIONS': [item],
+            'ACTIVE_AUCTIONS': {},
+            'HISTORICAL_AUCTIONS': {},
+            'ATTENDANCE_LOGS': [],
+            'KILL_TIMERS': [],
+            'PLAYER_DB': {},
+            'LAST_WHO_SNAPSHOT': {},
+        }
+        with tempfile.NamedTemporaryFile(
+                mode='w', suffix='.json', delete=False) as tmp:
+            json.dump(json_state, tmp, cls=utils.JSONEncoder)
+            tmp_path = tmp.name
+
+        try:
+            config.PENDING_AUCTIONS = []
+            utils.load_state(state_file=tmp_path)
+            self.assertEqual(1, len(config.PENDING_AUCTIONS))
+            self.assertEqual('Copper Disc', config.PENDING_AUCTIONS[0].name)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_load_state_missing_file(self):
+        config.PENDING_AUCTIONS = ['sentinel']
+        utils.load_state(state_file='nonexistent_file_12345.json')
+        self.assertEqual(['sentinel'], config.PENDING_AUCTIONS)
