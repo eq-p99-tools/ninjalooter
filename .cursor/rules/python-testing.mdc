@@ -1,0 +1,10 @@
+---
+description: Always use tox for Python testing
+alwaysApply: true
+---
+
+# Python Testing Rule
+
+Python tests are run with the `tox` test runner.
+
+Read tox.ini to discover environments.

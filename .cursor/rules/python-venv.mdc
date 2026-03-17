@@ -9,7 +9,7 @@ Never run Python tools (pip, python, tox, pytest, etc.) outside of a virtual env
 
 ## Default venv location
 
-Use `.venv` in the project root unless one already exists elsewhere (e.g. `.tox`).
+Use `.venv` in the project root.
 
 ## Creating a venv (if `.venv` doesn't exist)
 
