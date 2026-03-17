@@ -766,9 +766,7 @@ class GratssLog(DictEquals):
 
     def target(self) -> str:
         try:
-            message_cleaned = (
-                self.message.lower().split("gratss")[1].split(" ")[1].strip().capitalize()
-            )
+            message_cleaned = self.message.lower().split("gratss")[1].split(" ")[1].strip().capitalize()
         except:  # noqa
             message_cleaned = self.message
         return message_cleaned
@@ -896,9 +894,7 @@ class ItemDrop(DictEquals):
         return minimum
 
     def __str__(self):
-        return "{name} ({reporter} @ {time})".format(
-            name=self.name, reporter=self.reporter, time=self.timestamp
-        )
+        return "{name} ({reporter} @ {time})".format(name=self.name, reporter=self.reporter, time=self.timestamp)
 
 
 class Auction(DictEquals):
@@ -923,9 +919,7 @@ class Auction(DictEquals):
         # import at runtime rather than on load to avoid circular error
         from ninjalooter import utils  # noqa: PLC0415
 
-        utils.alert_message(
-            "Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name
-        )
+        utils.alert_message("Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name)
         config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
         utils.alert_sound(config.AUC_EXPIRING_SOUND)
 

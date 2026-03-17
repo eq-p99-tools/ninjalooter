@@ -12,8 +12,8 @@ with open('version_info.txt', 'w', encoding='utf-8') as _vf:
 
 datas = [('data/icons', 'data/icons')]
 datas += [('data/sounds/*.mp3', 'data/sounds')]
-datas += [('data/items.json', 'data/items.json')]
-datas += [('data/spells.json', 'data/spells.json')]
+datas += [('data/items.json', 'data')]
+datas += [('data/spells.json', 'data')]
 
 a = Analysis(['ninjalooter\\cmd\\run.py'],
              pathex=[],

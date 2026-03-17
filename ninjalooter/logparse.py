@@ -1,4 +1,3 @@
-import datetime
 import os
 import threading
 import time
@@ -41,15 +40,16 @@ reset_matchers()
 def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
     if config.TRIE is None:
         utils.setup_aho()
-    with open(logfile) as lfp:
+    with open(logfile, encoding="utf-8", errors="replace") as lfp:
         lfp.seek(0, os.SEEK_END)
         LOG.info("Logfile loaded: %s", logfile)
         while run.is_set():
-            try:
-                lines = lfp.readlines()
-            except UnicodeDecodeError:
-                LOG.warning("Bad character in log line at: %s", datetime.datetime.now())
-                continue
+            pos = lfp.tell()
+            lines = lfp.readlines()
+            if not lines:
+                # Reset TextIOWrapper's internal decoder state so it
+                # picks up data appended by another process.
+                lfp.seek(pos)
             last_rand_player = None
             for line in lines:
                 line = line.strip()
@@ -84,9 +84,7 @@ class ParseThread(threading.Thread):
         config.PLAYER_NAME = name
         LOG.info("Starting logparser thread for %s...", name)
         self.window.SetLabel(
-            "NinjaLooter EQ Raid Manager v{version} - {name}".format(
-                version=config.VERSION, name=name
-            )
+            "NinjaLooter EQ Raid Manager v{version} - {name}".format(version=config.VERSION, name=name)
         )
         if logfile:
             utils.alert_message(

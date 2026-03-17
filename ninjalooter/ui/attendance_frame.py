@@ -21,9 +21,7 @@ class AttendanceFrame(wx.Window):
         # Attendance Log Frame (Tab 2)
         ##############################
         attendance_main_box = wx.BoxSizer(wx.VERTICAL)
-        attendance_splitter = wx.lib.splitter.MultiSplitterWindow(
-            self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER
-        )
+        attendance_splitter = wx.lib.splitter.MultiSplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
         attendance_splitter.SetOrientation(wx.VERTICAL)
         pane_1 = wx.Panel(attendance_splitter, wx.ID_ANY)
         pane_2 = wx.Panel(attendance_splitter, wx.ID_ANY)
@@ -31,9 +29,7 @@ class AttendanceFrame(wx.Window):
 
         # Attendance / Raidtick List
         attendance_box = wx.BoxSizer(wx.HORIZONTAL)
-        attendance_list = ObjectListView.ObjectListView(
-            pane_1, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 600)
-        )
+        attendance_list = ObjectListView.ObjectListView(pane_1, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 600))
         attendance_box.Add(attendance_list, flag=wx.EXPAND | wx.ALL)
         attendance_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowAttendanceDetail)
         attendance_list.Bind(wx.EVT_RIGHT_DCLICK, self.OnMarkRaidtick)
@@ -44,9 +40,7 @@ class AttendanceFrame(wx.Window):
                 ObjectListView.ColumnDefn("Time", "left", 140, "time", fixedWidth=140),
                 ObjectListView.ColumnDefn("Name", "left", 140, "tick_name", fixedWidth=140),
                 ObjectListView.ColumnDefn("RT", "left", 25, "raidtick_display", fixedWidth=25),
-                ObjectListView.ColumnDefn(
-                    "Populations", "left", 357, "populations", fixedWidth=357
-                ),
+                ObjectListView.ColumnDefn("Populations", "left", 357, "populations", fixedWidth=357),
             ]
         )
         attendance_list.SetObjects(config.ATTENDANCE_LOGS)
@@ -87,9 +81,7 @@ class AttendanceFrame(wx.Window):
 
         # Creditt Log
         creditt_box = wx.BoxSizer(wx.HORIZONTAL)
-        creditt_list = ObjectListView.ObjectListView(
-            pane_2, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200)
-        )
+        creditt_list = ObjectListView.ObjectListView(pane_2, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200))
         creditt_box.Add(creditt_list, flag=wx.EXPAND | wx.ALL)
         # creditt_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditCreditt)
         self.creditt_list = creditt_list
@@ -113,9 +105,7 @@ class AttendanceFrame(wx.Window):
 
         # Gratss Log
         gratss_box = wx.BoxSizer(wx.HORIZONTAL)
-        gratss_list = ObjectListView.ObjectListView(
-            pane_3, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200)
-        )
+        gratss_list = ObjectListView.ObjectListView(pane_3, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200))
         gratss_box.Add(gratss_list, flag=wx.EXPAND | wx.ALL)
         # gratss_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditGratss)
         self.gratss_list = gratss_list
@@ -263,9 +253,7 @@ class AttendanceFrame(wx.Window):
         selected_object = self.attendance_list.GetSelectedObject()
         if not selected_object:
             return
-        AttendanceDetailWindow(
-            selected_object, parent=self, title="Attendance Record: {}".format(selected_object.time)
-        )
+        AttendanceDetailWindow(selected_object, parent=self, title="Attendance Record: {}".format(selected_object.time))
 
     def OnMarkRaidtick(self, e: wx.EVT_RIGHT_DCLICK):
         selected_object = self.attendance_list.GetSelectedObject()
@@ -295,9 +283,7 @@ class AttendanceDetailWindow(wx.Frame):
         remove_button.Bind(wx.EVT_BUTTON, self.OnRemovePlayer)
         button_box.Add(remove_button, border=5, flag=wx.ALL)
 
-        self.name_textbox = wx.TextCtrl(
-            self, id=wx.ID_ANY, size=(130, 22), value=item.tick_name or ""
-        )
+        self.name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22), value=item.tick_name or "")
         if self.item.zone:
             self.name_textbox.SetHint(f"{self.item.zone}?")
         else:
@@ -367,10 +353,7 @@ class AttendanceDetailWindow(wx.Frame):
             return
 
         # Make a text version of the values
-        lines = [
-            (f"[{self.item.eqtime()}] [ANONYMOUS] {x.name} <{x.guild}> {{{x.level} {x.pclass}}}")
-            for x in objects
-        ]
+        lines = [(f"[{self.item.eqtime()}] [ANONYMOUS] {x.name} <{x.guild}> {{{x.level} {x.pclass}}}") for x in objects]
         txt = "\n".join(lines) + "\n"
 
         cb = wx.Clipboard()

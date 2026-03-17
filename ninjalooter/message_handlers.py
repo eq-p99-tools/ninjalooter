@@ -60,11 +60,7 @@ def handle_gratss(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     if award_match:
         for old_auction in config.HISTORICAL_AUCTIONS.values():
             # there were no bids on the auction, and this message is for ROT
-            if (
-                not old_auction.highest()
-                and award_match.group("name") == "ROT"
-                and int(award_match.group("dkp")) == 0
-            ):
+            if not old_auction.highest() and award_match.group("name") == "ROT" and int(award_match.group("dkp")) == 0:
                 # don't count this item
                 return False
             # there was a bid and it matches player/dkp and item name
@@ -99,9 +95,7 @@ def raidtick_reminder_alert() -> None:
     )
     if config.RAIDTICK_REMINDER_COUNT >= 5:
         reminder_message += " Next reminder: 10 minutes."
-    utils.alert_message(
-        "RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1), reminder_message
-    )
+    utils.alert_message("RaidTick Reminder #%d" % (config.RAIDTICK_REMINDER_COUNT + 1), reminder_message)
     utils.alert_sound(config.RAIDTICK_REMINDER_SOUND)
     if config.RAIDTICK_REMINDER_COUNT < 5:
         config.RAIDTICK_REMINDER_COUNT += 1
@@ -258,9 +252,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
         return list()
     if used_found_items:
         wx.PostEvent(window, models.DropEvent())
-        utils.alert_message(
-            "New Drops Detected", "\n".join(["\u00a0\u2022 %s" % drop for drop in used_found_items])
-        )
+        utils.alert_message("New Drops Detected", "\n".join(["\u00a0\u2022 %s" % drop for drop in used_found_items]))
         utils.alert_sound(config.NEW_DROP_SOUND)
     if not skip_store:
         utils.store_state()
@@ -320,11 +312,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                     msec=8000,
                 )
                 auc_item._second_main_cap_alerted = True
-            elif (
-                config.ALT_REMINDER_DKP
-                and bid > config.ALT_REMINDER_DKP
-                and not auc_item._alt_cap_alerted
-            ):
+            elif config.ALT_REMINDER_DKP and bid > config.ALT_REMINDER_DKP and not auc_item._alt_cap_alerted:
                 utils.alert_message(
                     "%d DKP is above the Alt Bid Cap" % bid,
                     "%s's bid for %s is above the cap for alts. "
@@ -399,11 +387,7 @@ def handle_auc_start(match: re.Match, window: wx.Frame, skip_store=False) -> boo
     if number:
         auc.number = number
     auc.start_time = message_time
-    if (
-        "player" in match.groupdict()
-        and match.group("player") is not None
-        and match.group("bid") is not None
-    ):
+    if "player" in match.groupdict() and match.group("player") is not None and match.group("bid") is not None:
         auc.bids[int(match.group("bid"))] = match.group("player")
 
     window.bidding_frame.pending_list.SetObjects(config.PENDING_AUCTIONS)
@@ -451,9 +435,7 @@ def handle_rand2(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
             if not skip_store:
                 utils.store_state()
             return True
-    LOG.info(
-        "%s rolled %d-%d but that doesn't apply to an active auction.", name, rand_from, rand_to
-    )
+    LOG.info("%s rolled %d-%d but that doesn't apply to an active auction.", name, rand_from, rand_to)
     return False
 
 

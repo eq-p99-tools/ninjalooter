@@ -115,9 +115,7 @@ class MainWindow(wx.Frame):
             self.watcher = wx.FileSystemWatcher()
             self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
             if os.path.isdir(config.LOG_DIRECTORY):
-                self.watcher.Add(
-                    config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY
-                )
+                self.watcher.Add(config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
             config.WX_FILESYSTEM_WATCHER = self.watcher
 
         # Show Changelog on new version

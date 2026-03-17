@@ -32,9 +32,7 @@ class PopulationFrame(wx.Window):
         population_label.SetFont(label_font)
         population_main_box.Add(population_label, flag=wx.LEFT | wx.TOP, border=10)
         population_box = wx.BoxSizer(wx.HORIZONTAL)
-        population_main_box.Add(
-            population_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10
-        )
+        population_main_box.Add(population_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10)
 
         # List
         population_list = ObjectListView.GroupListView(
@@ -48,24 +46,14 @@ class PopulationFrame(wx.Window):
 
         population_list.SetColumns(
             [
-                ObjectListView.ColumnDefn(
-                    "Name", "left", 180, "name", groupKeyGetter=popGroupKey, fixedWidth=180
-                ),
-                ObjectListView.ColumnDefn(
-                    "Class", "left", 100, "pclass", groupKeyGetter=popGroupKey, fixedWidth=100
-                ),
-                ObjectListView.ColumnDefn(
-                    "Level", "left", 40, "level", groupKeyGetter=popGroupKey, fixedWidth=40
-                ),
-                ObjectListView.ColumnDefn(
-                    "Guild", "left", 148, "guild", groupKeyGetter=popGroupKey, fixedWidth=148
-                ),
+                ObjectListView.ColumnDefn("Name", "left", 180, "name", groupKeyGetter=popGroupKey, fixedWidth=180),
+                ObjectListView.ColumnDefn("Class", "left", 100, "pclass", groupKeyGetter=popGroupKey, fixedWidth=100),
+                ObjectListView.ColumnDefn("Level", "left", 40, "level", groupKeyGetter=popGroupKey, fixedWidth=40),
+                ObjectListView.ColumnDefn("Guild", "left", 148, "guild", groupKeyGetter=popGroupKey, fixedWidth=148),
             ]
         )
         population_list.SetObjects(self.player_affiliations)
-        population_list.SetEmptyListMsg(
-            "No player affiliation data loaded.\nPlease type `/who` ingame."
-        )
+        population_list.SetEmptyListMsg("No player affiliation data loaded.\nPlease type `/who` ingame.")
 
         # Buttons / Adjustments
         population_buttons_box = wx.BoxSizer(wx.VERTICAL)
@@ -78,9 +66,7 @@ class PopulationFrame(wx.Window):
         population_buttons_box.Add(adj_alliance_header, flag=wx.BOTTOM, border=10)
         for alliance in config.ALLIANCES:
             adj_alliance_box = wx.GridBagSizer(1, 2)
-            adj_alliance_label = wx.StaticText(
-                self, label=alliance, size=(100, 20), style=wx.ALIGN_RIGHT
-            )
+            adj_alliance_label = wx.StaticText(self, label=alliance, size=(100, 20), style=wx.ALIGN_RIGHT)
             adj_alliance_label.SetFont(adj_alliance_font)
             adj_alliance_spinner = wx.SpinCtrl(self, value="0")
             adj_alliance_spinner.SetRange(-1000, 1000)  # Why limit things? :D

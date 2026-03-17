@@ -20,9 +20,7 @@ class BiddingFrame(wx.Window):
         # Bidding Frame (Tab 1)
         #######################
         # bidding_frame = wx.Window(notebook)
-        bidding_splitter = wx.lib.splitter.MultiSplitterWindow(
-            self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER
-        )
+        bidding_splitter = wx.lib.splitter.MultiSplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
         bidding_splitter.SetOrientation(wx.VERTICAL)
         pane_1 = wx.Panel(bidding_splitter, wx.ID_ANY)
         pane_2 = wx.Panel(bidding_splitter, wx.ID_ANY)
@@ -118,9 +116,7 @@ class BiddingFrame(wx.Window):
                 ObjectListView.ColumnDefn("Rand/Min", "left", 70, "get_target_min", fixedWidth=70),
                 ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number", fixedWidth=65),
                 ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players", fixedWidth=90),
-                ObjectListView.ColumnDefn(
-                    "Time Left", "left", 100, "time_remaining_ui", fixedWidth=100
-                ),
+                ObjectListView.ColumnDefn("Time Left", "left", 100, "time_remaining_ui", fixedWidth=100),
             ]
         )
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
@@ -137,9 +133,7 @@ class BiddingFrame(wx.Window):
         active_button_undo = wx.Button(pane_2, label="Undo")
         active_buttonspacer = wx.StaticLine(pane_2)
         active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
-        self.active_buttons_timespinner = wx.SpinCtrl(
-            pane_2, min=1, max=30, initial=1, size=(44, 22)
-        )
+        self.active_buttons_timespinner = wx.SpinCtrl(pane_2, min=1, max=30, initial=1, size=(44, 22))
         self.active_buttons_timespinner.SetToolTip("Minutes to add/remove")
         active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
         active_button_timeadd.SetToolTip("Add time to Auction")
@@ -158,9 +152,7 @@ class BiddingFrame(wx.Window):
             value=config.PRIMARY_BID_CHANNEL,
             style=wx.CB_READONLY,
         )
-        active_cb_bid_target.SetToolTip(
-            "Selected channel will be used for Auction clipboard messages"
-        )
+        active_cb_bid_target.SetToolTip("Selected channel will be used for Auction clipboard messages")
         active_buttons_box.Add(active_button_undo, flag=wx.TOP)
         active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=6)
         active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
@@ -417,9 +409,7 @@ class BiddingFrame(wx.Window):
             selected_object.start_time -= delta
         else:
             if selected_object.time_remaining().seconds <= 0:
-                selected_object.start_time = datetime.datetime.now() - datetime.timedelta(
-                    seconds=config.MIN_BID_TIME
-                )
+                selected_object.start_time = datetime.datetime.now() - datetime.timedelta(seconds=config.MIN_BID_TIME)
             selected_object.start_time += delta
 
     def CopyBidText(self, e: wx.Event):

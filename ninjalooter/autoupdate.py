@@ -15,16 +15,12 @@ from ninjalooter.config import VERSION
 
 LOG = logger.getLogger(__name__)
 GITHUB_API_LATEST_RELEASE_URL = "https://api.github.com/repos/rm-you/ninjalooter/releases/latest"
-GITHUB_API_TAGGED_RELEASE_URL = (
-    "https://api.github.com/repos/rm-you/ninjalooter/releases/tags/{tag}"
-)
+GITHUB_API_TAGGED_RELEASE_URL = "https://api.github.com/repos/rm-you/ninjalooter/releases/tags/{tag}"
 
 if os.path.exists("github_auth.json"):
     with open("github_auth.json") as gha:
         auth_data = json.load(gha)
-    get = functools.partial(
-        requests.get, auth=requests.auth.HTTPBasicAuth(auth_data["username"], auth_data["key"])
-    )
+    get = functools.partial(requests.get, auth=requests.auth.HTTPBasicAuth(auth_data["username"], auth_data["key"]))
 else:
     get = requests.get
 
@@ -53,11 +49,7 @@ def download_and_unpack(url: str):
             title="Downloading Update",
             message="Downloading update, please wait...",
             maximum=size,
-            style=wx.PD_APP_MODAL
-            | wx.PD_AUTO_HIDE
-            | wx.PD_CAN_ABORT
-            | wx.PD_ELAPSED_TIME
-            | wx.PD_REMAINING_TIME,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME,
         )
         with io.BytesIO() as bio:
             downloaded = 0

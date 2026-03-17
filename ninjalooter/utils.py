@@ -102,9 +102,7 @@ def generate_pop_roll(source=None, extras=None) -> tuple:
         roll_text = "/shout " + roll_text
     else:
         frame = inspect.currentframe()
-        roll_text = "/tell Toald break in `{func}:{line}`".format(
-            func=frame.f_code.co_name, line=frame.f_lineno - 1
-        )
+        roll_text = "/tell Toald break in `{func}:{line}`".format(func=frame.f_code.co_name, line=frame.f_lineno - 1)
     rand_text = "/random 1 {}".format(end)
     LOG.info("Generated pop roll with %d players: %s", start - 1, roll_text)
     return roll_text, rand_text
@@ -379,9 +377,7 @@ def load_state(state_file=config.SAVE_STATE_FILE):
             elif key == "WHO_LOG":
                 key = "ATTENDANCE_LOGS"  # noqa: PLW2901
                 for entry in value:
-                    entry.log = {
-                        name: models.Player(name, guild=guild) for name, guild in entry.log.items()
-                    }
+                    entry.log = {name: models.Player(name, guild=guild) for name, guild in entry.log.items()}
             # Handle conversion of auction end data prior to v1.16.10
             elif key == "HISTORICAL_AUCTIONS":
                 for entry in value.values():
@@ -449,11 +445,7 @@ def export_to_excel(filename):
     for auc in config.HISTORICAL_AUCTIONS.values():
         dkp_auc = isinstance(auc, models.DKPAuction)
         auc_data = {
-            "time": (
-                auc.end_time + eastern_time_offset()
-                if config.EXPORT_TIME_IN_EASTERN
-                else auc.end_time
-            ),
+            "time": (auc.end_time + eastern_time_offset() if config.EXPORT_TIME_IN_EASTERN else auc.end_time),
             # 'time': datetime_from_eq_format(auc.item.timestamp),
             "item": auc.name(),
             "winner": auc.highest_players(),
@@ -479,9 +471,7 @@ def export_to_excel(filename):
             if not m:
                 continue
             time_part = m.groupdict()["time"]
-            new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False)
-            )
+            new_time = datetime_to_eq_format(datetime_from_eq_format(time_part, allow_eastern=False))
             adjusted_message = adjusted_message.replace(time_part, new_time)
         creditt_data = {"creditt/gratss": adjusted_message}
         excel_data["Creditt & Gratss"].append(creditt_data)
@@ -493,9 +483,7 @@ def export_to_excel(filename):
             if not m:
                 continue
             time_part = m.groupdict()["time"]
-            new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False)
-            )
+            new_time = datetime_to_eq_format(datetime_from_eq_format(time_part, allow_eastern=False))
             adjusted_message = adjusted_message.replace(time_part, new_time)
         gratss_data = {"creditt/gratss": adjusted_message}
         excel_data["Creditt & Gratss"].append(gratss_data)
@@ -624,9 +612,7 @@ def export_to_eqdkp(filename):
             if not m:
                 continue
             time_part = m.groupdict()["time"]
-            new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False)
-            )
+            new_time = datetime_to_eq_format(datetime_from_eq_format(time_part, allow_eastern=False))
             adjusted_message = adjusted_message.replace(time_part, new_time)
         creditt_messages.append(adjusted_message)
     gratss_messages = []
@@ -637,9 +623,7 @@ def export_to_eqdkp(filename):
             if not m:
                 continue
             time_part = m.groupdict()["time"]
-            new_time = datetime_to_eq_format(
-                datetime_from_eq_format(time_part, allow_eastern=False)
-            )
+            new_time = datetime_to_eq_format(datetime_from_eq_format(time_part, allow_eastern=False))
             adjusted_message = adjusted_message.replace(time_part, new_time)
         gratss_messages.append(adjusted_message)
 
@@ -775,7 +759,7 @@ def fetch_google_sheet_data(url):
 
     # Get the data in CSV format
     new_url = ("https://docs.google.com/spreadsheets/d/{id}/export?format=csv").format(id=sheet_id)
-    req = requests.get(new_url)
+    req = requests.get(new_url, timeout=10)
     if req.status_code != 200:
         LOG.error("Couldn't fetch spreadsheet `%s`: %d", sheet_id, req.status_code)
         return None
@@ -807,9 +791,7 @@ def translate_sheet_csv_to_mindkp_json(csv_data):
             item = {"min_dkp": mindkp_row}
             try:
                 if config.MIN_DKP_RESTR_COL and row[config.MIN_DKP_RESTR_COL]:
-                    item["classes"] = list(
-                        map(lambda x: x.strip(), row[config.MIN_DKP_RESTR_COL].split(","))
-                    )
+                    item["classes"] = list(map(lambda x: x.strip(), row[config.MIN_DKP_RESTR_COL].split(",")))
             except:  # noqa
                 LOG.warning("Couldn't parse column `%s` for row: %s", config.MIN_DKP_DROP_COL, row)
             try:

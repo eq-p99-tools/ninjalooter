@@ -13,6 +13,7 @@ import shutil
 import tempfile
 
 PYINSTALLER_REPO = "https://github.com/pyinstaller/pyinstaller.git"
+MARKER_PREFIX = ".custom_bootloader_"
 
 
 def get_pyinstaller_version():
@@ -25,8 +26,27 @@ def get_pyinstaller_version():
     raise RuntimeError("PyInstaller is not installed")
 
 
-def build_bootloader():
+def _bootloader_dir():
+    import PyInstaller
+    return os.path.join(os.path.dirname(PyInstaller.__file__), "bootloader")
+
+
+def _marker_path(version):
+    return os.path.join(_bootloader_dir(), f"{MARKER_PREFIX}{version}")
+
+
+def is_custom_bootloader(version):
+    return os.path.isfile(_marker_path(version))
+
+
+def build_bootloader(force=False):
     version = get_pyinstaller_version()
+
+    if not force and is_custom_bootloader(version):
+        print(f"Custom bootloader for PyInstaller {version} already installed, skipping build. "
+              f"Use --force to rebuild.")
+        return
+
     tag = f"v{version}"
     print(f"Building custom bootloader for PyInstaller {version} ({tag})")
 
@@ -37,20 +57,21 @@ def build_bootloader():
              PYINSTALLER_REPO, work_dir],
             check=True)
 
-        bootloader_dir = os.path.join(work_dir, "bootloader")
+        bootloader_src_dir = os.path.join(work_dir, "bootloader")
         subprocess.run(
             [sys.executable, "./waf", "all"],
-            cwd=bootloader_dir, check=True)
+            cwd=bootloader_src_dir, check=True)
 
-        import PyInstaller
-        pi_dir = os.path.dirname(PyInstaller.__file__)
         src = os.path.join(work_dir, "PyInstaller", "bootloader")
-        dst = os.path.join(pi_dir, "bootloader")
+        dst = _bootloader_dir()
 
         print(f"Copying custom bootloader to {dst}")
         if os.path.exists(dst):
             shutil.rmtree(dst)
         shutil.copytree(src, dst)
+
+        with open(_marker_path(version), "w") as f:
+            f.write(version)
 
         print("Custom bootloader installed successfully.")
     finally:
@@ -58,4 +79,5 @@ def build_bootloader():
 
 
 if __name__ == "__main__":
-    build_bootloader()
+    force = "--force" in sys.argv
+    build_bootloader(force=force)

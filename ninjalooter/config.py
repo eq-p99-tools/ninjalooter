@@ -15,7 +15,7 @@ SEMVER = semver.VersionInfo(
     minor=17,
     patch=0,
     prerelease="rc2",
-    build=None,
+    build='console',
 )
 VERSION = str(SEMVER)
 
@@ -36,9 +36,7 @@ if not CONF.has_section("default"):
     CONF.add_section("default")
 LOG_DIRECTORY = CONF.get("default", "logdir", fallback="C:\\Everquest\\")
 LOG_LEVEL = CONF.getint("default", "loglevel", fallback=logging.INFO)
-NUMBERS = CONF.get(
-    "default", "numbers", fallback="1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999"
-)
+NUMBERS = CONF.get("default", "numbers", fallback="1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999")
 NUMBERS = [int(num.strip()) for num in NUMBERS.split(",")]
 DEFAULT_BID_MESSAGE_NEW = (
     "[{item}]{classes} - BID IN /{channel}, MIN {min} DKP. "
@@ -52,9 +50,7 @@ DEFAULT_BID_MESSAGE_REMINDER = (
     "You MUST include the item name in your bid! Currently: "
     "`{player}` with {number} DKP - Closing in {time_remaining}! "
 )
-BID_MESSAGE_REMINDER = CONF.get(
-    "default", "bid_message_reminder", fallback=DEFAULT_BID_MESSAGE_REMINDER
-)
+BID_MESSAGE_REMINDER = CONF.get("default", "bid_message_reminder", fallback=DEFAULT_BID_MESSAGE_REMINDER)
 BID_MESSAGE_REMINDER = BID_MESSAGE_REMINDER.strip("\"'")
 DEFAULT_ROLL_MESSAGE = "[{item}]{classes} ROLL {target} NOW!"
 ROLL_MESSAGE = CONF.get("default", "roll_message", fallback=DEFAULT_ROLL_MESSAGE)
@@ -120,9 +116,7 @@ if not CONF.has_section("alerts"):
     CONF.set("alerts", "text_enabled", str(TEXT_ALERTS))
     NEEDS_WRITE = True
 
-NEW_DROP_SOUND = CONF.get(
-    "alerts", "new_drop", fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.mp3")
-)
+NEW_DROP_SOUND = CONF.get("alerts", "new_drop", fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_drop.mp3"))
 AUC_EXPIRING_SOUND = CONF.get(
     "alerts",
     "auction_expiring",
@@ -231,12 +225,8 @@ MATCH_BID_OOC = re.compile(
     TIMESTAMP + r"(?P<name>\w+) says? out of character, "
     r"'(?P<text>.*?(?P<bid>\d+(?!nd)).*)'"
 )
-MATCH_BID_AUC = re.compile(
-    TIMESTAMP + r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'"
-)
-MATCH_BID_SHOUT = re.compile(
-    TIMESTAMP + r"(?P<name>\w+) shouts?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'"
-)
+MATCH_BID_AUC = re.compile(TIMESTAMP + r"(?P<name>\w+) auctions?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
+MATCH_BID_SHOUT = re.compile(TIMESTAMP + r"(?P<name>\w+) shouts?, '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'")
 MATCH_BID_GU = re.compile(
     TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild),"
     r" '(?P<text>.*?(?P<bid>\d+(?!nd)).*)'"
@@ -259,9 +249,7 @@ MATCH_WHO = re.compile(
     TIMESTAMP + r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
     r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w \']+)>)?"
 )
-MATCH_END_WHO = re.compile(
-    TIMESTAMP + r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\."
-)
+MATCH_END_WHO = re.compile(TIMESTAMP + r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
 MATCH_KILL = re.compile(TIMESTAMP + r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
 MATCH_RAIDTICK = re.compile(TIMESTAMP + r".*RAID ?TICK.*", flags=re.IGNORECASE)
 MATCH_CREDITT = re.compile(
@@ -269,9 +257,7 @@ MATCH_CREDITT = re.compile(
     r"(?P<message>.*creditt.*?)'?$",
     flags=re.IGNORECASE,
 )
-MATCH_GRATSS = re.compile(
-    TIMESTAMP + r"(?P<from>.*?) .*?(, '|: )(?P<message>.*gratss.*?)'?$", flags=re.IGNORECASE
-)
+MATCH_GRATSS = re.compile(TIMESTAMP + r"(?P<from>.*?) .*?(, '|: )(?P<message>.*gratss.*?)'?$", flags=re.IGNORECASE)
 
 DROP_CHANNEL_OPTIONS = {
     "say": MATCH_DROP_SAY,

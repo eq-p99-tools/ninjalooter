@@ -30,16 +30,12 @@ class MenuBar(wx.MenuBar):
         file_menu.Append(set_log_mi)
         self.Bind(wx.EVT_MENU, self.OnConfigure, set_log_mi)
 
-        self.autoswap_mi = wx.MenuItem(
-            file_menu, wx.ID_ANY, "Auto-Switch Characters", kind=wx.ITEM_CHECK
-        )
+        self.autoswap_mi = wx.MenuItem(file_menu, wx.ID_ANY, "Auto-Switch Characters", kind=wx.ITEM_CHECK)
         file_menu.Append(self.autoswap_mi)
         self.autoswap_mi.Check(config.AUTO_SWAP_LOGFILE)
         self.Bind(wx.EVT_MENU, self.OnAutoSwapLogfile, self.autoswap_mi)
 
-        self.alwaysontop_mi = wx.MenuItem(
-            file_menu, wx.ID_ANY, "&Always On Top", kind=wx.ITEM_CHECK
-        )
+        self.alwaysontop_mi = wx.MenuItem(file_menu, wx.ID_ANY, "&Always On Top", kind=wx.ITEM_CHECK)
         file_menu.Append(self.alwaysontop_mi)
         self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
         self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
@@ -51,9 +47,7 @@ class MenuBar(wx.MenuBar):
 
         file_menu.AppendSeparator()
 
-        self.export_tz_mi = wx.MenuItem(
-            file_menu, wx.ID_ANY, "Export in Eastern Time", kind=wx.ITEM_CHECK
-        )
+        self.export_tz_mi = wx.MenuItem(file_menu, wx.ID_ANY, "Export in Eastern Time", kind=wx.ITEM_CHECK)
         file_menu.Append(self.export_tz_mi)
         self.export_tz_mi.Check(config.EXPORT_TIME_IN_EASTERN)
         self.Bind(wx.EVT_MENU, self.OnExportTimezone, self.export_tz_mi)
@@ -74,9 +68,7 @@ class MenuBar(wx.MenuBar):
         file_menu.AppendSeparator()
 
         load_state_mi = wx.MenuItem(file_menu, wx.ID_ANY, "&Load State")
-        load_state_bitmap = wx.Bitmap(
-            os.path.join(config.PROJECT_DIR, "data", "icons", "import.png")
-        )
+        load_state_bitmap = wx.Bitmap(os.path.join(config.PROJECT_DIR, "data", "icons", "import.png"))
         load_state_mi.SetBitmap(load_state_bitmap)
         file_menu.Append(load_state_mi)
         self.Bind(wx.EVT_MENU, self.OnLoadState, load_state_mi)
@@ -142,9 +134,7 @@ class MenuBar(wx.MenuBar):
             self.Bind(wx.EVT_MENU, self.OnSetBidChannel, channel_item)
         bidding_menu.AppendSubMenu(bid_chan_menu, "&Bid Channels")
 
-        self.restrict_bids_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, "Restrict Bids to Alliance", kind=wx.ITEM_CHECK
-        )
+        self.restrict_bids_mi = wx.MenuItem(bidding_menu, wx.ID_ANY, "Restrict Bids to Alliance", kind=wx.ITEM_CHECK)
         bidding_menu.Append(self.restrict_bids_mi)
         self.restrict_bids_mi.Check(config.RESTRICT_BIDS)
         self.Bind(wx.EVT_MENU, self.OnRestrictBids, self.restrict_bids_mi)
@@ -156,9 +146,7 @@ class MenuBar(wx.MenuBar):
         self.restrict_exports_mi.Check(config.RESTRICT_EXPORT)
         self.Bind(wx.EVT_MENU, self.OnRestrictExport, self.restrict_exports_mi)
 
-        self.nodrop_only_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, "&Ignore Droppable Items", kind=wx.ITEM_CHECK
-        )
+        self.nodrop_only_mi = wx.MenuItem(bidding_menu, wx.ID_ANY, "&Ignore Droppable Items", kind=wx.ITEM_CHECK)
         bidding_menu.Append(self.nodrop_only_mi)
         self.nodrop_only_mi.Check(config.NODROP_ONLY)
         self.Bind(wx.EVT_MENU, self.OnNodropOnly, self.nodrop_only_mi)
@@ -179,16 +167,12 @@ class MenuBar(wx.MenuBar):
 
         bidding_menu.AppendSeparator()
 
-        self.audio_alerts_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, "Use &Audio Alerts", kind=wx.ITEM_CHECK
-        )
+        self.audio_alerts_mi = wx.MenuItem(bidding_menu, wx.ID_ANY, "Use &Audio Alerts", kind=wx.ITEM_CHECK)
         bidding_menu.Append(self.audio_alerts_mi)
         self.audio_alerts_mi.Check(config.AUDIO_ALERTS)
         self.Bind(wx.EVT_MENU, self.OnAudioAlerts, self.audio_alerts_mi)
 
-        self.text_alerts_mi = wx.MenuItem(
-            bidding_menu, wx.ID_ANY, "Use &Text Alerts", kind=wx.ITEM_CHECK
-        )
+        self.text_alerts_mi = wx.MenuItem(bidding_menu, wx.ID_ANY, "Use &Text Alerts", kind=wx.ITEM_CHECK)
         bidding_menu.Append(self.text_alerts_mi)
         self.text_alerts_mi.Check(config.TEXT_ALERTS)
         self.Bind(wx.EVT_MENU, self.OnTextAlerts, self.text_alerts_mi)
@@ -277,29 +261,19 @@ class MenuBar(wx.MenuBar):
             border=2,
             flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL,
         )
-        time_select_bounds_box.Add(
-            date_chooser_from, pos=(0, 1), border=2, flag=wx.ALIGN_RIGHT | wx.ALL
-        )
-        time_select_bounds_box.Add(
-            time_chooser_from, pos=(0, 2), border=2, flag=wx.ALIGN_RIGHT | wx.ALL
-        )
+        time_select_bounds_box.Add(date_chooser_from, pos=(0, 1), border=2, flag=wx.ALIGN_RIGHT | wx.ALL)
+        time_select_bounds_box.Add(time_chooser_from, pos=(0, 2), border=2, flag=wx.ALIGN_RIGHT | wx.ALL)
         time_select_bounds_box.Add(
             to_label, pos=(1, 0), border=2, flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL
         )
-        time_select_bounds_box.Add(
-            date_chooser_to, pos=(1, 1), border=2, flag=wx.ALIGN_RIGHT | wx.ALL
-        )
-        time_select_bounds_box.Add(
-            time_chooser_to, pos=(1, 2), border=2, flag=wx.ALIGN_RIGHT | wx.ALL
-        )
+        time_select_bounds_box.Add(date_chooser_to, pos=(1, 1), border=2, flag=wx.ALIGN_RIGHT | wx.ALL)
+        time_select_bounds_box.Add(time_chooser_to, pos=(1, 2), border=2, flag=wx.ALIGN_RIGHT | wx.ALL)
 
         # Buttons
         time_select_buttons_box = time_select_dialog.CreateButtonSizer(wx.OK | wx.CANCEL)
 
         time_select_main_box.Add(time_select_bounds_box, border=10, flag=wx.ALL | wx.EXPAND)
-        time_select_main_box.Add(
-            time_select_buttons_box, border=10, flag=wx.BOTTOM | wx.RIGHT | wx.EXPAND
-        )
+        time_select_main_box.Add(time_select_buttons_box, border=10, flag=wx.BOTTOM | wx.RIGHT | wx.EXPAND)
         time_select_dialog.SetSizer(time_select_main_box)
         time_select_dialog.Fit()
 
@@ -311,20 +285,14 @@ class MenuBar(wx.MenuBar):
         time_select_dialog.Destroy()
 
         fd, ft = date_chooser_from.GetValue(), time_chooser_from.GetValue()
-        fdt = datetime.datetime(
-            *map(int, fd.FormatISODate().split("-")), *map(int, ft.FormatISOTime().split(":"))
-        )
+        fdt = datetime.datetime(*map(int, fd.FormatISODate().split("-")), *map(int, ft.FormatISOTime().split(":")))
         td, tt = date_chooser_to.GetValue(), time_chooser_to.GetValue()
-        tdt = datetime.datetime(
-            *map(int, td.FormatISODate().split("-")), *map(int, tt.FormatISOTime().split(":"))
-        )
+        tdt = datetime.datetime(*map(int, td.FormatISODate().split("-")), *map(int, tt.FormatISOTime().split(":")))
         first_index = utils.find_timestamp(loglines, fdt)
         last_index = utils.find_timestamp(loglines, tdt)
         if first_index is None or last_index is None:
             # can't parse those times
-            LOG.error(
-                "Couldn't find the first (%s) or last (%s) log line index.", first_index, last_index
-            )
+            LOG.error("Couldn't find the first (%s) or last (%s) log line index.", first_index, last_index)
             self.DialogParseFail()
             return
         LOG.debug("Times: %s -> %s", fdt, tdt)
@@ -337,11 +305,7 @@ class MenuBar(wx.MenuBar):
             message="Please wait while your logfile is parsed.",
             maximum=total_picked_lines,
             parent=self.GetParent(),
-            style=wx.PD_APP_MODAL
-            | wx.PD_AUTO_HIDE
-            | wx.PD_CAN_ABORT
-            | wx.PD_ELAPSED_TIME
-            | wx.PD_REMAINING_TIME,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME,
         )
 
         logreplay.replay_logs(picked_lines, parse_progress_dialog)
@@ -385,9 +349,7 @@ class MenuBar(wx.MenuBar):
         existing_logdir = config.LOG_DIRECTORY
         if not os.path.isdir(existing_logdir):
             existing_logdir = os.path.dirname(existing_logdir)
-        openFileDialog = wx.DirDialog(
-            self.GetParent(), "Select Log Directory", existing_logdir, wx.DD_DIR_MUST_EXIST
-        )
+        openFileDialog = wx.DirDialog(self.GetParent(), "Select Log Directory", existing_logdir, wx.DD_DIR_MUST_EXIST)
 
         result = openFileDialog.ShowModal()
         selected = openFileDialog.GetPath()
@@ -402,9 +364,7 @@ class MenuBar(wx.MenuBar):
             self.GetParent().parser_thread.start()
             if config.WX_FILESYSTEM_WATCHER is not None:
                 config.WX_FILESYSTEM_WATCHER.RemoveAll()
-                config.WX_FILESYSTEM_WATCHER.Add(
-                    config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY
-                )
+                config.WX_FILESYSTEM_WATCHER.Add(config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
 
     def OnExportTimezone(self, e: wx.MenuEvent):
         config.EXPORT_TIME_IN_EASTERN = self.export_tz_mi.IsChecked()
