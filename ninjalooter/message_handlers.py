@@ -143,6 +143,16 @@ def handle_end_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     return True
 
 
+def _check_alliance_menu_item(window, alliance):
+    try:
+        for item in window.GetMenuBar().alliance_menu.GetMenuItems():
+            if item.GetItemLabelText() == alliance:
+                item.Check()
+                return
+    except Exception:
+        LOG.exception("Failed to update alliance menu item")
+
+
 def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     name = match.group("name")
     guild = match.group("guild")
@@ -180,12 +190,10 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
         alliance = config.ALLIANCE_MAP.get(guild)
         if alliance:
             LOG.info("Updating default alliance to match operator's guild")
-            for item in window.GetMenuBar().alliance_menu.GetMenuItems():
-                if item.GetItemLabelText() == alliance:
-                    item.Check()
-                    config.DEFAULT_ALLIANCE = alliance
-                    config.CONF.set("default", "default_alliance", alliance)
-                    config.write()
+            config.DEFAULT_ALLIANCE = alliance
+            config.CONF.set("default", "default_alliance", alliance)
+            config.write()
+            wx.CallAfter(_check_alliance_menu_item, window, alliance)
 
     LOG.info("Adding player record for %s as guild %s", name, config.PLAYER_DB[name].guild)
     if config.REMEMBER_PLAYER_DATA:

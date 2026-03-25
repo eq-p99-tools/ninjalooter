@@ -60,7 +60,14 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
                 for matcher, match_func in LOG_MATCHERS.items():
                     match = matcher.match(current_line)
                     if match:
-                        result = match_func(match, window)
+                        try:
+                            result = match_func(match, window)
+                        except Exception:
+                            LOG.exception(
+                                "Error in log handler %s for line: %s",
+                                match_func.__name__,
+                                current_line,
+                            )
                         if matcher == config.MATCH_RAND1:
                             last_rand_player = result
                         break
@@ -78,24 +85,28 @@ class ParseThread(threading.Thread):
         self.loop_run.set()
 
     def run(self):
-        logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
-        config.LATEST_LOGFILE = logfile
-        config.PLAYER_NAME = name
-        LOG.info("Starting logparser thread for %s...", name)
-        self.window.SetLabel(
-            "NinjaLooter EQ Raid Manager v{version} - {name}".format(version=config.VERSION, name=name)
-        )
-        if logfile:
-            utils.alert_message(
-                "Now monitoring logs for %s" % name,
-                "A recently modified logfile was detected: %s" % os.path.basename(logfile),
+        try:
+            logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
+            config.LATEST_LOGFILE = logfile
+            config.PLAYER_NAME = name
+            LOG.info("Starting logparser thread for %s...", name)
+            wx.CallAfter(
+                self.window.SetLabel,
+                "NinjaLooter EQ Raid Manager v{version} - {name}".format(version=config.VERSION, name=name),
             )
-            parse_logfile(logfile, self.window, self.loop_run)
-        else:
-            utils.alert_message(
-                "Not monitoring any logs",
-                "No logfile detected. Please configure your EQ Log Directory via the File menu.",
-            )
+            if logfile:
+                utils.alert_message(
+                    "Now monitoring logs for %s" % name,
+                    "A recently modified logfile was detected: %s" % os.path.basename(logfile),
+                )
+                parse_logfile(logfile, self.window, self.loop_run)
+            else:
+                utils.alert_message(
+                    "Not monitoring any logs",
+                    "No logfile detected. Please configure your EQ Log Directory via the File menu.",
+                )
+        except Exception:
+            LOG.exception("ParseThread crashed")
 
     def abort(self):
         self.loop_run.clear()

@@ -416,8 +416,9 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('ninjalooter.config.WX_TASKBAR_ICON')
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('wx.PostEvent')
-    def test_handle_drop_alert(self, mock_post_event, mock_store_state,
-                               mock_taskbar_icon):
+    @mock.patch('wx.CallAfter', side_effect=lambda f, *a, **kw: f(*a, **kw))
+    def test_handle_drop_alert(self, mock_call_after, mock_post_event,
+                               mock_store_state, mock_taskbar_icon):
         config.PENDING_AUCTIONS = list()
         config.NODROP_ONLY = False
 

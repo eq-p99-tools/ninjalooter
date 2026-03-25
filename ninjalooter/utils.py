@@ -15,6 +15,7 @@ import playsound
 import pyperclip
 import pytz
 import requests
+import wx
 import xlsxwriter
 import xlsxwriter.exceptions
 from ahocorapy import keywordtree
@@ -196,7 +197,7 @@ def to_clipboard(text: str) -> None:
 def alert_message(title, message, msec=2000):
     if config.TEXT_ALERTS and config.WX_TASKBAR_ICON is not None:
         try:
-            config.WX_TASKBAR_ICON.ShowBalloon(title, message, msec)
+            wx.CallAfter(config.WX_TASKBAR_ICON.ShowBalloon, title, message, msec)
         except:  # noqa
             LOG.exception("Couldn't show alert balloon.")
 
