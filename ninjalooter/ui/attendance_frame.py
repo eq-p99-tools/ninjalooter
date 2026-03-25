@@ -38,9 +38,9 @@ class AttendanceFrame(wx.Window):
         attendance_list.SetColumns(
             [
                 ObjectListView.ColumnDefn("Time", "left", 140, "time", fixedWidth=140),
-                ObjectListView.ColumnDefn("Name", "left", 140, "tick_name", fixedWidth=140),
+                ObjectListView.ColumnDefn("Name", "left", 140, lambda x: x.tick_name or "", fixedWidth=140),
                 ObjectListView.ColumnDefn("RT", "left", 25, "raidtick_display", fixedWidth=25),
-                ObjectListView.ColumnDefn("Populations", "left", 357, "populations", fixedWidth=357),
+                ObjectListView.ColumnDefn("Populations", "left", 357, lambda x: x.populations() or "", fixedWidth=357),
             ]
         )
         attendance_list.SetObjects(config.ATTENDANCE_LOGS)

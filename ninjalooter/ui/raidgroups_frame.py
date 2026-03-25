@@ -48,7 +48,7 @@ class RaidGroupsFrame(wx.Window):
             group_list.SetColumns(
                 [
                     ObjectListView.ColumnDefn("Player", "left", 110, "name", fixedWidth=110),
-                    ObjectListView.ColumnDefn("Class", "left", 80, "pclass", fixedWidth=80),
+                    ObjectListView.ColumnDefn("Class", "left", 80, "sortclass", fixedWidth=80),
                     ObjectListView.ColumnDefn("Level", "left", 60, "level", fixedWidth=60),
                 ]
             )

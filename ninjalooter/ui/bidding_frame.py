@@ -53,7 +53,7 @@ class BiddingFrame(wx.Window):
                 ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp", fixedWidth=170),
                 ObjectListView.ColumnDefn("Reporter", "left", 95, "reporter", fixedWidth=95),
                 ObjectListView.ColumnDefn("Item", "left", 225, "name", fixedWidth=225),
-                ObjectListView.ColumnDefn("Min. DKP", "center", 61, "min_dkp", fixedWidth=61),
+                ObjectListView.ColumnDefn("Min. DKP", "center", 61, lambda x: str(x.min_dkp()), fixedWidth=61),
                 ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes", fixedWidth=85),
                 ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
             ]
@@ -113,8 +113,8 @@ class BiddingFrame(wx.Window):
                 ObjectListView.ColumnDefn("Item", "left", 215, "name", fixedWidth=215),
                 ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
                 ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-                ObjectListView.ColumnDefn("Rand/Min", "left", 70, "get_target_min", fixedWidth=70),
-                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number", fixedWidth=65),
+                ObjectListView.ColumnDefn("Rand/Min", "left", 70, lambda x: str(x.get_target_min()), fixedWidth=70),
+                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, lambda x: str(x.highest_number()), fixedWidth=65),
                 ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players", fixedWidth=90),
                 ObjectListView.ColumnDefn("Time Left", "left", 100, "time_remaining_ui", fixedWidth=100),
             ]
@@ -192,8 +192,8 @@ class BiddingFrame(wx.Window):
                 ObjectListView.ColumnDefn("Item", "left", 240, "name", fixedWidth=240),
                 ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
                 ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-                ObjectListView.ColumnDefn("Rand/Min", "left", 65, "get_target_min", fixedWidth=65),
-                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, "highest_number", fixedWidth=65),
+                ObjectListView.ColumnDefn("Rand/Min", "left", 65, lambda x: str(x.get_target_min()), fixedWidth=65),
+                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, lambda x: str(x.highest_number()), fixedWidth=65),
                 ObjectListView.ColumnDefn("Winner", "left", 108, "highest_players", fixedWidth=108),
             ]
         )

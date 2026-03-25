@@ -47,7 +47,9 @@ class PopulationFrame(wx.Window):
         population_list.SetColumns(
             [
                 ObjectListView.ColumnDefn("Name", "left", 180, "name", groupKeyGetter=popGroupKey, fixedWidth=180),
-                ObjectListView.ColumnDefn("Class", "left", 100, "pclass", groupKeyGetter=popGroupKey, fixedWidth=100),
+                ObjectListView.ColumnDefn(
+                    "Class", "left", 100, "sortclass", groupKeyGetter=popGroupKey, fixedWidth=100
+                ),
                 ObjectListView.ColumnDefn("Level", "left", 40, "level", groupKeyGetter=popGroupKey, fixedWidth=40),
                 ObjectListView.ColumnDefn("Guild", "left", 148, "guild", groupKeyGetter=popGroupKey, fixedWidth=148),
             ]
