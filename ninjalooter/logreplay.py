@@ -63,7 +63,11 @@ def replay_logs(replay_lines, progress_dialog):
         for matcher, match_func in logparse.LOG_MATCHERS.items():
             match = matcher.match(current_line)
             if match:
-                result = match_func(match, progress_dialog.Parent, True)
+                try:
+                    result = match_func(match, progress_dialog.Parent, True)
+                except Exception:
+                    LOG.exception("Failed to parse line: %s", current_line)
+                    break
                 if matcher == config.MATCH_RAND1:
                     last_rand_player = result
         if result:

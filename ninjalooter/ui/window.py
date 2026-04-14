@@ -162,6 +162,7 @@ class MainWindow(wx.Frame):
             utils.clear_alerts()
             config.WX_TASKBAR_ICON.Destroy()
             self.parser_thread.abort()
+            self.parser_thread.join(timeout=2)
             utils.store_state()
             self.Destroy()
 

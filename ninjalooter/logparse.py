@@ -79,7 +79,7 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
 class ParseThread(threading.Thread):
     # pylint: disable=no-member
     def __init__(self, window: wx.Window):
-        super().__init__()
+        super().__init__(daemon=True)
         self.window = window
         self.loop_run = threading.Event()
         self.loop_run.set()
@@ -107,6 +107,18 @@ class ParseThread(threading.Thread):
                 )
         except Exception:
             LOG.exception("ParseThread crashed")
+            if self.loop_run.is_set():
+                utils.alert_message(
+                    "Log Parser Crashed",
+                    "The log monitoring thread has stopped "
+                    "unexpectedly. Restarting...",
+                )
+                wx.CallAfter(self._restart)
+
+    def _restart(self):
+        new_thread = ParseThread(self.window)
+        self.window.parser_thread = new_thread
+        new_thread.start()
 
     def abort(self):
         self.loop_run.clear()

@@ -54,7 +54,7 @@ def download_and_unpack(url: str):
         with io.BytesIO() as bio:
             downloaded = 0
             cancelled = False
-            for data in zip_data.iter_content(chunk_size=int(size / 100)):
+            for data in zip_data.iter_content(chunk_size=max(int(size / 100), 8192)):
                 bio.write(data)
                 downloaded += len(data)
                 pd.Update(downloaded)

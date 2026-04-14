@@ -1147,3 +1147,5 @@ def apply_custom_overrides():
         EXTRA_ITEM_DATA.update(override_data)
     except FileNotFoundError:
         pass
+    except Exception:
+        LOG.exception("Failed to load custom overrides from item_data.json")

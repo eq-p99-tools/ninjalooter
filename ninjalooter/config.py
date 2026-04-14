@@ -14,8 +14,8 @@ SEMVER = semver.VersionInfo(
     major=1,
     minor=17,
     patch=0,
-    prerelease="rc4",
-    build="console",
+    prerelease=None,
+    build=None,
 )
 VERSION = str(SEMVER)
 

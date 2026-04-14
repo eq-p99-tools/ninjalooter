@@ -923,12 +923,16 @@ class Auction(DictEquals):
             self._alert_timer.start()
 
     def _do_alert(self):
-        # import at runtime rather than on load to avoid circular error
-        from ninjalooter import utils  # noqa: PLC0415
+        try:
+            # import at runtime rather than on load to avoid circular error
+            from ninjalooter import utils  # noqa: PLC0415
 
-        utils.alert_message("Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name)
-        config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
-        utils.alert_sound(config.AUC_EXPIRING_SOUND)
+            utils.alert_message("Auction Ending Soon", "The auction for '%s' is ending soon!" % self.item.name)
+            if self._alert_timer in config.AUCTION_ALERT_TIMERS:
+                config.AUCTION_ALERT_TIMERS.remove(self._alert_timer)
+            utils.alert_sound(config.AUC_EXPIRING_SOUND)
+        except Exception:
+            LOG.exception("Error in auction alert timer callback")
 
     def add(self, number: int, player: str) -> bool:
         raise NotImplementedError()

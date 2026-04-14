@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ninjalooter"
-version = "0.1.0"
+version = "1.17.0"
 description = "Track loot drops/bidding for raids"
 authors = [
     { name = "Adam Harwell" },
@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
     "ahocorapy",
     "wxPython",
-    "ObjectListView3",
+    "ObjectListView3 @ git+https://github.com/rm-you/ObjectListView3.git",
     "pyperclip",
     "python-dateutil",
     "XlsxWriter",

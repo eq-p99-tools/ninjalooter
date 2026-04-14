@@ -391,3 +391,32 @@ class TestUtils(base.NLTestBase):
         config.PENDING_AUCTIONS = ['sentinel']
         utils.load_state(state_file='nonexistent_file_12345.json')
         self.assertEqual(['sentinel'], config.PENDING_AUCTIONS)
+
+    def test_export_to_eqdkp_distinct_sheets_for_case_only_tick_names(self):
+        """Excel sheet names are unique case-insensitively; export must disambiguate."""
+        config.RESTRICT_EXPORT = False
+        base_time = datetime.datetime(2020, 8, 16, 22, 46, 32)
+        player = models.Player("Jim", level=50, pclass="Warrior", guild="Venerate")
+        log = {"Jim": player}
+        wholog_a = models.WhoLog(
+            base_time,
+            log,
+            raidtick=True,
+            tick_name="LadyVox",
+        )
+        wholog_b = models.WhoLog(
+            base_time + datetime.timedelta(seconds=1),
+            log,
+            raidtick=True,
+            tick_name="ladyvox",
+        )
+        config.ATTENDANCE_LOGS = [wholog_a, wholog_b]
+
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+            path = tmp.name
+        try:
+            result = utils.export_to_eqdkp(path)
+            self.assertTrue(result)
+            self.assertGreater(os.path.getsize(path), 0)
+        finally:
+            os.unlink(path)

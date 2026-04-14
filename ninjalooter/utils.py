@@ -396,33 +396,36 @@ def load_state(state_file=config.SAVE_STATE_FILE):
 
 
 def store_state(backup=False):
-    statefile_name = config.SAVE_STATE_FILE
-    if backup and config.BACKUP_ON_CLEAR:
-        now = datetime.datetime.now()
-        timestr = now.isoformat().replace(":", "-").split(".")[0]
-        statefile_name = "state_{}.json".format(timestr)
+    try:
+        statefile_name = config.SAVE_STATE_FILE
+        if backup and config.BACKUP_ON_CLEAR:
+            now = datetime.datetime.now()
+            timestr = now.isoformat().replace(":", "-").split(".")[0]
+            statefile_name = "state_{}.json".format(timestr)
 
-    json_state = {
-        "PENDING_AUCTIONS": config.PENDING_AUCTIONS,
-        "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
-        "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
-        "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
-        "LAST_WHO_SNAPSHOT": config.LAST_WHO_SNAPSHOT,
-        "WX_LAST_WHO_SNAPSHOT": config.WX_LAST_WHO_SNAPSHOT,
-        "PLAYER_DB": config.PLAYER_DB,
-        "ATTENDANCE_LOGS": config.ATTENDANCE_LOGS,
-        "KILL_TIMERS": config.KILL_TIMERS,
-        "CREDITT_LOG": config.CREDITT_LOG,
-        "GRATSS_LOG": config.GRATSS_LOG,
-        "CREDITT_SASH_POS": config.CREDITT_SASH_POS,
-        "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
-        "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
-        "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
-        "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
-        "TAB_SELECTION": config.TAB_SELECTION,
-    }
-    with open(statefile_name, "w") as ssfp:
-        json.dump(json_state, ssfp, cls=JSONEncoder)
+        json_state = {
+            "PENDING_AUCTIONS": config.PENDING_AUCTIONS,
+            "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
+            "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
+            "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
+            "LAST_WHO_SNAPSHOT": config.LAST_WHO_SNAPSHOT,
+            "WX_LAST_WHO_SNAPSHOT": config.WX_LAST_WHO_SNAPSHOT,
+            "PLAYER_DB": config.PLAYER_DB,
+            "ATTENDANCE_LOGS": config.ATTENDANCE_LOGS,
+            "KILL_TIMERS": config.KILL_TIMERS,
+            "CREDITT_LOG": config.CREDITT_LOG,
+            "GRATSS_LOG": config.GRATSS_LOG,
+            "CREDITT_SASH_POS": config.CREDITT_SASH_POS,
+            "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
+            "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
+            "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
+            "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
+            "TAB_SELECTION": config.TAB_SELECTION,
+        }
+        with open(statefile_name, "w") as ssfp:
+            json.dump(json_state, ssfp, cls=JSONEncoder)
+    except Exception:
+        LOG.exception("Failed to store state.")
 
 
 def eastern_time_offset():
@@ -594,6 +597,12 @@ def parse_tick_for_export(wholog):
     return tick_lines
 
 
+def _workbook_sheet_name_taken_case_insensitive(workbook, name: str) -> bool:
+    """True if workbook already has a sheet whose name matches case-insensitively."""
+    key = name.lower()
+    return any(sn.lower() == key for sn in workbook.sheetnames)
+
+
 def export_to_eqdkp(filename):
     LOG.info("Exporting to EQDKP file: %s", filename)
 
@@ -661,7 +670,7 @@ def export_to_eqdkp(filename):
             sheet_name = sheet_name.replace("*", "")
         else:
             sheet_name = alt_sheet_name
-        while sheet_name in workbook.sheetnames:
+        while _workbook_sheet_name_taken_case_insensitive(workbook, sheet_name):
             suffix_match = re.search(r"(\d+)$", sheet_name)
             if suffix_match:
                 num = int(suffix_match.group(1))
@@ -676,7 +685,7 @@ def export_to_eqdkp(filename):
         # Write /who logs
         for row, line in enumerate(tick):
             worksheet.write_string(row, 0, line)
-            sheet_rows[sheet_name] = row + 1
+            sheet_rows[worksheet.name] = row + 1
     # If there weren't any ticks, just make one sheet to hold loot
     if not sheets and closed_loots:
         sheets["Loot"] = workbook.add_worksheet("Loot")
