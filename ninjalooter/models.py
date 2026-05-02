@@ -977,6 +977,9 @@ class Auction(DictEquals):
         min_bid_time = datetime.timedelta(seconds=config.MIN_BID_TIME)
         return max(min_bid_time - elapsed, datetime.timedelta(0))
 
+    def time_remaining_seconds(self) -> int:
+        return int(self.time_remaining().total_seconds())
+
     def time_remaining_text(self) -> str:
         if self.time_remaining().seconds <= FEW_MOMENTS_THRESHOLD:
             return "a few moments"

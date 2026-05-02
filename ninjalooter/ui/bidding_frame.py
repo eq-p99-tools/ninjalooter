@@ -116,7 +116,10 @@ class BiddingFrame(wx.Window):
                 ObjectListView.ColumnDefn("Rand/Min", "left", 70, lambda x: str(x.get_target_min()), fixedWidth=70),
                 ObjectListView.ColumnDefn("Bid/Roll", "left", 65, lambda x: str(x.highest_number()), fixedWidth=65),
                 ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players", fixedWidth=90),
-                ObjectListView.ColumnDefn("Time Left", "left", 100, "time_remaining_ui", fixedWidth=100),
+                ObjectListView.ColumnDefn(
+                    "Time Left", "left", 100, "time_remaining_seconds",
+                    fixedWidth=100, stringConverter=lambda s: "{}m{:02d}s".format(s // 60, s % 60) if s >= 60 else "{}s".format(s),
+                ),
             ]
         )
         active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
@@ -242,15 +245,20 @@ class BiddingFrame(wx.Window):
         parent.AddPage(self, "Bidding")
 
     def refresh_active_list(self, event):
-        self.active_list.RefreshObjects(list(config.ACTIVE_AUCTIONS.values()))
+        selected = self.active_list.GetSelectedObject()
+        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
+        if selected is not None:
+            self.active_list.SelectObject(selected, ensureVisible=False)
 
         # https://www.youtube.com/watch?v=d3D7Y_ycSms
         DANGER_ZONE = config.MIN_BID_TIME / 3
-
         WARNING_ZONE = config.MIN_BID_TIME / 3 * 2
 
-        for idx, obj in enumerate(self.active_list.GetObjects()):
-            remaining = obj.time_remaining().seconds
+        for idx in range(self.active_list.GetItemCount()):
+            obj = self.active_list.GetObjectAt(idx)
+            if obj is None:
+                continue
+            remaining = obj.time_remaining().total_seconds()
             if remaining < DANGER_ZONE:
                 self.active_list.SetItemBackgroundColour(idx, config.DANGER_COLOR)
             elif remaining < WARNING_ZONE:
