@@ -30,6 +30,7 @@ dependencies = [
     "semver",
     "markdown2",
     "pytz",
+    "watchdog>=4.0.0",
 ]
 
 [project.optional-dependencies]

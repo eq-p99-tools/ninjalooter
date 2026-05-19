@@ -45,7 +45,13 @@ def parse_logfile(logfile: str, run: threading.Event):
             pos = lfp.tell()
             lines = lfp.readlines()
             if not lines:
+                # On Windows, TextIOWrapper can cache EOF state internally.
+                # Seeking to current pos via the underlying buffer forces a
+                # reset of the read-ahead buffer so new appended data is seen.
+                lfp.buffer.seek(pos)
                 lfp.seek(pos)
+                time.sleep(0.1)
+                continue
             last_rand_player = None
             for raw_line in lines:
                 current_line = raw_line.strip()

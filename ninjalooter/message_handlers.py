@@ -280,6 +280,14 @@ def handle_bid(match: re.Match, skip_store=False) -> bool:
         return False
     item = found_items[0]
 
+    # Proxy bid: check if text contains a known character name from PLAYER_DB
+    remaining = text.lower().replace(item.lower(), "").replace(str(bid), "", 1)
+    for word in remaining.split():
+        candidate = word.capitalize()
+        if candidate in config.PLAYER_DB and candidate != name:
+            name = candidate
+            break
+
     for auc_item in config.ACTIVE_AUCTIONS.values():
         if item.lower() == auc_item.name().lower():
             if not isinstance(auc_item, models.DKPAuction):

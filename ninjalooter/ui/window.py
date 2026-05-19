@@ -1,8 +1,7 @@
 import os
-import sys
 
 import semver
-from PySide6.QtCore import QFileSystemWatcher, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QShowEvent
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -14,6 +13,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from ninjalooter import autoupdate, config, logger, logparse, utils
 from ninjalooter.app_signals import signals
@@ -29,6 +30,24 @@ from ninjalooter.ui import (
 from ninjalooter.ui.theme import apply_windows_window_frame, semantic
 
 LOG = logger.getLogger(__name__)
+
+
+class _LogDirHandler(FileSystemEventHandler):
+    """Watchdog handler that triggers log file swap check on modifications."""
+
+    def __init__(self, window):
+        super().__init__()
+        self._window = window
+
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        self._window._on_filesystem_event()
+
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        self._window._on_filesystem_event()
 
 
 class MainWindow(QMainWindow):
@@ -102,13 +121,10 @@ class MainWindow(QMainWindow):
         config.PARSER_THREAD = logparse.ParseThread()
         config.PARSER_THREAD.start()
 
-        # Filesystem watcher for auto-detecting new log files (Windows only)
-        self._fs_watcher = None
-        if sys.platform == "win32":
-            self._fs_watcher = QFileSystemWatcher(self)
-            if os.path.isdir(config.LOG_DIRECTORY):
-                self._fs_watcher.addPath(config.LOG_DIRECTORY)
-            self._fs_watcher.directoryChanged.connect(self._on_filesystem_event)
+        # Filesystem watcher for auto-detecting new/changed log files
+        self._log_observer = None
+        if os.path.isdir(config.LOG_DIRECTORY):
+            self._start_log_observer(config.LOG_DIRECTORY)
 
         # Show changelog on version bump
         try:
@@ -136,13 +152,18 @@ class MainWindow(QMainWindow):
         self._tray_aot_action.setChecked(config.ALWAYS_ON_TOP)
 
     def update_fs_watcher(self, new_dir: str):
-        if self._fs_watcher is None:
-            return
-        paths = self._fs_watcher.directories()
-        if paths:
-            self._fs_watcher.removePaths(paths)
+        if self._log_observer is not None:
+            self._log_observer.stop()
+            self._log_observer = None
         if os.path.isdir(new_dir):
-            self._fs_watcher.addPath(new_dir)
+            self._start_log_observer(new_dir)
+
+    def _start_log_observer(self, directory: str):
+        handler = _LogDirHandler(self)
+        self._log_observer = Observer(timeout=1)
+        self._log_observer.schedule(handler, directory, recursive=False)
+        self._log_observer.daemon = True
+        self._log_observer.start()
 
     def restart_parser(self):
         if config.PARSER_THREAD:
@@ -157,7 +178,7 @@ class MainWindow(QMainWindow):
         self.update_always_on_top()
         self._menu_bar.sync_always_on_top()
 
-    def _on_filesystem_event(self, path: str):  # noqa: ARG002
+    def _on_filesystem_event(self):
         if not config.AUTO_SWAP_LOGFILE:
             return
         logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)

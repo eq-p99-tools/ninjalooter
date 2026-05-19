@@ -598,6 +598,78 @@ class TestMessageHandlers(base.NLTestBase):
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_bid_proxy(self, mock_signals, mock_store_state):
+        config.PLAYER_DB = {
+            'Jim': models.Player('Jim', None, None, 'Venerate'),
+            'Pim': models.Player('Pim', None, None, 'Castle'),
+            'Tim': models.Player('Tim', None, None, 'Kingdom'),
+            'Otherchar': models.Player('Otherchar', None, None, 'Venerate'),
+        }
+        config.LAST_WHO_SNAPSHOT = {
+            'Jim': models.Player('Jim', None, None, 'Venerate'),
+        }
+        config.RESTRICT_BIDS = False
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        disc_auction = models.DKPAuction(itemdrop, 'VCR')
+        config.ACTIVE_AUCTIONS = {
+            itemdrop.uuid: disc_auction
+        }
+
+        # Proxy bid: known player name after the bid number
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 10 Otherchar'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertTrue(result)
+        self.assertIn(('Otherchar', 10), disc_auction.highest())
+        mock_signals.bid.emit.assert_called_once()
+        mock_signals.bid.emit.reset_mock()
+
+        # Proxy bid: known player name before the item
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Pim Copper Disc 11'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertTrue(result)
+        self.assertIn(('Pim', 11), disc_auction.highest())
+        mock_signals.bid.emit.assert_called_once()
+        mock_signals.bid.emit.reset_mock()
+
+        # Proxy bid: known player name with DKP noise word
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 12 DKP Tim'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertTrue(result)
+        self.assertIn(('Tim', 12), disc_auction.highest())
+        mock_signals.bid.emit.assert_called_once()
+        mock_signals.bid.emit.reset_mock()
+
+        # No proxy: unknown word is not treated as a player
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 13 DKP'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertTrue(result)
+        self.assertIn(('Jim', 13), disc_auction.highest())
+        mock_signals.bid.emit.assert_called_once()
+        mock_signals.bid.emit.reset_mock()
+
+        # No proxy: sender's own name in text is not treated as proxy
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Copper Disc 14 Jim'")
+        match = config.MATCH_BID_AUC.match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertTrue(result)
+        self.assertIn(('Jim', 14), disc_auction.highest())
+        mock_signals.bid.emit.assert_called_once()
+        mock_signals.bid.emit.reset_mock()
+
+        config.ACTIVE_AUCTIONS.clear()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_gratss(self, mock_signals, mock_store_state):
         config.PENDING_AUCTIONS.clear()
         config.ACTIVE_AUCTIONS.clear()
