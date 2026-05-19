@@ -6,9 +6,9 @@ import re
 import threading
 
 import dateutil.parser
-import wx
 
 from ninjalooter import config, extra_data, logger, models, utils
+from ninjalooter.app_signals import signals
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -30,13 +30,13 @@ AWARD_MESSAGE_MATCHER = re.compile(AWARD_MESSAGE_MATCHER)
 NUMBER_MATCHER = re.compile(r".*\d.*")
 
 
-def handle_raidtick(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_raidtick(match: re.Match, skip_store=False) -> bool:
     tick_time = match.group("time")
     config.LAST_RAIDTICK = dateutil.parser.parse(tick_time)
     return True
 
 
-def handle_creditt(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_creditt(match: re.Match, skip_store=False) -> bool:
     time = match.group("time")
     user = match.group("from")
     message = match.group("message")
@@ -45,11 +45,11 @@ def handle_creditt(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     raw_message = raw_message.replace(")", "}")
     creddit_entry = models.CredittLog(time, user, message, raw_message)
     config.CREDITT_LOG.append(creddit_entry)
-    wx.PostEvent(window, models.CredittEvent())
+    signals.creditt.emit()
     return True
 
 
-def handle_gratss(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_gratss(match: re.Match, skip_store=False) -> bool:
     time = match.group("time")
     user = match.group("from")
     message = match.group("message")
@@ -61,7 +61,6 @@ def handle_gratss(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
         for old_auction in config.HISTORICAL_AUCTIONS.values():
             # there were no bids on the auction, and this message is for ROT
             if not old_auction.highest() and award_match.group("name") == "ROT" and int(award_match.group("dkp")) == 0:
-                # don't count this item
                 return False
             # there was a bid and it matches player/dkp and item name
             if (
@@ -73,18 +72,17 @@ def handle_gratss(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                 )
                 and old_auction.item.name == award_match.group("item")
             ):
-                # don't count this item
                 return False
     gratss_entry = models.GratssLog(time, user, message, raw_message)
     config.GRATSS_LOG.append(gratss_entry)
-    wx.PostEvent(window, models.GratssEvent())
+    signals.gratss.emit()
     return True
 
 
 # pylint: disable=unused-argument
-def handle_start_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_start_who(match: re.Match, skip_store=False) -> bool:
     config.LAST_WHO_SNAPSHOT.clear()
-    wx.PostEvent(window, models.ClearWhoEvent())
+    signals.clear_who.emit()
     return True
 
 
@@ -106,7 +104,7 @@ def raidtick_reminder_alert() -> None:
         LOG.exception("Error in raidtick reminder alert callback")
 
 
-def handle_end_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_end_who(match: re.Match, skip_store=False) -> bool:
     who_time = match.group("time")
     zone = match.group("zone")
     if zone.lower() == "everquest":
@@ -131,7 +129,6 @@ def handle_end_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
             LOG.info("Not remembering player: %s", config.LAST_WHO_SNAPSHOT[name])
     log_entry = models.WhoLog(time=parsed_time, log=who_snapshot, raidtick=raidtick_who, zone=zone)
     if raidtick_who:
-        # Give audio confirmation of the RaidTick detection
         utils.alert_sound(config.NEW_RAIDTICK_SOUND)
         utils.alert_message(
             "RaidTick Recorded",
@@ -139,24 +136,14 @@ def handle_end_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
             "your alliance." % (len(log_entry.log), log_entry.alliance_count()),
         )
     config.ATTENDANCE_LOGS.append(log_entry)
-    wx.PostEvent(window, models.WhoHistoryEvent())
-    wx.PostEvent(window, models.WhoEndEvent())
+    signals.who_history.emit()
+    signals.who_end.emit()
     if not skip_store:
         utils.store_state()
     return True
 
 
-def _check_alliance_menu_item(window, alliance):
-    try:
-        for item in window.GetMenuBar().alliance_menu.GetMenuItems():
-            if item.GetItemLabelText() == alliance:
-                item.Check()
-                return
-    except Exception:
-        LOG.exception("Failed to update alliance menu item")
-
-
-def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_who(match: re.Match, skip_store=False) -> bool:
     name = match.group("name")
     guild = match.group("guild")
     pclass = match.group("class") or ""
@@ -196,7 +183,7 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
             config.DEFAULT_ALLIANCE = alliance
             config.CONF.set("default", "default_alliance", alliance)
             config.write()
-            wx.CallAfter(_check_alliance_menu_item, window, alliance)
+            signals.alliance_changed.emit(alliance)
 
     LOG.info("Adding player record for %s as guild %s", name, config.PLAYER_DB[name].guild)
     if config.REMEMBER_PLAYER_DATA:
@@ -204,11 +191,15 @@ def handle_who(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     else:
         config.LAST_WHO_SNAPSHOT[name] = models.Player(name, pclass, level, guild)
         LOG.info("Not remembering player: %s", config.LAST_WHO_SNAPSHOT[name])
-    wx.PostEvent(window, models.WhoEvent(name, pclass, level, guild))
+    try:
+        level_int = int(level)
+    except (ValueError, TypeError):
+        level_int = 0
+    signals.who.emit(name, pclass, level_int, guild or "")
     return True
 
 
-def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
+def handle_drop(match: re.Match, skip_store=False) -> list:
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
@@ -220,11 +211,9 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
         LOG.info("Ignoring drop message that matches Gratss")
         return list()
     if NUMBER_MATCHER.match(text):
-        # line contains a number, it's probably a bid, ignore it
         LOG.info("Ignoring drop message with a number, probably a bid")
         return list()
     if config.RESTRICT_BIDS and guild and guild not in config.ALLIANCE_MAP:
-        # Some other guild is talking, discard line
         LOG.info("Ignoring ooc from guild %s", guild)
         return list()
 
@@ -262,7 +251,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     if not found_items:
         return list()
     if used_found_items:
-        wx.PostEvent(window, models.DropEvent())
+        signals.drop.emit()
         utils.alert_message("New Drops Detected", "\n".join(["\u00a0\u2022 %s" % drop for drop in used_found_items]))
         utils.alert_sound(config.NEW_DROP_SOUND)
     if not skip_store:
@@ -270,7 +259,7 @@ def handle_drop(match: re.Match, window: wx.Frame, skip_store=False) -> list:
     return found_items
 
 
-def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_bid(match: re.Match, skip_store=False) -> bool:
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME
@@ -284,11 +273,9 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
 
     found_items = utils.get_items_from_text(text)
     if not found_items:
-        # No item found in auction
         LOG.info("%s might have attempted to bid but no item name found: %s", name, text)
         return False
     if len(found_items) > 1:
-        # Can't bid on two items at once
         LOG.info("%s attempted to bid for two items at once: %s", name, found_items)
         return False
     item = found_items[0]
@@ -299,7 +286,6 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                 LOG.info("Ignoring bid by %s because `%s` is a random auction.", name, item)
                 return False
             if config.RESTRICT_BIDS and guild and alliance != auc_item.alliance:
-                # Player is not in the correct alliance
                 LOG.info(
                     "%s attempted to bid for %s, but is in the wrong guild/alliance: %s/%s",
                     name,
@@ -309,7 +295,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                 )
                 return False
             result = auc_item.add(bid, name)
-            wx.PostEvent(window, models.BidEvent(auc_item))
+            signals.bid.emit(auc_item)
             # pylint: disable=protected-access
             if (
                 config.SECOND_MAIN_REMINDER_DKP
@@ -338,7 +324,7 @@ def handle_bid(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     return False
 
 
-def handle_auc_start(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_auc_start(match: re.Match, skip_store=False) -> bool:
     LOG.warning("AUCTION START for %s", match.groupdict())
     message_time = dateutil.parser.parse(match.group("time"))
     item_name = match.group("item")
@@ -370,6 +356,7 @@ def handle_auc_start(match: re.Match, window: wx.Frame, skip_store=False) -> boo
             )
             config.HISTORICAL_AUCTIONS.pop(historical_auc.item.uuid)
             config.ACTIVE_AUCTIONS[historical_auc.item.uuid] = historical_auc
+            signals.auction_started.emit()
             return True
         LOG.debug(
             "Failed to find historical auction for %s/%s/%s.",
@@ -401,13 +388,11 @@ def handle_auc_start(match: re.Match, window: wx.Frame, skip_store=False) -> boo
     if "player" in match.groupdict() and match.group("player") is not None and match.group("bid") is not None:
         auc.bids[int(match.group("bid"))] = match.group("player")
 
-    window.bidding_frame.pending_list.SetObjects(config.PENDING_AUCTIONS)
-    window.bidding_frame.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-    window.bidding_frame.active_list.SelectObject(auc)
+    signals.auction_started.emit()
     return True
 
 
-def handle_auc_end(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_auc_end(match: re.Match, skip_store=False) -> bool:
     LOG.warning("AUCTION END for %s", match.groupdict())
     item_name = match.group("item")
     active_item = None
@@ -421,17 +406,15 @@ def handle_auc_end(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
 
     config.HISTORICAL_AUCTIONS[active_item.item.uuid] = active_item
     config.ACTIVE_AUCTIONS.pop(active_item.item.uuid)
-    window.bidding_frame.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-    window.bidding_frame.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-    window.bidding_frame.history_list.SelectObject(active_item)
+    signals.auction_completed.emit()
     return True
 
 
-def handle_rand1(match: re.Match, window: wx.Frame, skip_store=False) -> str:
+def handle_rand1(match: re.Match, skip_store=False) -> str:
     return match.group("name")
 
 
-def handle_rand2(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_rand2(match: re.Match, skip_store=False) -> bool:
     name = match.group("name")
     rand_from = int(match.group("from"))
     rand_to = int(match.group("to"))
@@ -442,7 +425,7 @@ def handle_rand2(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
                 LOG.info("%s rolled from %d instead of 0, not counting it.", name, rand_from)
                 return False
             item_obj.add(rand_result, name)
-            wx.PostEvent(window, models.BidEvent(item_obj))
+            signals.bid.emit(item_obj)
             if not skip_store:
                 utils.store_state()
             return True
@@ -450,13 +433,12 @@ def handle_rand2(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
     return False
 
 
-def handle_kill(match: re.Match, window: wx.Frame, skip_store=False) -> bool:
+def handle_kill(match: re.Match, skip_store=False) -> bool:
     time = match.group("time")
     victim = match.group("victim")
-    # if victim in extra_data.TIMER_MOBS:
     kt_obj = models.KillTimer(time, victim)
     config.KILL_TIMERS.append(kt_obj)
-    wx.PostEvent(window, models.KillEvent())
+    signals.kill.emit()
     if not skip_store:
         utils.store_state()
     return True

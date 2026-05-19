@@ -15,12 +15,12 @@ import playsound
 import pyperclip
 import pytz
 import requests
-import wx
 import xlsxwriter
 import xlsxwriter.exceptions
 from ahocorapy import keywordtree
 
 from ninjalooter import config, logger, models
+from ninjalooter.app_signals import signals
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -195,11 +195,11 @@ def to_clipboard(text: str) -> None:
 
 
 def alert_message(title, message, msec=2000):
-    if config.TEXT_ALERTS and config.WX_TASKBAR_ICON is not None:
+    if config.TEXT_ALERTS:
         try:
-            wx.CallAfter(config.WX_TASKBAR_ICON.ShowBalloon, title, message, msec)
+            signals.alert.emit(title, message, msec)
         except:  # noqa
-            LOG.exception("Couldn't show alert balloon.")
+            LOG.exception("Couldn't emit alert signal.")
 
 
 def alert_sound(soundfile, block=False):
@@ -409,7 +409,6 @@ def store_state(backup=False):
             "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
             "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
             "LAST_WHO_SNAPSHOT": config.LAST_WHO_SNAPSHOT,
-            "WX_LAST_WHO_SNAPSHOT": config.WX_LAST_WHO_SNAPSHOT,
             "PLAYER_DB": config.PLAYER_DB,
             "ATTENDANCE_LOGS": config.ATTENDANCE_LOGS,
             "KILL_TIMERS": config.KILL_TIMERS,

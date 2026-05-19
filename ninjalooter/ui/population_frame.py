@@ -1,202 +1,224 @@
-# pylint: disable=no-member,invalid-name,unused-argument
-# pylint: disable=too-many-locals,too-many-statements
-import math
+from __future__ import annotations
 
-import ObjectListView3 as ObjectListView
-import wx
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ninjalooter import config, models, utils
+from ninjalooter import config, utils
+from ninjalooter.app_signals import signals
+from ninjalooter.models import Player, PopulationPreview
+from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
 
 
-class PopulationFrame(wx.Window):
-    def __init__(self, parent: wx.Notebook, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        parent.GetParent().Connect(-1, -1, models.EVT_WHO, self.OnWho)
-        parent.GetParent().Connect(-1, -1, models.EVT_CLEAR_WHO, self.OnClearWho)
-        parent.GetParent().Connect(-1, -1, models.EVT_WHO_END, self.ResetPopPreview)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR, self.OnClearApp)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD, self.OnReloadApp)
+class PopulationFrame(QWidget):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
 
-        self.player_affiliations = config.WX_LAST_WHO_SNAPSHOT or list()
-        config.WX_LAST_WHO_SNAPSHOT = self.player_affiliations
-        self.pop_adjustments = dict()
-        self.pop_preview = list()
+        self._alliance_spinners: dict[str, QSpinBox] = {}
+        self._pop_overrides: dict[str, int] = {}
 
-        ##########################
-        # Population Frame (Tab 3)
-        ##########################
-        label_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
-        population_main_box = wx.BoxSizer(wx.VERTICAL)
+        root = QHBoxLayout(self)
+        root.setContentsMargins(6, 6, 6, 6)
 
-        population_label = wx.StaticText(self, label="Population Count", style=wx.ALIGN_LEFT)
-        population_label.SetFont(label_font)
-        population_main_box.Add(population_label, flag=wx.LEFT | wx.TOP, border=10)
-        population_box = wx.BoxSizer(wx.HORIZONTAL)
-        population_main_box.Add(population_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10)
+        # --- Left: player table ---
+        left = QVBoxLayout()
 
-        # List
-        population_list = ObjectListView.GroupListView(
-            self, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(625, 1200), useExpansionColumn=True
+        pop_label = QLabel("Population Count")
+        pop_font = pop_label.font()
+        pop_font.setBold(True)
+        pop_label.setFont(pop_font)
+        left.addWidget(pop_label)
+
+        self._player_table = ObjectTableView(
+            columns=[
+                ColumnDefn("Name", "name", width=130),
+                ColumnDefn("Class", "pclass", width=100),
+                ColumnDefn("Level", "level", width=50),
+                ColumnDefn("Guild", "guild", width=130),
+            ],
+            parent=self,
+            sortable=True,
+            single_select=True,
         )
-        population_box.Add(population_list, flag=wx.EXPAND | wx.ALL)
-        self.population_list = population_list
+        left.addWidget(self._player_table)
+        root.addLayout(left, stretch=3)
 
-        def popGroupKey(player):
-            return config.ALLIANCE_MAP.get(player.guild, player.guild or "")
+        # --- Right: adjustments + preview ---
+        right = QVBoxLayout()
+        right.setContentsMargins(6, 0, 0, 0)
+        root.addLayout(right, stretch=1)
 
-        population_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Name", "left", 180, "name", groupKeyGetter=popGroupKey, fixedWidth=180),
-                ObjectListView.ColumnDefn(
-                    "Class", "left", 100, "sortclass", groupKeyGetter=popGroupKey, fixedWidth=100
-                ),
-                ObjectListView.ColumnDefn("Level", "left", 40, "level", groupKeyGetter=popGroupKey, fixedWidth=40),
-                ObjectListView.ColumnDefn("Guild", "left", 148, "guild", groupKeyGetter=popGroupKey, fixedWidth=148),
-            ]
-        )
-        population_list.SetObjects(self.player_affiliations)
-        population_list.SetEmptyListMsg("No player affiliation data loaded.\nPlease type `/who` ingame.")
+        adj_label = QLabel("Adjustments")
+        adj_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        font = adj_label.font()
+        font.setBold(True)
+        adj_label.setFont(font)
+        right.addWidget(adj_label)
 
-        # Buttons / Adjustments
-        population_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        population_box.Add(population_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-
-        # Autogenerate adjustments for each Alliance
-        adj_alliance_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
-        adj_alliance_header = wx.StaticText(self, label="Adjustments:")
-        adj_alliance_header.SetFont(adj_alliance_font)
-        population_buttons_box.Add(adj_alliance_header, flag=wx.BOTTOM, border=10)
         for alliance in config.ALLIANCES:
-            adj_alliance_box = wx.GridBagSizer(1, 2)
-            adj_alliance_label = wx.StaticText(self, label=alliance, size=(100, 20), style=wx.ALIGN_RIGHT)
-            adj_alliance_label.SetFont(adj_alliance_font)
-            adj_alliance_spinner = wx.SpinCtrl(self, value="0")
-            adj_alliance_spinner.SetRange(-1000, 1000)  # Why limit things? :D
-            adj_alliance_spinner.Bind(wx.EVT_SPINCTRL, self.ResetPopPreview)
-            self.pop_adjustments[alliance] = adj_alliance_spinner
-            adj_alliance_box.Add(adj_alliance_label, pos=(0, 0), flag=wx.RIGHT | wx.TOP, border=3)
-            adj_alliance_box.Add(adj_alliance_spinner, pos=(0, 1), flag=wx.LEFT, border=7)
-            population_buttons_box.Add(adj_alliance_box, flag=wx.BOTTOM | wx.EXPAND, border=10)
+            row = QHBoxLayout()
+            lbl = QLabel(alliance)
+            lbl.setMinimumWidth(80)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            lbl_font = lbl.font()
+            lbl_font.setBold(True)
+            lbl.setFont(lbl_font)
+            spinner = QSpinBox()
+            spinner.setRange(-999, 999)
+            spinner.setValue(0)
+            spinner.valueChanged.connect(lambda _val, a=alliance: self._on_spinner_changed(a))
+            self._alliance_spinners[alliance] = spinner
+            row.addWidget(lbl)
+            row.addWidget(spinner)
+            right.addLayout(row)
 
-        # Small Pop-List Display
-        population_preview_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL, size=wx.Size(120, 140)
+        self._preview_table = ObjectTableView(
+            columns=[
+                ColumnDefn("Alliance", "alliance", width=120),
+                ColumnDefn("Pop", "population", width=60),
+            ],
+            parent=self,
+            sortable=False,
+            single_select=True,
         )
-        population_buttons_box.Add(population_preview_list, flag=wx.EXPAND | wx.ALL)
-        self.population_preview_list = population_preview_list
+        self._preview_table.setMaximumHeight(180)
+        right.addWidget(self._preview_table, stretch=1)
 
-        population_preview_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Alliance", "left", 125, "alliance", fixedWidth=125),
-                ObjectListView.ColumnDefn("Pop", "left", 40, "population", fixedWidth=40),
-            ]
+        btn_row1 = QHBoxLayout()
+        btn_half = QPushButton("1/2")
+        btn_zero = QPushButton("Zero")
+        btn_reset = QPushButton("Reset")
+        btn_half.clicked.connect(self._halve_extras)
+        btn_zero.clicked.connect(self._zero_extras)
+        btn_reset.clicked.connect(self._reset_extras)
+        btn_row1.addWidget(btn_half)
+        btn_row1.addWidget(btn_zero)
+        btn_row1.addWidget(btn_reset)
+        right.addLayout(btn_row1)
+
+        btn_copy_pop = QPushButton("Copy Populations")
+        btn_copy_roll = QPushButton("Copy Roll Text")
+        btn_copy_pop.clicked.connect(self._copy_populations)
+        btn_copy_roll.clicked.connect(self._copy_roll_text)
+        right.addWidget(btn_copy_pop)
+        right.addWidget(btn_copy_roll)
+
+        right.addStretch()
+
+        # --- Signals ---
+        signals.who.connect(self._on_who)
+        signals.clear_who.connect(self._on_clear_who)
+        signals.who_end.connect(self._on_who_end)
+        signals.app_clear.connect(self._on_app_clear)
+        signals.app_reload.connect(self._on_app_reload)
+
+        self._refresh_player_table()
+        self._update_preview()
+
+    # ---- helpers ----
+
+    def _extras(self) -> dict[str, int]:
+        return {
+            alliance: spinner.value() for alliance, spinner in self._alliance_spinners.items() if spinner.value() != 0
+        }
+
+    def _on_spinner_changed(self, alliance: str):
+        self._pop_overrides.pop(alliance, None)
+        self._update_preview()
+
+    def _refresh_player_table(self):
+        players = sorted(
+            config.LAST_WHO_SNAPSHOT.values(),
+            key=lambda p: (p.guild or "", p.name),
         )
-        population_preview_list.SetObjects(self.pop_preview)
-        population_preview_list.SetEmptyListMsg("No pop data found.")
+        self._player_table.set_objects(players)
 
-        population_button_half = wx.Button(self, label="1/2")
-        population_button_zero = wx.Button(self, label="Zero")
-        population_button_reset = wx.Button(self, label="Reset")
-        population_box_half_reset = wx.BoxSizer(wx.HORIZONTAL)
-        population_box_half_reset.Add(population_button_half, flag=wx.LEFT, border=5)
-        population_box_half_reset.Add(population_button_zero, flag=wx.LEFT, border=5)
-        population_box_half_reset.Add(population_button_reset, flag=wx.LEFT, border=10)
+    def _update_preview(self):
+        pops = utils.get_pop_numbers(extras=self._extras())
+        pops.update(self._pop_overrides)
+        previews = [
+            PopulationPreview(a, p)
+            for a, p in pops.items()
+            if p > 0 or a in self._pop_overrides
+        ]
+        self._preview_table.set_objects(previews)
 
-        population_button_poptext = wx.Button(self, label="Copy Populations", size=(160, 23))
-        population_button_randtext = wx.Button(self, label="Copy Roll Text", size=(160, 23))
-        population_buttons_box.Add(population_box_half_reset, flag=wx.TOP | wx.BOTTOM, border=10)
-        population_buttons_box.Add(population_button_poptext, flag=wx.LEFT | wx.BOTTOM, border=5)
-        population_buttons_box.Add(population_button_randtext, flag=wx.LEFT | wx.TOP, border=5)
+    def _effective_pops(self) -> dict[str, int]:
+        """Final population numbers with overrides applied."""
+        pops = utils.get_pop_numbers(extras=self._extras())
+        pops.update(self._pop_overrides)
+        return pops
 
-        population_button_half.Bind(wx.EVT_BUTTON, self.HalvePopPreview)
-        population_button_zero.Bind(wx.EVT_BUTTON, self.ZeroPopPreview)
-        population_button_reset.Bind(wx.EVT_BUTTON, self.ResetPopPreview)
-        population_button_poptext.Bind(wx.EVT_BUTTON, self.CopyPopText)
-        population_button_randtext.Bind(wx.EVT_BUTTON, self.CopyPopRandom)
-        self.ResetPopPreview(None)
+    def _get_selected_alliance(self) -> str | None:
+        obj = self._preview_table.get_selected_object()
+        if obj:
+            return obj.alliance
+        return None
 
-        # Finalize Tab
-        self.SetSizer(population_main_box)
-        parent.AddPage(self, "Population Rolls")
+    # ---- button handlers ----
 
-    def _get_spinner_pops(self):
-        return {alliance: spinner.GetValue() for alliance, spinner in self.pop_adjustments.items()}
+    def _halve_extras(self):
+        alliance = self._get_selected_alliance()
+        if not alliance:
+            return
+        current_pops = self._effective_pops()
+        current_pop = current_pops.get(alliance, 0)
+        self._pop_overrides[alliance] = current_pop // 2
+        self._update_preview()
 
-    def _reset_spinner_pops(self):
-        for spinner in self.pop_adjustments.values():
-            spinner.SetValue(0)
+    def _zero_extras(self):
+        alliance = self._get_selected_alliance()
+        if not alliance:
+            return
+        self._pop_overrides[alliance] = 0
+        self._update_preview()
 
-    def OnClearWho(self, e: models.ClearWhoEvent):
-        self.player_affiliations.clear()
-        self.population_list.SetObjects(self.player_affiliations)
+    def _reset_extras(self):
+        self._pop_overrides.clear()
+        for spinner in self._alliance_spinners.values():
+            spinner.setValue(0)
+        self._update_preview()
 
-    def OnReloadApp(self, e: models.AppReloadEvent):
-        self.population_list.SetObjects(self.player_affiliations)
-        self._reset_spinner_pops()
-        self.ResetPopPreview(e)
-        e.Skip()
+    def _copy_populations(self):
+        pops = self._effective_pops()
+        lines = [f"{alliance}: {pop}" for alliance, pop in pops.items() if pop > 0]
+        utils.to_clipboard("\n".join(lines))
 
-    def OnClearApp(self, e: models.AppClearEvent):
-        self.player_affiliations.clear()
+    def _copy_roll_text(self):
+        pops = self._effective_pops()
+        if set(pops.values()) == {0}:
+            return
+        roll_text, rand_text = utils.generate_pop_roll(extras=self._extras())
+        if roll_text:
+            utils.to_clipboard(f"{roll_text}\n{rand_text}")
+
+    # ---- signal slots ----
+
+    def _on_who(self, name: str, pclass: str, level: int, guild: str):
+        player = Player(name, pclass, level, guild)
+        config.LAST_WHO_SNAPSHOT[name] = player
+        self._player_table.object_model.add_object(player)
+
+    def _on_clear_who(self):
+        self._player_table.set_objects([])
+
+    def _on_who_end(self):
+        self._refresh_player_table()
+        self._pop_overrides.clear()
+        self._reset_extras()
+
+    def _on_app_clear(self):
         config.LAST_WHO_SNAPSHOT.clear()
-        self.population_list.SetObjects(self.player_affiliations)
-        self._reset_spinner_pops()
-        self.ResetPopPreview(e)
-        e.Skip()
+        self._player_table.set_objects([])
+        self._pop_overrides.clear()
+        self._reset_extras()
 
-    def OnWho(self, e: models.WhoEvent):
-        player = models.Player(e.name, e.pclass, e.level, e.guild)
-        self.player_affiliations.append(player)
-        self.population_list.SetObjects(self.player_affiliations)
-
-    def ResetPopPreview(self, e: wx.SpinEvent):
-        raw_pops = utils.get_pop_numbers()
-        pops = utils.get_pop_numbers(extras=self._get_spinner_pops())
-        self.pop_preview.clear()
-        for alliance, pop in pops.items():
-            pop_obj = models.PopulationPreview(alliance, str(pop))
-            self.pop_preview.append(pop_obj)
-        to_remove = list()
-        for pop in self.pop_preview:
-            if int(pop.population) <= 0:
-                pop.population = "0"
-                to_remove.append(pop)
-        for pop in to_remove:
-            self.pop_preview.remove(pop)
-        for alliance, pop in raw_pops.items():
-            spinner = self.pop_adjustments.get(alliance)
-            if spinner:
-                spinner.SetMin(0 - pop)
-
-        selected_index = self.population_preview_list.GetFirstSelected()
-        self.population_preview_list.SetObjects(self.pop_preview)
-        if selected_index >= 0:
-            self.population_preview_list.Select(selected_index)
-        # self.CopyPopText(e)
-
-    def HalvePopPreview(self, e: wx.Event):
-        selected_object = self.population_preview_list.GetSelectedObject()
-        if not selected_object:
-            return
-        sel_pop = int(selected_object.population)
-        selected_object.population = str(math.ceil(sel_pop / 2))
-        self.population_preview_list.RefreshObject(selected_object)
-        self.CopyPopText(e)
-
-    def ZeroPopPreview(self, e: wx.Event):
-        selected_object = self.population_preview_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.population = "0"
-        self.population_preview_list.RefreshObject(selected_object)
-        self.CopyPopText(e)
-
-    def CopyPopText(self, e: wx.Event):  # pylint: disable=no-self-use
-        pop_dict = {pop.alliance: int(pop.population) for pop in self.pop_preview}
-        poproll, _ = utils.generate_pop_roll(source={}, extras=pop_dict)
-        utils.to_clipboard(poproll)
-
-    def CopyPopRandom(self, e: wx.Event):  # pylint: disable=no-self-use
-        pop_dict = {pop.alliance: int(pop.population) for pop in self.pop_preview}
-        _, rolltext = utils.generate_pop_roll(source={}, extras=pop_dict)
-        utils.to_clipboard(rolltext)
+    def _on_app_reload(self):
+        self._refresh_player_table()
+        self._update_preview()

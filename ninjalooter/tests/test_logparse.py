@@ -44,8 +44,8 @@ class TestLogparse(base.NLTestBase):
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('time.sleep')
-    @mock.patch('wx.PostEvent')
-    def test_parse_logfile(self, mock_post_event, mock_sleep, mock_store_state):
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_parse_logfile(self, mock_signals, mock_sleep, mock_store_state):
         log_data = (
             base.SAMPLE_ATTENDANCE_LOGS
             + base.SAMPLE_OOC_DROP
@@ -74,7 +74,7 @@ class TestLogparse(base.NLTestBase):
         mock_open.__exit__ = mock.Mock(return_value=False)
 
         with mock.patch('builtins.open', return_value=mock_open):
-            logparse.parse_logfile('somefile.log', mock.Mock(), run)
+            logparse.parse_logfile('somefile.log', run)
 
         # Who parsing should have populated the snapshot
         self.assertGreater(len(config.LAST_WHO_SNAPSHOT), 0)
@@ -97,8 +97,8 @@ class TestLogparse(base.NLTestBase):
         self.assertIn("a shimmering meteor", kill_names)
         self.assertIn("a soul carrier", kill_names)
 
-        # wx.PostEvent should have been called multiple times
-        self.assertGreater(mock_post_event.call_count, 0)
+        # Signals should have been emitted for various events
+        self.assertGreater(mock_signals.who.emit.call_count, 0)
 
         # time.sleep should have been called (loop ran)
         mock_sleep.assert_called()

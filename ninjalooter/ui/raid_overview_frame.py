@@ -1,158 +1,196 @@
-# pylint: disable=no-member,invalid-name,unused-argument
-import ObjectListView3 as ObjectListView
-import wx
-import wx.lib.scrolledpanel as scrolled
+from __future__ import annotations
 
-from ninjalooter import config, constants, models
+from collections import defaultdict
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ninjalooter import config
+from ninjalooter.app_signals import signals
+from ninjalooter.models import Player
+from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
+
+COLUMNS = 3
+MAX_POPULATION = 14
 
 
-class RaidOverviewFrame(scrolled.ScrolledPanel):
-    def __init__(self, parent: wx.Notebook, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR, self.OnClearApp)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD, self.OnLastWho)
-        parent.GetParent().Connect(-1, -1, models.EVT_SHOW_RAID_OVERVIEW, self.OnCalcRaidOverview)
-        parent.GetParent().Connect(-1, -1, models.EVT_WHO_END, self.OnLastWho)
+class _ClassPanel(QWidget):
+    """A single class panel: header label, compact table, and watermark for empty."""
 
-        #############################
-        # Raid Overview Frame (Tab 6)
-        #############################
-        self.raid_overview_main_box = wx.WrapSizer()
-        self.label_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
+    TABLE_ROWS = 6  # Fixed row count so all panels are uniform height
 
-        # Add a box for guild filter checkboxes
-        self.guild_cb_outer_box = wx.BoxSizer(wx.VERTICAL)
-        self.guild_cb_inner_box = wx.WrapSizer()
-        self.guild_cb_outer_box.Add(self.guild_cb_inner_box)
-        self.raid_overview_main_box.Add(self.guild_cb_outer_box, flag=wx.TOP | wx.LEFT, border=10)
+    def __init__(self, pclass: str, players: list[Player], total: int, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(2)
 
-        # Set up boxes for each class
-        self.class_olv_objects = {}
-        for pclass in config.OVERVIEW_CLASS_ORDER:
-            group_box = wx.BoxSizer(wx.VERTICAL)
-            group_type_label = wx.StaticText(self, label=pclass)
-            group_type_label.SetFont(self.label_font)
-            group_box.Add(group_type_label)
-            group_list = ObjectListView.ObjectListView(
-                self,
-                wx.ID_ANY,
-                size=wx.Size(262, 142),
-                style=wx.LC_REPORT | wx.LC_SINGLE_SEL,
-                sortable=True,
+        shown = len(players)
+        header = QLabel(f"<b>{pclass} ({shown} / {MAX_POPULATION})</b>")
+        layout.addWidget(header)
+
+        self._table = ObjectTableView(
+            columns=[
+                ColumnDefn("Player", "name", width=90),
+                ColumnDefn("", "level", width=30),
+                ColumnDefn("Guild", "guild", width=90),
+            ],
+            parent=self,
+            sortable=True,
+            single_select=True,
+        )
+        row_h = self._table.verticalHeader().defaultSectionSize()
+        header_h = self._table.horizontalHeader().height()
+        fixed_h = header_h + row_h * self.TABLE_ROWS + 4
+
+        if players:
+            self._table.set_objects(sorted(players, key=lambda p: p.name))
+            self._table.setFixedHeight(fixed_h)
+            layout.addWidget(self._table)
+        else:
+            self._table.hide()
+            watermark = QLabel(f"No {pclass}s" if not pclass.endswith("s") else f"No {pclass}")
+            watermark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            watermark.setStyleSheet(
+                "font-size: 24px; font-weight: bold; color: rgba(180, 180, 180, 120);"
             )
-            group_list.SetEmptyListMsg(f"No {pclass}s")
-            group_list.SetColumns(
-                [
-                    ObjectListView.ColumnDefn("Player", "left", 114, "name", fixedWidth=114),
-                    ObjectListView.ColumnDefn("Lvl", "left", 30, "level", fixedWidth=30),
-                    ObjectListView.ColumnDefn("Guild", "left", 100, "sortguild", fixedWidth=100),
-                ]
-            )
-            group_list.SetFilter(ObjectListView.Filter.Predicate(self._guild_filter))
-            group_box.Add(group_list)
-            self.class_olv_objects[pclass] = group_list, group_type_label
-            self.raid_overview_main_box.Add(group_box, flag=wx.TOP | wx.LEFT, border=8)
+            watermark.setFixedHeight(fixed_h)
+            layout.addWidget(watermark)
 
-        # Finalize Tab
-        self.SetSizer(self.raid_overview_main_box)
-        parent.AddPage(self, "Raid Overview")
 
-        # Fix scrolling
-        self.SetupScrolling(scroll_x=False)
-        self.Bind(wx.EVT_SIZE, self.onSize)
+class RaidOverviewFrame(QScrollArea):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setWidgetResizable(True)
 
-        # Initialize data
-        self._guilds_enabled = set()
-        self._who_log = config.LAST_WHO_SNAPSHOT
-        self._recalc_lists()
+        self._guild_checkboxes: dict[str, QCheckBox] = {}
+        self._snapshot: dict[str, Player] = {}
 
-    def onSize(self, e: wx.EVT_SIZE):
-        size = self.GetSize()
-        vsize = self.GetVirtualSize()
+        self._container = QWidget()
+        self._root = QVBoxLayout(self._container)
+        self._root.setContentsMargins(6, 6, 6, 6)
+        self._root.setSpacing(6)
 
-        self.guild_cb_outer_box.SetMinSize((size[0] - 25, 0))
-        self.SetVirtualSize((size[0], vsize[1]))
+        # Filter row
+        self._filter_row = QHBoxLayout()
+        self._filter_row.setContentsMargins(0, 0, 0, 0)
+        self._root.addLayout(self._filter_row)
 
-        if e:
-            e.Skip()
+        # Grid for class panels
+        self._grid_container = QWidget()
+        self._grid = QGridLayout(self._grid_container)
+        self._grid.setContentsMargins(0, 0, 0, 0)
+        self._grid.setSpacing(6)
+        self._root.addWidget(self._grid_container)
+        self._root.addStretch()
 
-    def OnLastWho(self, e: models.WhoEndEvent):
-        print("Calc raid overview")
-        self._who_log = config.LAST_WHO_SNAPSHOT
-        self._recalc_lists()
-        e.Skip()
+        self.setWidget(self._container)
 
-    def OnCalcRaidOverview(self, e: models.ShowRaidOverviewEvent):
-        print("Calc raid overview")
-        self._who_log = e.wholog.log
-        self._recalc_lists()
-        self.GetParent().SetSelection(5)
-        e.Skip()
+        signals.show_raid_overview.connect(self._on_show_raid_overview)
+        signals.who_end.connect(self._on_who_end)
+        signals.app_clear.connect(self._on_app_clear)
 
-    def _recalc_lists(self):
-        guilds = set()
-        self._cached_class_rosters = {pclass: [] for pclass in constants.ALL_CLASSES}
-        for player in self._who_log.values():
-            if player.pclass in self._cached_class_rosters:
-                self._cached_class_rosters[player.pclass].append(player)
-                if player.guild:
-                    guilds.add(player.guild)
-                else:
-                    guilds.add("None")
+    def _rebuild(self, snapshot: dict[str, Player]):
+        self._snapshot = snapshot
+        self._rebuild_filter_checkboxes()
+        self._rebuild_grid()
 
-        self.guild_cb_inner_box.Clear(True)
+    def _rebuild_filter_checkboxes(self):
+        for cb in self._guild_checkboxes.values():
+            self._filter_row.removeWidget(cb)
+            cb.deleteLater()
+        self._guild_checkboxes.clear()
 
-        self._guilds_enabled.clear()
+        # Clear existing filter row items
+        while self._filter_row.count():
+            item = self._filter_row.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        guilds: set[str] = set()
+        for player in self._snapshot.values():
+            if player.guild:
+                guilds.add(player.guild)
+
         for guild in sorted(guilds):
-            guild_cb = wx.CheckBox(self, label=str(guild))
-            if config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE.get(guild, True):
-                guild_cb.SetValue(True)
-                self._guilds_enabled.add(guild)
-            guild_cb.Bind(wx.EVT_CHECKBOX, self._filter_checkbox_event)
-            if not self.guild_cb_inner_box.GetItemCount() == 0:
-                self.guild_cb_inner_box.Add(
-                    wx.StaticLine(self, style=wx.LI_VERTICAL, size=(2, 16)), flag=wx.ALL, border=6
-                )
-            self.guild_cb_inner_box.Add(guild_cb, flag=wx.LEFT | wx.TOP | wx.BOTTOM, border=6)
-        self.onSize(None)  # Trigger a resize to handle initialization
+            cb = QCheckBox(guild)
+            cached = config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE.get(guild, True)
+            cb.setChecked(cached)
+            cb.stateChanged.connect(self._on_filter_changed)
+            self._guild_checkboxes[guild] = cb
+            self._filter_row.addWidget(cb)
+        self._filter_row.addStretch()
 
-        self._refresh_list_items()
+    def _enabled_guilds(self) -> set[str]:
+        enabled: set[str] = set()
+        for guild, cb in self._guild_checkboxes.items():
+            if cb.isChecked():
+                enabled.add(guild)
+        return enabled
 
-    def _refresh_list_items(self):
-        total = 0
-        for pclass, listview in self.class_olv_objects.items():
-            listview[0].SetObjects(self._cached_class_rosters[pclass])
-            listview[0].SortBy(1, False)
-            class_count = len(listview[0].GetFilteredObjects())
-            total += class_count
+    def _rebuild_grid(self):
+        # Clear existing grid
+        while self._grid.count():
+            item = self._grid.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-        for pclass, listview in self.class_olv_objects.items():
-            class_count = len(listview[0].GetFilteredObjects())
-            listview[1].SetLabel(f"{pclass} ({class_count} / {total})")
+        by_class: dict[str, list[Player]] = defaultdict(list)
+        enabled_guilds = self._enabled_guilds()
 
-    def _guild_filter(self, obj):
-        if obj.guild in self._guilds_enabled:
-            return True
-        elif not obj.guild and "None" in self._guilds_enabled:
-            return True
-        return False
+        for player in self._snapshot.values():
+            key = player.pclass or "Unknown"
+            if player.guild in enabled_guilds:
+                by_class[key].append(player)
 
-    def _filter_checkbox_event(self, e: wx.EVT_CHECKBOX):
-        checkbox = e.GetEventObject()
-        config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE[checkbox.GetLabel()] = checkbox.IsChecked()
+        all_classes = list(config.OVERVIEW_CLASS_ORDER)
+        remaining = set(by_class.keys()) - set(all_classes)
+        all_classes.extend(sorted(remaining))
 
-        self._guilds_enabled.clear()
-        for cb_window in self.guild_cb_inner_box.GetChildren():
-            checkbox = cb_window.GetWindow()
-            if hasattr(checkbox, "IsChecked") and checkbox.IsChecked():
-                self._guilds_enabled.add(checkbox.GetLabel())
+        for i, pclass in enumerate(all_classes):
+            players = by_class.get(pclass, [])
+            total = len([
+                p for p in self._snapshot.values()
+                if (p.pclass or "Unknown") == pclass
+            ])
+            panel = _ClassPanel(pclass, players, total, self._grid_container)
+            row = i // COLUMNS
+            col = i % COLUMNS
+            self._grid.addWidget(panel, row, col)
 
-        self._refresh_list_items()
+    def _clear(self):
+        while self._grid.count():
+            item = self._grid.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-        e.Skip()
+        for cb in self._guild_checkboxes.values():
+            self._filter_row.removeWidget(cb)
+            cb.deleteLater()
+        self._guild_checkboxes.clear()
 
-    def OnClearApp(self, e: models.AppClearEvent):
-        for pclass, listview in self.class_olv_objects.items():
-            listview[0].SetObjects([])
-            listview[1].SetLabel(f"{pclass} (0 / 0)")
-        e.Skip()
+        self._snapshot = {}
+
+    # ---- signal slots ----
+
+    def _on_show_raid_overview(self, wholog):
+        self._rebuild(dict(wholog.log) if wholog and wholog.log else {})
+
+    def _on_who_end(self):
+        self._rebuild(dict(config.LAST_WHO_SNAPSHOT))
+
+    def _on_app_clear(self):
+        self._clear()
+
+    def _on_filter_changed(self):
+        for guild, cb in self._guild_checkboxes.items():
+            config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE[guild] = cb.isChecked()
+        self._rebuild_grid()

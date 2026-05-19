@@ -1,559 +1,556 @@
-# pylint: disable=no-member,invalid-name,unused-argument
-# pylint: disable=too-many-locals,too-many-statements
 import datetime
 
-import ObjectListView3 as ObjectListView
-import wx
-import wx.lib.splitter
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QShowEvent
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ninjalooter import config, models, utils
+from ninjalooter.app_signals import signals
+from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
+from ninjalooter.ui.theme import apply_windows_window_frame, semantic
 
 
-class BiddingFrame(wx.Window):
-    def __init__(self, parent: wx.Notebook, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        parent.GetParent().Connect(-1, -1, models.EVT_DROP, self.OnDrop)
-        parent.GetParent().Connect(-1, -1, models.EVT_BID, self.OnBid)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR, self.OnClearApp)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD, self.OnReloadApp)
-        #######################
-        # Bidding Frame (Tab 1)
-        #######################
-        # bidding_frame = wx.Window(notebook)
-        bidding_splitter = wx.lib.splitter.MultiSplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
-        bidding_splitter.SetOrientation(wx.VERTICAL)
-        pane_1 = wx.Panel(bidding_splitter, wx.ID_ANY)
-        pane_2 = wx.Panel(bidding_splitter, wx.ID_ANY)
-        pane_3 = wx.Panel(bidding_splitter, wx.ID_ANY)
-        bidding_main_box1 = wx.BoxSizer(wx.VERTICAL)
-        bidding_main_box2 = wx.BoxSizer(wx.VERTICAL)
-        bidding_main_box3 = wx.BoxSizer(wx.VERTICAL)
-        label_font = wx.Font(11, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
+class BiddingFrame(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        # ----------------
-        # Pending Loot Box
-        # ----------------
-        pending_label = wx.StaticText(pane_1, label="Pending Drops", style=wx.ALIGN_LEFT)
-        pending_label.SetFont(label_font)
-        bidding_main_box1.Add(pending_label, flag=wx.LEFT | wx.TOP, border=10)
-        pending_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box1.Add(pending_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        splitter = QSplitter(Qt.Orientation.Vertical, self)
 
-        # List
-        pending_list = ObjectListView.ObjectListView(
-            pane_1, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+        # ── Pane 1: Pending Drops ──
+        pane1 = QWidget()
+        pane1_layout = QVBoxLayout(pane1)
+        pane1_layout.setContentsMargins(10, 10, 10, 0)
+
+        pending_label = QLabel("Pending Drops")
+        pending_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        pane1_layout.addWidget(pending_label)
+
+        pending_row = QHBoxLayout()
+        pane1_layout.addLayout(pending_row)
+
+        self.pending_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Report Time", "timestamp", width=170),
+                ColumnDefn("Reporter", "reporter", width=95),
+                ColumnDefn("Item", "name", width=225),
+                ColumnDefn("Min. DKP", lambda x: str(x.min_dkp()), width=61, center=True),
+                ColumnDefn("Restrictions", lambda x: x.classes(), width=85, center=True),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=70, center=True),
+            ],
+            parent=self,
+            single_select=True,
         )
-        pending_box.Add(pending_list, flag=wx.EXPAND)
-        pending_list.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.UpdateMinDKP)
-        pending_list.Bind(wx.EVT_LEFT_DCLICK, self.OnIgnorePending)
-        self.pending_list = pending_list
+        self.pending_list.setToolTip("Double click an item to ignore it")
+        self.pending_list.doubleClicked.connect(self._on_ignore_pending)
+        self.pending_list.clicked.connect(self._update_min_dkp_spinner)
+        pending_row.addWidget(self.pending_list, 1)
 
-        pending_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp", fixedWidth=170),
-                ObjectListView.ColumnDefn("Reporter", "left", 95, "reporter", fixedWidth=95),
-                ObjectListView.ColumnDefn("Item", "left", 225, "name", fixedWidth=225),
-                ObjectListView.ColumnDefn("Min. DKP", "center", 61, lambda x: str(x.min_dkp()), fixedWidth=61),
-                ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes", fixedWidth=85),
-                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-            ]
-        )
-        pending_list.SetObjects(config.PENDING_AUCTIONS)
-        pending_list.SetEmptyListMsg("No drops pending.")
-        pending_list.SetToolTip("Double click an item to ignore it")
+        pending_btn_col = QVBoxLayout()
+        pending_row.addLayout(pending_btn_col)
 
-        # Buttons
-        pending_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        pending_box.Add(pending_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        btn_ignore = QPushButton("Ignore")
+        btn_ignore.clicked.connect(self._on_ignore_pending)
+        pending_btn_col.addWidget(btn_ignore)
 
-        pending_button_ignore = wx.Button(pane_1, label="Ignore")
-        pending_button_dkp = wx.Button(pane_1, label="DKP Bid")
-        pending_button_roll = wx.Button(pane_1, label="Roll")
-        # pending_buttonspacer = wx.StaticLine(self)
-        pending_button_wiki = wx.Button(pane_1, label="Wiki?")
-        pending_buttons_box.Add(pending_button_ignore, flag=wx.TOP)
-        pending_buttons_box.Add(pending_button_dkp, flag=wx.TOP, border=10)
-        pending_buttons_box.Add(pending_button_roll, flag=wx.TOP, border=10)
-        # pending_buttons_box.Add(pending_buttonspacer, flag=wx.TOP, border=10)
-        pending_buttons_box.Add(pending_button_wiki, flag=wx.TOP, border=10)
-        min_dkp_font = wx.Font(10, wx.DEFAULT, wx.DEFAULT, wx.BOLD)
-        min_dkp_label = wx.StaticText(pane_1, label="Min. DKP")
-        min_dkp_label.SetFont(min_dkp_font)
-        min_dkp_spinner = wx.SpinCtrl(pane_1, value=str(config.MIN_DKP))
-        min_dkp_spinner.SetRange(0, 10000)
-        min_dkp_spinner.Bind(wx.EVT_SPINCTRL, self.OnMinDkpSpin)
-        self.min_dkp_spinner = min_dkp_spinner
-        pending_buttons_box.Add(min_dkp_label, flag=wx.TOP | wx.LEFT, border=10)
-        pending_buttons_box.Add(min_dkp_spinner, flag=wx.LEFT, border=10)
+        btn_dkp = QPushButton("DKP Bid")
+        btn_dkp.clicked.connect(self._start_auction_dkp)
+        pending_btn_col.addWidget(btn_dkp)
 
-        pending_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnorePending)
-        pending_button_dkp.Bind(wx.EVT_BUTTON, self.StartAuctionDKP)
-        pending_button_roll.Bind(wx.EVT_BUTTON, self.StartAuctionRandom)
-        pending_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiPending)
+        btn_roll = QPushButton("Roll")
+        btn_roll.clicked.connect(self._start_auction_random)
+        pending_btn_col.addWidget(btn_roll)
 
-        # ---------------
-        # Active Loot Box
-        # ---------------
-        active_label = wx.StaticText(pane_2, label="Active Auctions", style=wx.ALIGN_LEFT)
-        active_label.SetFont(label_font)
-        bidding_main_box2.Add(active_label, flag=wx.LEFT | wx.TOP, border=10)
-        active_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box2.Add(active_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        btn_wiki_pending = QPushButton("Wiki?")
+        btn_wiki_pending.clicked.connect(self._show_wiki_pending)
+        pending_btn_col.addWidget(btn_wiki_pending)
 
-        # List
-        active_list = ObjectListView.ObjectListView(
-            pane_2, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
-        )
-        active_box.Add(active_list, flag=wx.EXPAND)
-        active_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowActiveDetail)
-        self.active_list = active_list
+        pending_btn_col.addSpacing(8)
+        min_dkp_label = QLabel("Min. DKP")
+        min_dkp_label.setStyleSheet("font-weight: bold;")
+        pending_btn_col.addWidget(min_dkp_label)
 
-        active_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Item", "left", 215, "name", fixedWidth=215),
-                ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
-                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-                ObjectListView.ColumnDefn("Rand/Min", "left", 70, lambda x: str(x.get_target_min()), fixedWidth=70),
-                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, lambda x: str(x.highest_number()), fixedWidth=65),
-                ObjectListView.ColumnDefn("Leading", "left", 90, "highest_players", fixedWidth=90),
-                ObjectListView.ColumnDefn(
-                    "Time Left", "left", 100, "time_remaining_seconds",
-                    fixedWidth=100, stringConverter=lambda s: "{}m{:02d}s".format(s // 60, s % 60) if s >= 60 else "{}s".format(s),
+        self.min_dkp_spinner = QSpinBox()
+        self.min_dkp_spinner.setRange(0, 10000)
+        self.min_dkp_spinner.setValue(config.MIN_DKP)
+        self.min_dkp_spinner.valueChanged.connect(self._on_min_dkp_spin)
+        pending_btn_col.addWidget(self.min_dkp_spinner)
+        pending_btn_col.addStretch()
+
+        # ── Pane 2: Active Auctions ──
+        pane2 = QWidget()
+        pane2_layout = QVBoxLayout(pane2)
+        pane2_layout.setContentsMargins(10, 10, 10, 0)
+
+        active_label = QLabel("Active Auctions")
+        active_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        pane2_layout.addWidget(active_label)
+
+        active_row = QHBoxLayout()
+        pane2_layout.addLayout(active_row)
+
+        self.active_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Item", lambda x: x.name(), width=215),
+                ColumnDefn("Restrictions", lambda x: x.classes(), width=95, center=True),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=70, center=True),
+                ColumnDefn("Rand/Min", lambda x: str(x.get_target_min()), width=70, center=True),
+                ColumnDefn("Bid/Roll", lambda x: str(x.highest_number()), width=65, center=True),
+                ColumnDefn("Leading", lambda x: x.highest_players(), width=90),
+                ColumnDefn(
+                    "Time Left",
+                    lambda x: x.time_remaining_seconds(),
+                    width=100,
+                    string_converter=lambda x: x.time_remaining_ui(),
                 ),
-            ]
+            ],
+            parent=self,
+            single_select=True,
         )
-        active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        active_list.SetEmptyListMsg("No auctions pending.")
-        active_list.SetToolTip("Double click an auction to edit bid the history")
-        self.active_list_refresh_timer = wx.Timer(self, id=1)
-        self.Bind(wx.EVT_TIMER, self.refresh_active_list, self.active_list_refresh_timer)
-        self.active_list_refresh_timer.Start(1000)
+        self.active_list.setToolTip("Double click an auction to view bid history")
+        self.active_list.doubleClicked.connect(self._show_active_detail)
+        active_row.addWidget(self.active_list, 1)
+        self.active_list.sortByColumn(6, Qt.SortOrder.AscendingOrder)
 
-        # Buttons
-        active_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        active_box.Add(active_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        self.active_list.object_model.set_row_color_func(self._active_row_color)
 
-        active_button_undo = wx.Button(pane_2, label="Undo")
-        active_buttonspacer = wx.StaticLine(pane_2)
-        active_buttons_timebox = wx.BoxSizer(wx.HORIZONTAL)
-        self.active_buttons_timespinner = wx.SpinCtrl(pane_2, min=1, max=30, initial=1, size=(44, 22))
-        self.active_buttons_timespinner.SetToolTip("Minutes to add/remove")
-        active_button_timeadd = wx.Button(pane_2, label="+", size=(15, 22))
-        active_button_timeadd.SetToolTip("Add time to Auction")
-        active_button_timesub = wx.Button(pane_2, label="-", size=(15, 22))
-        active_button_timesub.SetToolTip("Remove time from Auction")
-        active_buttons_timebox.Add(active_button_timesub)
-        active_buttons_timebox.Add(self.active_buttons_timespinner)
-        active_buttons_timebox.Add(active_button_timeadd)
-        active_button_gettext = wx.Button(pane_2, label="Copy Bid")
-        active_button_complete = wx.Button(pane_2, label="Complete")
-        active_button_wiki = wx.Button(pane_2, label="Wiki?")
-        active_cb_bid_target = wx.ComboBox(
-            pane_2,
-            size=wx.Size(73, 22),
-            choices=list(config.BID_CHANNEL_OPTIONS),
-            value=config.PRIMARY_BID_CHANNEL,
-            style=wx.CB_READONLY,
+        active_btn_col = QVBoxLayout()
+        active_row.addLayout(active_btn_col)
+
+        btn_undo_start = QPushButton("Undo")
+        btn_undo_start.clicked.connect(self._undo_start)
+        active_btn_col.addWidget(btn_undo_start)
+
+        active_btn_col.addSpacing(4)
+
+        time_row = QHBoxLayout()
+        self.btn_time_sub = QPushButton("-")
+        self.btn_time_sub.setFixedWidth(24)
+        self.btn_time_sub.setToolTip("Remove time from Auction")
+        self.btn_time_sub.clicked.connect(lambda: self._auc_time_delta(subtract=True))
+        time_row.addWidget(self.btn_time_sub)
+
+        self.time_spinner = QSpinBox()
+        self.time_spinner.setRange(1, 30)
+        self.time_spinner.setValue(1)
+        self.time_spinner.setToolTip("Minutes to add/remove")
+        self.time_spinner.setFixedWidth(50)
+        time_row.addWidget(self.time_spinner)
+
+        self.btn_time_add = QPushButton("+")
+        self.btn_time_add.setFixedWidth(24)
+        self.btn_time_add.setToolTip("Add time to Auction")
+        self.btn_time_add.clicked.connect(lambda: self._auc_time_delta(subtract=False))
+        time_row.addWidget(self.btn_time_add)
+        active_btn_col.addLayout(time_row)
+
+        btn_copy_bid = QPushButton("Copy Bid")
+        btn_copy_bid.clicked.connect(self._copy_bid_text)
+        active_btn_col.addWidget(btn_copy_bid)
+
+        btn_complete = QPushButton("Complete")
+        btn_complete.clicked.connect(self._complete_auction)
+        active_btn_col.addWidget(btn_complete)
+
+        btn_wiki_active = QPushButton("Wiki?")
+        btn_wiki_active.clicked.connect(self._show_wiki_active)
+        active_btn_col.addWidget(btn_wiki_active)
+
+        active_btn_col.addSpacing(4)
+
+        self.bid_channel_combo = QComboBox()
+        self.bid_channel_combo.addItems(list(config.BID_CHANNEL_OPTIONS))
+        idx = self.bid_channel_combo.findText(config.PRIMARY_BID_CHANNEL)
+        if idx >= 0:
+            self.bid_channel_combo.setCurrentIndex(idx)
+        self.bid_channel_combo.setToolTip("Selected channel will be used for Auction clipboard messages")
+        self.bid_channel_combo.currentTextChanged.connect(self._select_bid_target)
+        active_btn_col.addWidget(self.bid_channel_combo)
+        active_btn_col.addStretch()
+
+        # 1-second refresh timer for active auctions
+        self._active_timer = QTimer(self)
+        self._active_timer.timeout.connect(self._refresh_active_list)
+        self._active_timer.start(1000)
+
+        # ── Pane 3: Historical Auctions ──
+        pane3 = QWidget()
+        pane3_layout = QVBoxLayout(pane3)
+        pane3_layout.setContentsMargins(10, 10, 10, 10)
+
+        history_label = QLabel("Historical Auctions")
+        history_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        pane3_layout.addWidget(history_label)
+
+        history_row = QHBoxLayout()
+        pane3_layout.addLayout(history_row)
+
+        self.history_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Item", lambda x: x.name(), width=240),
+                ColumnDefn("Restrictions", lambda x: x.classes(), width=95, center=True),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=70),
+                ColumnDefn("Rand/Min", lambda x: str(x.get_target_min()), width=65),
+                ColumnDefn("Bid/Roll", lambda x: str(x.highest_number()), width=65),
+                ColumnDefn("Winner", lambda x: x.highest_players(), width=108),
+            ],
+            parent=self,
+            single_select=True,
         )
-        active_cb_bid_target.SetToolTip("Selected channel will be used for Auction clipboard messages")
-        active_buttons_box.Add(active_button_undo, flag=wx.TOP)
-        active_buttons_box.Add(active_buttonspacer, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_buttons_timebox, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_button_gettext, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_button_complete, flag=wx.TOP, border=6)
-        active_buttons_box.Add(active_button_wiki, flag=wx.TOP | wx.BOTTOM, border=6)
-        active_buttons_box.Add(active_cb_bid_target, flag=wx.LEFT, border=1)
+        self.history_list.setToolTip("Double click an auction to view bid history")
+        self.history_list.doubleClicked.connect(self._show_history_detail)
+        history_row.addWidget(self.history_list, 1)
 
-        active_button_undo.Bind(wx.EVT_BUTTON, self.UndoStart)
-        active_button_timeadd.Bind(wx.EVT_BUTTON, self.AucTimeDelta)
-        active_button_timesub.Bind(wx.EVT_BUTTON, self.AucTimeDelta)
-        active_button_gettext.Bind(wx.EVT_BUTTON, self.CopyBidText)
-        active_button_complete.Bind(wx.EVT_BUTTON, self.CompleteAuction)
-        active_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiActive)
-        active_cb_bid_target.Bind(wx.EVT_COMBOBOX, self.SelectBidTarget)
+        history_btn_col = QVBoxLayout()
+        history_row.addLayout(history_btn_col)
 
-        # -------------------
-        # Historical Loot Box
-        # -------------------
-        history_label = wx.StaticText(pane_3, label="Historical Auctions", style=wx.ALIGN_LEFT)
-        history_label.SetFont(label_font)
-        bidding_main_box3.Add(history_label, flag=wx.LEFT | wx.TOP, border=10)
-        history_box = wx.BoxSizer(wx.HORIZONTAL)
-        bidding_main_box3.Add(history_box, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        btn_undo_complete = QPushButton("Undo")
+        btn_undo_complete.clicked.connect(self._undo_complete)
+        history_btn_col.addWidget(btn_undo_complete)
 
-        # List
-        history_list = ObjectListView.ObjectListView(
-            pane_3, wx.ID_ANY, size=wx.Size(725, 1000), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
-        )
-        history_list.CopyObjectsToClipboard = self.CopyObjectsToClipboardLoot
-        history_box.Add(history_list, flag=wx.EXPAND | wx.BOTTOM, border=10)
-        history_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowHistoryDetail)
-        self.history_list = history_list
+        btn_copy_win = QPushButton("Copy Text")
+        btn_copy_win.clicked.connect(self._copy_win_text)
+        history_btn_col.addWidget(btn_copy_win)
 
-        history_list.SetColumns(
+        btn_wiki_history = QPushButton("Wiki?")
+        btn_wiki_history.clicked.connect(self._show_wiki_history)
+        history_btn_col.addWidget(btn_wiki_history)
+
+        self.hide_rots_cb = QCheckBox("Hide Rots")
+        self.hide_rots_cb.setChecked(config.HIDE_ROTS)
+        self.hide_rots_cb.stateChanged.connect(self._on_hide_rot)
+        history_btn_col.addWidget(self.hide_rots_cb)
+        history_btn_col.addStretch()
+
+        # ── Assemble splitter ──
+        splitter.addWidget(pane1)
+        splitter.addWidget(pane2)
+        splitter.addWidget(pane3)
+        splitter.setChildrenCollapsible(False)
+        splitter.setSizes(
             [
-                ObjectListView.ColumnDefn("Item", "left", 240, "name", fixedWidth=240),
-                ObjectListView.ColumnDefn("Restrictions", "left", 95, "classes", fixedWidth=95),
-                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-                ObjectListView.ColumnDefn("Rand/Min", "left", 65, lambda x: str(x.get_target_min()), fixedWidth=65),
-                ObjectListView.ColumnDefn("Bid/Roll", "left", 65, lambda x: str(x.highest_number()), fixedWidth=65),
-                ObjectListView.ColumnDefn("Winner", "left", 108, "highest_players", fixedWidth=108),
+                config.ACTIVE_SASH_POS,
+                config.HISTORICAL_SASH_POS,
+                215,
             ]
         )
-        history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        history_list.SetEmptyListMsg("No auctions completed.")
-        history_list.SetToolTip("Double click an auction to edit bid the history")
+        splitter.splitterMoved.connect(self._on_sash_changed)
+        self._splitter = splitter
 
-        # Buttons
-        history_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        history_box.Add(history_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(splitter)
 
-        history_button_undo = wx.Button(pane_3, label="Undo")
-        history_buttonspacer = wx.StaticLine(pane_3)
-        history_button_gettext = wx.Button(pane_3, label="Copy Text")
-        history_button_wiki = wx.Button(pane_3, label="Wiki?")
-        history_button_hiderot = wx.CheckBox(pane_3, label="Hide Rots")
-        history_buttons_box.Add(history_button_undo, flag=wx.TOP)
-        history_buttons_box.Add(history_buttonspacer, flag=wx.TOP, border=10)
-        history_buttons_box.Add(history_button_gettext, flag=wx.TOP, border=10)
-        history_buttons_box.Add(history_button_wiki, flag=wx.TOP, border=10)
-        history_buttons_box.Add(history_button_hiderot, flag=wx.TOP, border=10)
-
-        history_button_undo.Bind(wx.EVT_BUTTON, self.UndoComplete)
-        history_button_gettext.Bind(wx.EVT_BUTTON, self.CopyWinText)
-        history_button_wiki.Bind(wx.EVT_BUTTON, self.ShowWikiHistory)
-        history_button_hiderot.Bind(wx.EVT_CHECKBOX, self.OnHideRot)
-        self.history_button_hiderot = history_button_hiderot
-        history_button_hiderot.SetValue(config.HIDE_ROTS)
+        # ── Initial data ──
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self.history_list.set_objects(list(config.HISTORICAL_AUCTIONS.values()))
         if config.HIDE_ROTS:
-            self.OnHideRot(None)
+            self._apply_hide_rot_filter()
 
-        # Finalize Tab
-        pane_1.SetSizer(bidding_main_box1)
-        pane_2.SetSizer(bidding_main_box2)
-        pane_3.SetSizer(bidding_main_box3)
-        bidding_splitter.AppendWindow(pane_1)
-        bidding_splitter.AppendWindow(pane_2)
-        bidding_splitter.AppendWindow(pane_3)
-        bidding_main_box = wx.BoxSizer()
-        bidding_main_box.Add(bidding_splitter, 1, wx.EXPAND, 0)
-        self.SetSizer(bidding_main_box)
-        bidding_splitter.SetMinimumPaneSize(215)
-        bidding_splitter.SetSashPosition(0, config.ACTIVE_SASH_POS)
-        bidding_splitter.SetSashPosition(1, config.HISTORICAL_SASH_POS)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged, source=bidding_splitter)
-        parent.AddPage(self, "Bidding")
+        # ── Connect signals ──
+        signals.drop.connect(self._on_drop)
+        signals.bid.connect(self._on_bid)
+        signals.auction_started.connect(self._on_auction_started)
+        signals.auction_completed.connect(self._on_auction_completed)
+        signals.app_clear.connect(self._on_clear_app)
+        signals.app_reload.connect(self._on_reload_app)
+        signals.ignore.connect(self._refresh_pending)
 
-    def refresh_active_list(self, event):
-        selected = self.active_list.GetSelectedObject()
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        if selected is not None:
-            self.active_list.SelectObject(selected, ensureVisible=False)
+    # ── Timer / row color ──
 
-        # https://www.youtube.com/watch?v=d3D7Y_ycSms
-        DANGER_ZONE = config.MIN_BID_TIME / 3
-        WARNING_ZONE = config.MIN_BID_TIME / 3 * 2
-
-        for idx in range(self.active_list.GetItemCount()):
-            obj = self.active_list.GetObjectAt(idx)
-            if obj is None:
-                continue
+    @staticmethod
+    def _active_row_color(obj):
+        try:
             remaining = obj.time_remaining().total_seconds()
-            if remaining < DANGER_ZONE:
-                self.active_list.SetItemBackgroundColour(idx, config.DANGER_COLOR)
-            elif remaining < WARNING_ZONE:
-                self.active_list.SetItemBackgroundColour(idx, config.WARN_COLOR)
-            else:
-                self.active_list.SetItemBackgroundColour(idx, config.SAFE_COLOR)
+        except Exception:
+            return None
+        danger_zone = config.MIN_BID_TIME / 3
+        warn_zone = config.MIN_BID_TIME / 3 * 2
+        if remaining < danger_zone:
+            return semantic.timer_danger
+        if remaining < warn_zone:
+            return semantic.timer_warn
+        return semantic.timer_safe
+
+    def _refresh_active_list(self):
+        selected = self.active_list.get_selected_object()
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        if selected is not None:
+            self.active_list.select_object(selected)
+
+    # ── Splitter persistence ──
+
+    def _on_sash_changed(self, _pos, _index):
+        sizes = self._splitter.sizes()
+        if len(sizes) >= 2:
+            config.ACTIVE_SASH_POS = sizes[0]
+            config.HISTORICAL_SASH_POS = sizes[1]
+
+    # ── Pending pane actions ──
+
+    def _update_min_dkp_spinner(self):
+        selected = self.pending_list.get_selected_object()
+        if selected:
+            val = selected.min_dkp()
+            if isinstance(val, int):
+                self.min_dkp_spinner.setValue(val)
+
+    def _on_min_dkp_spin(self, value):
+        selected = self.pending_list.get_selected_object()
+        if not selected:
+            return
+        selected.min_dkp_override = value
+        self.pending_list.object_model.refresh_object(selected)
+
+    def _on_ignore_pending(self):
+        selected = self.pending_list.get_selected_object()
+        if not selected:
+            return
+        utils.ignore_pending_item(selected)
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        utils.store_state()
+        signals.ignore.emit()
+
+    def _start_auction_dkp(self):
+        selected = self.pending_list.get_selected_object()
+        if not selected:
+            return
+        auc = utils.start_auction_dkp(selected, config.DEFAULT_ALLIANCE)
+        if not auc:
+            QMessageBox.critical(
+                self,
+                "Duplicate Auction",
+                "An item with this name is already pending auction.\n"
+                "Please complete the existing auction before starting another.",
+            )
+            return
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self.active_list.select_object(auc)
+        self._copy_bid_text()
+        utils.store_state()
+        signals.auction_started.emit()
+
+    def _start_auction_random(self):
+        selected = self.pending_list.get_selected_object()
+        if not selected:
+            return
+        auc = utils.start_auction_random(selected)
+        if not auc:
+            QMessageBox.critical(
+                self,
+                "Duplicate Auction",
+                "An item with this name is already pending auction.\n"
+                "Please complete the existing auction before starting another.",
+            )
+            return
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self.active_list.select_object(auc)
+        self._copy_bid_text()
+        utils.store_state()
+        signals.auction_started.emit()
+
+    def _show_wiki_pending(self):
+        selected = self.pending_list.get_selected_object()
+        if selected:
+            utils.open_wiki_url(selected)
+
+    # ── Active pane actions ──
+
+    def _undo_start(self):
+        selected = self.active_list.get_selected_object()
+        if not selected:
+            return
+        selected.cancel()
+        config.PENDING_AUCTIONS.append(selected.item)
+        config.ACTIVE_AUCTIONS.pop(selected.item.uuid)
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self.pending_list.select_object(selected.item)
+        utils.store_state()
+
+    def _auc_time_delta(self, subtract=False):
+        selected = self.active_list.get_selected_object()
+        if not selected:
+            return
+        delta = datetime.timedelta(minutes=self.time_spinner.value())
+        if subtract:
+            selected.start_time -= delta
+        else:
+            if selected.time_remaining().seconds <= 0:
+                selected.start_time = datetime.datetime.now() - datetime.timedelta(seconds=config.MIN_BID_TIME)
+            selected.start_time += delta
+
+    def _copy_bid_text(self):
+        selected = self.active_list.get_selected_object()
+        if not selected:
+            return
+        utils.to_clipboard(selected.bid_text())
+
+    def _complete_auction(self):
+        selected = self.active_list.get_selected_object()
+        if not selected:
+            return
+        selected.complete()
+        config.HISTORICAL_AUCTIONS[selected.item.uuid] = selected
+        config.ACTIVE_AUCTIONS.pop(selected.item.uuid)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._refresh_history()
+        self.history_list.select_object(selected)
+        self._copy_win_text()
+        utils.store_state()
+        signals.auction_completed.emit()
+
+    def _show_wiki_active(self):
+        selected = self.active_list.get_selected_object()
+        if selected:
+            utils.open_wiki_url(selected.item)
+
+    def _show_active_detail(self):
+        selected = self.active_list.get_selected_object()
+        if selected:
+            ItemDetailWindow(selected, self.active_list, parent=self)
 
     @staticmethod
-    def OnSashChanged(e: wx.lib.splitter.MultiSplitterEvent):
-        index, new_pos = e.GetSashIdx(), e.GetSashPosition()
-        if index == 0:
-            config.ACTIVE_SASH_POS = new_pos
-        elif index == 1:
-            config.HISTORICAL_SASH_POS = new_pos
-
-    def OnHideRot(self, e: wx.Event):
-        config.HIDE_ROTS = self.history_button_hiderot.IsChecked()
-        config.CONF.set("default", "hide_rots", str(config.HIDE_ROTS))
-        if config.HIDE_ROTS:
-            # Filter by hiding rots
-            awarded_auctions = [x for x in config.HISTORICAL_AUCTIONS.values() if x.highest()]
-            self.history_list.SetObjects(awarded_auctions)
-        else:
-            self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        config.write()
-
-    def UpdateMinDKP(self, e: wx.Event):
-        selected_object = self.pending_list.GetSelectedObject()
-        if not selected_object:
-            return
-        self.min_dkp_spinner.SetValue(selected_object.min_dkp())
-
-    def OnIgnorePending(self, e: wx.Event):
-        selected_object = self.pending_list.GetSelectedObject()
-        selected_index = self.pending_list.GetFirstSelected()
-        if not selected_object:
-            return
-        utils.ignore_pending_item(selected_object)
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        item_count = self.pending_list.GetItemCount()
-        if item_count > 0:
-            self.pending_list.Select(min(selected_index, item_count - 1))
-        utils.store_state()
-        wx.PostEvent(self.GetGrandParent(), models.IgnoreEvent())
-
-    def DialogDuplicate(self):
-        dlg = wx.MessageDialog(
-            self,
-            "An item with this name is already pending auction.\n"
-            "Please complete the existing auction before starting another.",
-            "Duplicate Auction",
-            wx.OK | wx.ICON_ERROR,
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
-
-    def UndoStart(self, e: wx.Event):
-        selected_object = self.active_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.cancel()
-        config.PENDING_AUCTIONS.append(selected_object.item)
-        config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.pending_list.SelectObject(selected_object.item)
-        utils.store_state()
-
-    def OnMinDkpSpin(self, e: wx.SpinEvent):
-        min_dkp = self.min_dkp_spinner.GetValue()
-        selected_object = self.pending_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.min_dkp_override = min_dkp
-        self.pending_list.RefreshObject(selected_object)
-
-        # Old way: set up default mindkp
-        # config.MIN_DKP = min_dkp
-        # config.CONF.set(
-        #     'default', 'min_dkp', str(min_dkp))
-        # config.write()
-
-    def PickAuctionDKP(self, e: wx.Event):
-        """This is no longer used, in favor of selecting a default alliance."""
-
-        class MyPopupMenu(wx.Menu):
-            def __init__(self, parent):
-                super().__init__()
-                for alliance in config.ALLIANCES:
-                    mi = wx.MenuItem(self, wx.NewId(), alliance)
-                    self.Append(mi)
-                    self.Bind(wx.EVT_MENU, parent.StartAuctionDKP, mi)
-
-        self.PopupMenu(MyPopupMenu(self), e.EventObject.GetPosition())
-
-    def StartAuctionDKP(self, e: wx.Event):
-        selected_object = self.pending_list.GetSelectedObject()
-        if not selected_object:
-            return
-        auc = utils.start_auction_dkp(selected_object, config.DEFAULT_ALLIANCE)
-        if not auc:
-            self.DialogDuplicate()
-            return
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.active_list.SelectObject(auc)
-        self.CopyBidText(e)
-        utils.store_state()
-
-    def StartAuctionRandom(self, e: wx.Event):
-        selected_object = self.pending_list.GetSelectedObject()
-        if not selected_object:
-            return
-        auc = utils.start_auction_random(selected_object)
-        if not auc:
-            self.DialogDuplicate()
-            return
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.active_list.SelectObject(auc)
-        self.CopyBidText(e)
-        utils.store_state()
-
-    def CompleteAuction(self, e: wx.Event):
-        selected_object = self.active_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.complete()
-        config.HISTORICAL_AUCTIONS[selected_object.item.uuid] = selected_object
-        config.ACTIVE_AUCTIONS.pop(selected_object.item.uuid)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        self.OnHideRot(None)
-        self.history_list.SelectObject(selected_object)
-        self.CopyWinText(e)
-        utils.store_state()
-
-    def UndoComplete(self, e: wx.Event):
-        selected_object = self.history_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.end_time = None
-        config.ACTIVE_AUCTIONS[selected_object.item.uuid] = selected_object
-        config.HISTORICAL_AUCTIONS.pop(selected_object.item.uuid)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        self.active_list.SelectObject(selected_object)
-        utils.store_state()
-
-    def AucTimeDelta(self, e: wx.Event):
-        selected_object = self.active_list.GetSelectedObject()
-        if not selected_object:
-            return
-        delta = datetime.timedelta(minutes=self.active_buttons_timespinner.Value)
-        if e.EventObject.Label == "-":
-            selected_object.start_time -= delta
-        else:
-            if selected_object.time_remaining().seconds <= 0:
-                selected_object.start_time = datetime.datetime.now() - datetime.timedelta(seconds=config.MIN_BID_TIME)
-            selected_object.start_time += delta
-
-    def CopyBidText(self, e: wx.Event):
-        selected_object = self.active_list.GetSelectedObject()
-        if not selected_object:
-            return
-        text = selected_object.bid_text()
-        utils.to_clipboard(text)
-
-    def CopyWinText(self, e: wx.Event):
-        selected_object = self.history_list.GetSelectedObject()
-        if not selected_object:
-            return
-        text = selected_object.win_text()
-        utils.to_clipboard(text)
-
-    def ShowWikiPending(self, e: wx.Event):
-        selected_object = self.pending_list.GetSelectedObject()
-        if not selected_object:
-            return
-        utils.open_wiki_url(selected_object)
-
-    def ShowWikiActive(self, e: wx.Event):
-        selected_object = self.active_list.GetSelectedObject()
-        if not selected_object:
-            return
-        utils.open_wiki_url(selected_object.item)
-
-    def ShowWikiHistory(self, e: wx.Event):
-        selected_object = self.history_list.GetSelectedObject()
-        if not selected_object:
-            return
-        utils.open_wiki_url(selected_object.item)
-
-    def ShowHistoryDetail(self, e: wx.EVT_LEFT_DCLICK):
-        return self.ShowItemDetail(self.history_list)
-
-    def ShowActiveDetail(self, e: wx.EVT_LEFT_DCLICK):
-        return self.ShowItemDetail(self.active_list)
-
-    @staticmethod
-    def SelectBidTarget(e: wx.EVT_COMBOBOX):
-        config.PRIMARY_BID_CHANNEL = e.String
+    def _select_bid_target(text):
+        config.PRIMARY_BID_CHANNEL = text
         config.CONF.set("default", "primary_bid_channel", config.PRIMARY_BID_CHANNEL)
         config.write()
 
-    def OnDrop(self, e: models.DropEvent):
-        selected_object = self.pending_list.GetSelectedObject()
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        if selected_object:
-            self.pending_list.SelectObject(selected_object)
+    # ── History pane actions ──
 
-    def OnBid(self, e: models.BidEvent):
-        self.active_list.RefreshObject(e.item)
+    def _on_hide_rot(self):
+        config.HIDE_ROTS = self.hide_rots_cb.isChecked()
+        config.CONF.set("default", "hide_rots", str(config.HIDE_ROTS))
+        self._refresh_history()
+        config.write()
 
-    def OnReloadApp(self, e: models.AppReloadEvent):
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        e.Skip()
+    def _apply_hide_rot_filter(self):
+        if config.HIDE_ROTS:
+            self.history_list.set_filter_func(lambda x: bool(x.highest()))
+        else:
+            self.history_list.set_filter_func(None)
 
-    def OnClearApp(self, e: models.AppClearEvent):
+    def _refresh_history(self):
+        self.history_list.set_objects(list(config.HISTORICAL_AUCTIONS.values()))
+        self._apply_hide_rot_filter()
+
+    def _undo_complete(self):
+        selected = self.history_list.get_selected_object()
+        if not selected:
+            return
+        selected.end_time = None
+        config.ACTIVE_AUCTIONS[selected.item.uuid] = selected
+        config.HISTORICAL_AUCTIONS.pop(selected.item.uuid)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._refresh_history()
+        self.active_list.select_object(selected)
+        utils.store_state()
+
+    def _copy_win_text(self):
+        selected = self.history_list.get_selected_object()
+        if not selected:
+            return
+        utils.to_clipboard(selected.win_text())
+
+    def _show_wiki_history(self):
+        selected = self.history_list.get_selected_object()
+        if selected:
+            utils.open_wiki_url(selected.item)
+
+    def _show_history_detail(self):
+        selected = self.history_list.get_selected_object()
+        if selected:
+            ItemDetailWindow(selected, self.history_list, parent=self)
+
+    # ── Refresh helpers ──
+
+    def _refresh_pending(self):
+        selected = self.pending_list.get_selected_object()
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        if selected:
+            self.pending_list.select_object(selected)
+
+    # ── Signal handlers ──
+
+    def _on_drop(self):
+        self._refresh_pending()
+
+    def _on_bid(self, item):
+        self.active_list.object_model.refresh_object(item)
+
+    def _on_auction_started(self):
+        self._refresh_pending()
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+
+    def _on_auction_completed(self):
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._refresh_history()
+
+    def _on_clear_app(self):
         config.PENDING_AUCTIONS.clear()
         config.ACTIVE_AUCTIONS.clear()
         config.HISTORICAL_AUCTIONS.clear()
         config.IGNORED_AUCTIONS.clear()
-        self.pending_list.SetObjects(config.PENDING_AUCTIONS)
-        self.active_list.SetObjects(list(config.ACTIVE_AUCTIONS.values()))
-        self.history_list.SetObjects(list(config.HISTORICAL_AUCTIONS.values()))
-        e.Skip()
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._refresh_history()
 
-    def ShowItemDetail(self, listbox: ObjectListView.ObjectListView):
-        selected_object = listbox.GetSelectedObject()
-        if not selected_object:
-            return
-        ItemDetailWindow(selected_object, listbox, parent=self)
-
-    def CopyObjectsToClipboardLoot(self, objects):
-        """
-        Put a textual representation of the given objects onto the clipboard.
-
-        Custom version of the copy text from a tick line:
-
-        [Mon Jul 11 18:32:43 2022] You say, 'LOOT:  Item Player #'
-        """
-        if objects is None or len(objects) == 0:
-            return
-
-        # Make a text version of the values
-        lines = []
-        for auction in objects:
-            lines.append(utils.parse_auction_for_loot_export(auction))
-        txt = "\n".join(lines) + "\n"
-
-        cb = wx.Clipboard()
-        if cb.Open():
-            cb.SetData(wx.TextDataObject(txt))
-            cb.Flush()
-            cb.Close()
+    def _on_reload_app(self):
+        self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._refresh_history()
 
 
-class ItemDetailWindow(wx.Frame):
-    def __init__(
-        self,
-        item: models.Auction,
-        listbox: ObjectListView.ObjectListView,
-        parent=None,
-        title="Item Detail",
-    ):
-        wx.Frame.__init__(self, parent, title=title, size=(400, 400))
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.item = item
-        self.listbox = listbox
-        main_box = wx.BoxSizer(wx.HORIZONTAL)
+class ItemDetailWindow(QWidget):
+    """Editable view of bids/rolls for an auction."""
 
-        text_area = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=wx.Size(400, 400))
-        data = getattr(item, "rolls", getattr(item, "bids", dict()))
-        bids_or_rolls = ["{}: {}".format(number, players) for number, players in data.items()]
-        text_area.SetValue("\n".join(bids_or_rolls))
-        main_box.Add(text_area)
-        self.bid_data = text_area
+    def __init__(self, item, listview, parent=None):
+        super().__init__(parent, Qt.WindowType.Window)
+        self.setWindowTitle("Item Detail")
+        self.resize(400, 400)
 
-        self.SetSizer(main_box)
+        self._item = item
+        self._listview = listview
+
+        layout = QVBoxLayout(self)
+        self._text = QTextEdit()
+        layout.addWidget(self._text)
+
+        data = getattr(item, "rolls", getattr(item, "bids", {}))
+        lines = [f"{number}: {players}" for number, players in data.items()]
+        self._text.setPlainText("\n".join(lines))
+
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        self.Show()
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        self.show()
 
-    def OnClose(self, e: wx.Event):
-        text_data = self.bid_data.GetValue()
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
+
+    def closeEvent(self, event):
+        text_data = self._text.toPlainText()
+        data = getattr(self._item, "rolls", getattr(self._item, "bids", {}))
         bid_data = {}
-        data = getattr(self.item, "rolls", getattr(self.item, "bids", dict()))
         try:
             for line in text_data.split("\n"):
-                if not line:
+                if not line.strip():
                     continue
-                if isinstance(self.item, models.RandomAuction):
+                if isinstance(self._item, models.RandomAuction):
                     bidder, bid = line.split(":")
                     bid_data[bidder.strip()] = int(bid)
                 else:
@@ -561,53 +558,59 @@ class ItemDetailWindow(wx.Frame):
                     bid_data[int(bid)] = bidder.strip()
             data.clear()
             data.update(bid_data)
-            self.listbox.RefreshObject(self.item)
+            self._listview.object_model.refresh_object(self._item)
         except Exception:
             pass
-        self.Destroy()
+        event.accept()
 
 
-class IgnoredItemsWindow(wx.Frame):
-    def __init__(self, parent=None, title="Ignored Auctions (Double Click to Restore)"):
-        wx.Frame.__init__(self, parent, title=title, size=(616, 600))
-        self.GetParent().Connect(-1, -1, models.EVT_IGNORE, self.OnRefresh)
-        main_box = wx.BoxSizer(wx.HORIZONTAL)
+class IgnoredItemsWindow(QWidget):
+    """Window showing ignored items with restore on double-click."""
 
-        ignored_list = ObjectListView.ObjectListView(
-            self, wx.ID_ANY, size=wx.Size(600, 1080), style=wx.LC_REPORT | wx.LC_SINGLE_SEL
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.WindowType.Window)
+        self.setWindowTitle("Ignored Auctions (Double Click to Restore)")
+        self.resize(616, 600)
+
+        layout = QVBoxLayout(self)
+
+        self.ignored_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Report Time", "timestamp", width=170),
+                ColumnDefn("Reporter", "reporter", width=80),
+                ColumnDefn("Item", "name", width=178),
+                ColumnDefn("Restrictions", lambda x: x.classes(), width=85),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=70),
+            ],
+            parent=self,
+            single_select=True,
         )
-        main_box.Add(ignored_list, flag=wx.EXPAND)
+        layout.addWidget(self.ignored_list)
 
-        ignored_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Report Time", "left", 170, "timestamp", fixedWidth=170),
-                ObjectListView.ColumnDefn("Reporter", "left", 80, "reporter", fixedWidth=80),
-                ObjectListView.ColumnDefn("Item", "left", 178, "name", fixedWidth=178),
-                ObjectListView.ColumnDefn("Restrictions", "left", 85, "classes", fixedWidth=85),
-                ObjectListView.ColumnDefn("Droppable", "center", 70, "droppable", fixedWidth=70),
-            ]
-        )
-        ignored_list.SetObjects(config.IGNORED_AUCTIONS)
-        ignored_list.SetEmptyListMsg("No drops ignored.")
-        ignored_list.Bind(wx.EVT_LEFT_DCLICK, self.OnRestoreIgnored)
-        self.ignored_list = ignored_list
+        self.ignored_list.set_objects(config.IGNORED_AUCTIONS)
+        self.ignored_list.doubleClicked.connect(self._on_restore)
 
-        self.SetSizer(main_box)
+        signals.ignore.connect(self._on_refresh)
+
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        self.Show()
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        self.show()
 
-    def OnRefresh(self, e: models.IgnoreEvent):
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
+
+    def _on_refresh(self):
         try:
-            self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
+            self.ignored_list.set_objects(config.IGNORED_AUCTIONS)
         except RuntimeError:
             pass
 
-    def OnRestoreIgnored(self, e: wx.EVT_LEFT_DCLICK):
-        item = self.ignored_list.GetSelectedObject()
+    def _on_restore(self):
+        item = self.ignored_list.get_selected_object()
         if not item:
             return
         config.IGNORED_AUCTIONS.remove(item)
         config.PENDING_AUCTIONS.append(item)
-        self.ignored_list.SetObjects(config.IGNORED_AUCTIONS)
-        wx.PostEvent(self.GetParent(), models.DropEvent())
+        self.ignored_list.set_objects(config.IGNORED_AUCTIONS)
+        signals.drop.emit()

@@ -12,10 +12,10 @@ from ninjalooter import constants
 
 SEMVER = semver.VersionInfo(
     major=1,
-    minor=17,
-    patch=2,
-    prerelease=None,
-    build=None,
+    minor=18,
+    patch=0,
+    prerelease='rc2',
+    build='console',
 )
 VERSION = str(SEMVER)
 
@@ -189,8 +189,6 @@ RAID_OVERVIEW_GUILDS_ENABLED_CACHE = dict()
 TAB_SELECTION = 0
 
 # Calculated variables
-WX_LAST_WHO_SNAPSHOT = None
-WX_TASKBAR_ICON = None
 ALLIANCE_MAP = dict()
 for alliance, guilds in ALLIANCES.items():
     for guild in guilds:
@@ -202,7 +200,10 @@ LAST_RAIDTICK = datetime.datetime.now()
 LAST_NUMBER = 0
 PLAYER_NAME = ""
 LATEST_LOGFILE = None
-WX_FILESYSTEM_WATCHER = None
+PARSER_THREAD = None
+
+# Theme
+DARK_MODE = CONF.getboolean("theme", "dark_mode", fallback=True)
 
 # Constants
 BASE_WIKI_URL = "http://wiki.project1999.com"

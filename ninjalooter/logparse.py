@@ -2,9 +2,8 @@ import os
 import threading
 import time
 
-import wx
-
 from ninjalooter import config, logger, message_handlers, utils
+from ninjalooter.app_signals import signals
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -36,8 +35,7 @@ def reset_matchers():
 reset_matchers()
 
 
-# pylint: disable=no-member
-def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
+def parse_logfile(logfile: str, run: threading.Event):
     if config.TRIE is None:
         utils.setup_aho()
     with open(logfile, encoding="utf-8", errors="replace") as lfp:
@@ -47,8 +45,6 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
             pos = lfp.tell()
             lines = lfp.readlines()
             if not lines:
-                # Reset TextIOWrapper's internal decoder state so it
-                # picks up data appended by another process.
                 lfp.seek(pos)
             last_rand_player = None
             for raw_line in lines:
@@ -61,7 +57,7 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
                     match = matcher.match(current_line)
                     if match:
                         try:
-                            result = match_func(match, window)
+                            result = match_func(match)
                         except Exception:
                             LOG.exception(
                                 "Error in log handler %s for line: %s",
@@ -77,10 +73,8 @@ def parse_logfile(logfile: str, window: wx.Window, run: threading.Event):
 
 
 class ParseThread(threading.Thread):
-    # pylint: disable=no-member
-    def __init__(self, window: wx.Window):
+    def __init__(self):
         super().__init__(daemon=True)
-        self.window = window
         self.loop_run = threading.Event()
         self.loop_run.set()
 
@@ -90,16 +84,15 @@ class ParseThread(threading.Thread):
             config.LATEST_LOGFILE = logfile
             config.PLAYER_NAME = name
             LOG.info("Starting logparser thread for %s...", name)
-            wx.CallAfter(
-                self.window.SetLabel,
-                "NinjaLooter EQ Raid Manager v{version} - {name}".format(version=config.VERSION, name=name),
+            signals.title_changed.emit(
+                "NinjaLooter EQ Raid Manager v{version} - {name}".format(version=config.VERSION, name=name)
             )
             if logfile:
                 utils.alert_message(
                     "Now monitoring logs for %s" % name,
                     "A recently modified logfile was detected: %s" % os.path.basename(logfile),
                 )
-                parse_logfile(logfile, self.window, self.loop_run)
+                parse_logfile(logfile, self.loop_run)
             else:
                 utils.alert_message(
                     "Not monitoring any logs",
@@ -110,14 +103,16 @@ class ParseThread(threading.Thread):
             if self.loop_run.is_set():
                 utils.alert_message(
                     "Log Parser Crashed",
-                    "The log monitoring thread has stopped "
-                    "unexpectedly. Restarting...",
+                    "The log monitoring thread has stopped unexpectedly. Restarting...",
                 )
-                wx.CallAfter(self._restart)
+                signals.title_changed.emit(
+                    "NinjaLooter EQ Raid Manager v{version} - RESTARTING...".format(version=config.VERSION)
+                )
+                self._restart()
 
     def _restart(self):
-        new_thread = ParseThread(self.window)
-        self.window.parser_thread = new_thread
+        new_thread = ParseThread()
+        config.PARSER_THREAD = new_thread
         new_thread.start()
 
     def abort(self):

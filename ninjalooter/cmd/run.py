@@ -1,17 +1,19 @@
 import sys
 import traceback
 
-import wx
-import wx.html
+from PySide6.QtWidgets import QApplication
 
-from ninjalooter import autoupdate, extra_data, logger, utils
-from ninjalooter.ui import window
+from ninjalooter import autoupdate, config, extra_data, logger, utils
+from ninjalooter.ui.theme import apply_app_theme
+from ninjalooter.ui.window import MainWindow
 
 LOG = logger.getLogger(__name__)
 
 
 def run():
-    app = wx.App(False)
+    app = QApplication(sys.argv)
+    apply_app_theme(app, dark_mode=config.DARK_MODE)
+
     if getattr(sys, "frozen", False):
         try:
             autoupdate.check_update()
@@ -26,8 +28,10 @@ def run():
         LOG.exception(f"Failed to fetch google sheet for overrides: {e}")
     extra_data.apply_custom_overrides()
     utils.load_state()
-    window.MainWindow()
-    app.MainLoop()
+
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
 
 
 def main():

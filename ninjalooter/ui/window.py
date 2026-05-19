@@ -1,14 +1,22 @@
-# pylint: disable=no-member,invalid-name,unused-argument
-
-import os.path
+import os
 import sys
 
-import markdown2
 import semver
-import wx
-import wx.html
+from PySide6.QtCore import QFileSystemWatcher, Qt
+from PySide6.QtGui import QCloseEvent, QIcon, QShowEvent
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QSystemTrayIcon,
+    QTabWidget,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ninjalooter import autoupdate, config, logger, logparse, utils
+from ninjalooter.app_signals import signals
 from ninjalooter.ui import (
     attendance_frame,
     bidding_frame,
@@ -18,186 +26,233 @@ from ninjalooter.ui import (
     raid_overview_frame,
     raidgroups_frame,
 )
+from ninjalooter.ui.theme import apply_windows_window_frame, semantic
 
-# This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
 
 
-class TaskBarIcon(wx.adv.TaskBarIcon):
-    def __init__(self, frame):
-        wx.adv.TaskBarIcon.__init__(self)
-        self.frame = frame
-        icon = wx.Icon()
-        icon.CopyFromBitmap(
-            wx.Bitmap(
-                os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
-                wx.BITMAP_TYPE_ANY,
-            )
-        )
-        self.SetIcon(icon, "NinjaLooter " + config.VERSION)
-        self.alwaysontop_mi = None
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("NinjaLooter EQ Raid Manager")
+        self.resize(855, 800)
 
-    def CreatePopupMenu(self):
-        menu = wx.Menu()
+        icon_path = os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.ico")
+        if os.path.exists(icon_path):
+            self._app_icon = QIcon(icon_path)
+        else:
+            png_path = os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.png")
+            self._app_icon = QIcon(png_path)
+        self.setWindowIcon(self._app_icon)
 
-        self.alwaysontop_mi = wx.MenuItem(menu, wx.ID_ANY, "Always On Top", kind=wx.ITEM_CHECK)
-        menu.Append(self.alwaysontop_mi)
-        self.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
-        self.Bind(wx.EVT_MENU, self.OnAlwaysOnTop, self.alwaysontop_mi)
+        # Menu bar
+        self._menu_bar = menu_bar.MenuBar(self)
+        self.setMenuBar(self._menu_bar)
 
-        exit_mi = wx.MenuItem(menu, wx.ID_EXIT, "Quit")
-        exit_bitmap = wx.Bitmap(os.path.join(config.PROJECT_DIR, "data", "icons", "exit.png"))
-        exit_mi.SetBitmap(exit_bitmap)
-        menu.Append(exit_mi)
-        self.Bind(wx.EVT_MENU, self.frame.OnClose, exit_mi)
+        # Tab widget
+        self._notebook = QTabWidget()
+        self._notebook.setTabPosition(QTabWidget.TabPosition.North)
+        self.setCentralWidget(self._notebook)
 
-        return menu
-
-    def OnAlwaysOnTop(self, e: wx.MenuEvent):
-        config.ALWAYS_ON_TOP = self.alwaysontop_mi.IsChecked()
-        self.frame.MenuBar.alwaysontop_mi.Check(config.ALWAYS_ON_TOP)
-        config.CONF.set("default", "always_on_top", str(config.ALWAYS_ON_TOP))
-        self.frame.UpdateAlwaysOnTop()
-        config.write()
-
-
-class MainWindow(wx.Frame):
-    def __init__(self, parent=None, title="NinjaLooter EQ Raid Manager"):
-        wx.Frame.__init__(self, parent, title=title, size=(855, 800))
-        icon = wx.Icon()
-        icon.CopyFromBitmap(
-            wx.Bitmap(
-                os.path.join(config.PROJECT_DIR, "data", "icons", "ninja_attack.png"),
-                wx.BITMAP_TYPE_ANY,
-            )
-        )
-        self.SetIcon(icon)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-        # Set up menubar
-        menu_bar.MenuBar(self)
-
-        # Set up taskbar icon
-        config.WX_TASKBAR_ICON = TaskBarIcon(self)
-
-        # Notebook used to create a tabbed main interface
-        self._notebook = wx.Notebook(self, style=wx.LEFT)
-
-        # Bidding Frame
         self.bidding_frame = bidding_frame.BiddingFrame(self._notebook)
+        self._notebook.addTab(self.bidding_frame, "Bidding")
 
-        # Attendance Frame
         self.attendance_frame = attendance_frame.AttendanceFrame(self._notebook)
+        self._notebook.addTab(self.attendance_frame, "Attendance Logs")
 
-        # Population Frame
         self.population_frame = population_frame.PopulationFrame(self._notebook)
+        self._notebook.addTab(self.population_frame, "Population Rolls")
 
-        # Kill Times Frame
         self.killtimes_frame = killtimes_frame.KillTimesFrame(self._notebook)
+        self._notebook.addTab(self.killtimes_frame, "Time of Death Tracking")
 
-        # Raid Groups Frame
         self.raidgroups_frame = raidgroups_frame.RaidGroupsFrame(self._notebook)
+        self._notebook.addTab(self.raidgroups_frame, "Raid Groups")
 
-        # Raid Overview Frame
         self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(self._notebook)
+        self._notebook.addTab(self.raid_ov_frame, "Raid Overview")
 
-        self._notebook.SetSelection(config.TAB_SELECTION)
+        self._notebook.setCurrentIndex(config.TAB_SELECTION)
 
-        self.Show(True)
+        # System tray icon
+        self._tray_icon = QSystemTrayIcon(self._app_icon, self)
+        self._tray_icon.setToolTip("NinjaLooter " + config.VERSION)
+        tray_menu = QMenu()
+        self._tray_aot_action = tray_menu.addAction("Always On Top")
+        self._tray_aot_action.setCheckable(True)
+        self._tray_aot_action.setChecked(config.ALWAYS_ON_TOP)
+        self._tray_aot_action.triggered.connect(self._on_tray_always_on_top)
+        tray_menu.addSeparator()
+        quit_action = tray_menu.addAction("Quit")
+        quit_action.triggered.connect(self.close)
+        self._tray_icon.setContextMenu(tray_menu)
+        self._tray_icon.show()
+
+        # Apply always-on-top
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        self.parser_thread = logparse.ParseThread(self)
-        self.parser_thread.start()
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
 
-        # Handle automatically switching characters
-        if sys.platform == "win32":  # FileSystemWatcher is buggy on Linux/OSX
-            self.watcher = wx.FileSystemWatcher()
-            self.watcher.Bind(wx.EVT_FSWATCHER, self.OnFilesystemEvent)
+        # Signals
+        signals.title_changed.connect(self.setWindowTitle)
+        signals.alert.connect(self._show_tray_notification)
+        signals.show_raid_overview.connect(self._switch_to_raid_overview)
+        signals.calc_raid_groups.connect(self._switch_to_raid_groups)
+
+        # Start parse thread
+        config.PARSER_THREAD = logparse.ParseThread()
+        config.PARSER_THREAD.start()
+
+        # Filesystem watcher for auto-detecting new log files (Windows only)
+        self._fs_watcher = None
+        if sys.platform == "win32":
+            self._fs_watcher = QFileSystemWatcher(self)
             if os.path.isdir(config.LOG_DIRECTORY):
-                self.watcher.Add(config.LOG_DIRECTORY, events=wx.FSW_EVENT_CREATE | wx.FSW_EVENT_MODIFY)
-            config.WX_FILESYSTEM_WATCHER = self.watcher
+                self._fs_watcher.addPath(config.LOG_DIRECTORY)
+            self._fs_watcher.directoryChanged.connect(self._on_filesystem_event)
 
-        # Show Changelog on new version
+        # Show changelog on version bump
         try:
             last_run = semver.VersionInfo.parse(config.LAST_RUN_VERSION)
             current = semver.VersionInfo.parse(config.VERSION)
             if current > last_run:
-                ChangeLog(self)
+                ChangeLogWindow(self)
         except (ValueError, TypeError):
             config.LAST_RUN_VERSION = config.VERSION
             config.CONF.set("default", "last_run_version", config.VERSION)
             config.write()
 
-    def OnFilesystemEvent(self, e: wx.FileSystemWatcherEvent):
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
+
+    def update_always_on_top(self):
+        flags = self.windowFlags() | Qt.WindowType.Window
+        if config.ALWAYS_ON_TOP:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        else:
+            flags &= ~Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
+        self.show()
+        self._tray_aot_action.setChecked(config.ALWAYS_ON_TOP)
+
+    def update_fs_watcher(self, new_dir: str):
+        if self._fs_watcher is None:
+            return
+        paths = self._fs_watcher.directories()
+        if paths:
+            self._fs_watcher.removePaths(paths)
+        if os.path.isdir(new_dir):
+            self._fs_watcher.addPath(new_dir)
+
+    def restart_parser(self):
+        if config.PARSER_THREAD:
+            config.PARSER_THREAD.abort()
+        config.PARSER_THREAD = logparse.ParseThread()
+        config.PARSER_THREAD.start()
+
+    def _on_tray_always_on_top(self, checked: bool):
+        config.ALWAYS_ON_TOP = checked
+        config.CONF.set("default", "always_on_top", str(config.ALWAYS_ON_TOP))
+        config.write()
+        self.update_always_on_top()
+        self._menu_bar.sync_always_on_top()
+
+    def _on_filesystem_event(self, path: str):  # noqa: ARG002
         if not config.AUTO_SWAP_LOGFILE:
             return
         logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
-        if logfile != config.LATEST_LOGFILE:
+        if logfile and logfile != config.LATEST_LOGFILE:
             config.PLAYER_NAME = name
             config.LATEST_LOGFILE = logfile
-            self.parser_thread.abort()
-            self.parser_thread = logparse.ParseThread(self)
-            self.parser_thread.start()
+            self.restart_parser()
 
-    def UpdateAlwaysOnTop(self):
-        if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        else:
-            self.SetWindowStyle(self.GetWindowStyle() & ~wx.STAY_ON_TOP)
+    def _show_tray_notification(self, title: str, message: str, msec: int):
+        if self._tray_icon.supportsMessages():
+            self._tray_icon.showMessage(title, message, QSystemTrayIcon.MessageIcon.Information, msec)
 
-    def OnClose(self, e: wx.Event):
+    def _switch_to_raid_overview(self, _wholog=None):
+        idx = self._notebook.indexOf(self.raid_ov_frame)
+        if idx >= 0:
+            self._notebook.setCurrentIndex(idx)
+
+    def _switch_to_raid_groups(self):
+        idx = self._notebook.indexOf(self.raidgroups_frame)
+        if idx >= 0:
+            self._notebook.setCurrentIndex(idx)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
         if config.CONFIRM_EXIT:
-            dlg = wx.MessageDialog(
+            reply = QMessageBox.question(
                 self,
-                "Do you really want to close this application?",
                 "Confirm Exit",
-                wx.OK | wx.CANCEL | wx.ICON_QUESTION,
+                "Do you really want to close this application?",
+                QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             )
-            result = dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            result = wx.ID_OK
-        if result == wx.ID_OK:
-            config.TAB_SELECTION = self._notebook.GetSelection()
-            utils.clear_alerts()
-            config.WX_TASKBAR_ICON.Destroy()
-            self.parser_thread.abort()
-            self.parser_thread.join(timeout=2)
-            utils.store_state()
-            self.Destroy()
+            if reply != QMessageBox.StandardButton.Ok:
+                event.ignore()
+                return
+
+        config.TAB_SELECTION = self._notebook.currentIndex()
+        utils.clear_alerts()
+        if config.PARSER_THREAD:
+            config.PARSER_THREAD.abort()
+            config.PARSER_THREAD.join(timeout=2)
+        utils.store_state()
+        self._tray_icon.hide()
+        event.accept()
 
 
-class ChangeLog(wx.Frame):
+class ChangeLogWindow(QWidget):
     def __init__(self, parent=None):
+        super().__init__(parent, Qt.WindowType.Window)
         try:
-            version, tag_data = autoupdate.get_release_from_github(config.VERSION)
-        except Exception as e:  # noqa
-            if isinstance(e, KeyError) and "tag_name" in e.args:
-                LOG.warning("This version is not yet released, no changelog data to fetch.")
+            releases = autoupdate.get_recent_releases(max_releases=5)
+            current = semver.VersionInfo.parse(config.VERSION)
+            if config.LAST_RUN_VERSION:
+                last_run = semver.VersionInfo.parse(config.LAST_RUN_VERSION)
             else:
-                LOG.exception("Failed to fetch changelog data from GitHub.")
+                last_run = semver.VersionInfo(0, 0, 0)
+            new_releases = [r for r in releases if last_run < r["version"] <= current]
+            if not new_releases:
+                LOG.info("No new releases to show in changelog.")
+                self.deleteLater()
+                return
+        except Exception:
+            LOG.exception("Failed to fetch changelog data from GitHub.")
+            self.deleteLater()
             return
-        title = f"Changelog for {version}"
-        wx.Frame.__init__(self, parent, title=title, size=(600, 400))
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-        self.changelog_data = markdown2.markdown(tag_data["body"])
+        self.setWindowTitle(f"Changelog — v{config.VERSION}")
+        self.resize(600, 400)
 
-        self.html_win = wx.html.HtmlWindow(self)
-        self.html_win.SetPage(self.changelog_data)
-        self.html_win.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OpenURL)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self._browser = QTextBrowser()
+        self._browser.setOpenExternalLinks(False)
+        self._browser.anchorClicked.connect(self._open_url)
+        html = autoupdate.compile_changelog(new_releases)
+        styled_html = (
+            f'<body style="background-color:{semantic.changelog_bg}; '
+            f'color:{semantic.changelog_fg}; padding:12px;">{html}</body>'
+        )
+        self._browser.setHtml(styled_html)
+        layout.addWidget(self._browser)
+
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        self.html_win.SetBackgroundColour(wx.Colour("#eff7fa"))
-        self.Show()
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        self.show()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
 
     @staticmethod
-    def OpenURL(e: wx.html.EVT_HTML_LINK_CLICKED):
-        url = e.GetLinkInfo().GetHref()
-        utils.open_generic_url(url)
+    def _open_url(url):
+        utils.open_generic_url(url.toString())
 
-    def OnClose(self, e: wx.EVT_CLOSE):
+    def closeEvent(self, event: QCloseEvent) -> None:
         config.LAST_RUN_VERSION = config.VERSION
         config.CONF.set("default", "last_run_version", config.VERSION)
         config.write()
-        self.Destroy()
+        event.accept()

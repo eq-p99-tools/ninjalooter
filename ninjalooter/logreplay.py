@@ -34,15 +34,22 @@ SELF_MESSAGE_MATCHERS = {
 }
 
 
-def replay_logs(replay_lines, progress_dialog):
+def replay_logs(replay_lines, progress_callback=None):
+    """Replay a log file, parsing all lines.
+
+    Args:
+        replay_lines: List of log lines to replay.
+        progress_callback: Optional callable(current, total) -> bool.
+                          Returns False to cancel.
+    """
     old_charname = config.PLAYER_NAME
     total_picked_lines = len(replay_lines)
     last_rand_player = None
     for idx, line in enumerate(replay_lines):
-        keep_going, _ = progress_dialog.Update(idx, newmsg="Now parsing line %s of %s..." % (idx, total_picked_lines))
-        if not keep_going:
-            LOG.debug("User cancelled log replay.")
-            break
+        if progress_callback:
+            if not progress_callback(idx, total_picked_lines):
+                LOG.debug("User cancelled log replay.")
+                break
 
         current_line = line.strip()
         if last_rand_player:
@@ -53,7 +60,7 @@ def replay_logs(replay_lines, progress_dialog):
             match = matcher.match(current_line)
             if match:
                 try:
-                    result = match_func(match, progress_dialog.Parent, True)
+                    result = match_func(match, skip_store=True)
                 except Exception:
                     LOG.exception("Failed to parse SELF line: %s", current_line)
         if result:
@@ -64,7 +71,7 @@ def replay_logs(replay_lines, progress_dialog):
             match = matcher.match(current_line)
             if match:
                 try:
-                    result = match_func(match, progress_dialog.Parent, True)
+                    result = match_func(match, skip_store=True)
                 except Exception:
                     LOG.exception("Failed to parse line: %s", current_line)
                     break

@@ -1,387 +1,452 @@
-# pylint: disable=no-member,invalid-name,unused-argument,duplicate-code
 import copy
+from collections import defaultdict
 
-import ObjectListView3 as ObjectListView
-import wx
-import wx.lib.splitter
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QShowEvent, QStandardItem, QStandardItemModel
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ninjalooter import config, models, utils
+from ninjalooter.app_signals import signals
+from ninjalooter.raidgroups import GroupBuilder
+from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
+from ninjalooter.ui.theme import apply_windows_window_frame, semantic
 
 
-class AttendanceFrame(wx.Window):
-    def __init__(self, parent: wx.Notebook, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        parent.GetParent().Connect(-1, -1, models.EVT_WHO_HISTORY, self.OnWhoHistory)
-        parent.GetParent().Connect(-1, -1, models.EVT_CREDITT, self.OnCreditt)
-        parent.GetParent().Connect(-1, -1, models.EVT_GRATSS, self.OnGratss)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_CLEAR, self.OnClearApp)
-        parent.GetParent().Connect(-1, -1, models.EVT_APP_RELOAD, self.OnReloadApp)
+class _GroupBuilderThread(QThread):
+    finished_signal = Signal(object)
 
-        ##############################
-        # Attendance Log Frame (Tab 2)
-        ##############################
-        attendance_main_box = wx.BoxSizer(wx.VERTICAL)
-        attendance_splitter = wx.lib.splitter.MultiSplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_BORDER)
-        attendance_splitter.SetOrientation(wx.VERTICAL)
-        pane_1 = wx.Panel(attendance_splitter, wx.ID_ANY)
-        pane_2 = wx.Panel(attendance_splitter, wx.ID_ANY)
-        pane_3 = wx.Panel(attendance_splitter, wx.ID_ANY)
+    def __init__(self, players, parent=None):
+        super().__init__(parent)
+        self._players = players
 
-        # Attendance / Raidtick List
-        attendance_box = wx.BoxSizer(wx.HORIZONTAL)
-        attendance_list = ObjectListView.ObjectListView(pane_1, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 600))
-        attendance_box.Add(attendance_list, flag=wx.EXPAND | wx.ALL)
-        attendance_list.Bind(wx.EVT_LEFT_DCLICK, self.ShowAttendanceDetail)
-        attendance_list.Bind(wx.EVT_RIGHT_DCLICK, self.OnMarkRaidtick)
-        self.attendance_list = attendance_list
+    def run(self):
+        builder = GroupBuilder()
+        builder.build_groups(self._players)
+        self.finished_signal.emit(builder.raid)
 
-        attendance_list.SetColumns(
+
+class AttendanceFrame(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        splitter = QSplitter(Qt.Orientation.Vertical, self)
+
+        # ── Pane 1: Attendance / Raidtick List ──
+        pane1 = QWidget()
+        pane1_layout = QVBoxLayout(pane1)
+        pane1_layout.setContentsMargins(10, 10, 10, 0)
+
+        attendance_row = QHBoxLayout()
+        pane1_layout.addLayout(attendance_row)
+
+        self.attendance_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Time", "time", width=120),
+                ColumnDefn("Name", lambda x: x.tick_name or "", width=140),
+                ColumnDefn("RT", lambda x: x.raidtick_display(), width=25),
+                ColumnDefn("Zone", lambda x: x.zone or "", width=100),
+                ColumnDefn("Populations", lambda x: x.populations() or "", width=300),
+            ],
+            parent=self,
+            single_select=True,
+            sortable=True,
+        )
+        self.attendance_list.setToolTip("Double-click an attendance record to edit it in detail.")
+        self.attendance_list.doubleClicked.connect(self._show_attendance_detail)
+        attendance_row.addWidget(self.attendance_list, 1)
+
+        attendance_btn_col = QVBoxLayout()
+        attendance_btn_col.setContentsMargins(0, 0, 0, 0)
+        attendance_btn_col.setSpacing(2)
+        btn_wrapper = QWidget()
+        btn_wrapper.setFixedWidth(130)
+        btn_wrapper.setLayout(attendance_btn_col)
+        attendance_row.addWidget(btn_wrapper)
+
+        self.raidtick_only_cb = QCheckBox("Show RaidTicks Only")
+        self.raidtick_only_cb.setChecked(config.SHOW_RAIDTICK_ONLY)
+        self.raidtick_only_cb.stateChanged.connect(self._on_raidtick_only)
+        attendance_btn_col.addWidget(self.raidtick_only_cb)
+
+        btn_toggle_rt = QPushButton("Toggle RaidTick")
+        btn_toggle_rt.clicked.connect(self._on_mark_raidtick)
+        attendance_btn_col.addWidget(btn_toggle_rt)
+
+        btn_copy_tick = QPushButton("Copy Tick")
+        btn_copy_tick.clicked.connect(self._on_export_tick)
+        attendance_btn_col.addWidget(btn_copy_tick)
+
+        btn_calc_groups = QPushButton("Calculate Raid Groups")
+        btn_calc_groups.clicked.connect(self._on_calc_raid_groups)
+        attendance_btn_col.addWidget(btn_calc_groups)
+
+        btn_raid_overview = QPushButton("Show Raid Overview")
+        btn_raid_overview.clicked.connect(self._on_show_raid_overview)
+        attendance_btn_col.addWidget(btn_raid_overview)
+
+        attendance_btn_col.addStretch()
+
+        # ── Pane 2: Creditt Log ──
+        pane2 = QWidget()
+        pane2_layout = QVBoxLayout(pane2)
+        pane2_layout.setContentsMargins(10, 10, 10, 0)
+
+        creditt_row = QHBoxLayout()
+        pane2_layout.addLayout(creditt_row)
+
+        self.creditt_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Time", "time", width=160),
+                ColumnDefn("From", "user", width=120),
+                ColumnDefn("Message", "message", width=350),
+            ],
+            parent=self,
+            single_select=True,
+            empty_text="No messages received",
+        )
+        creditt_row.addWidget(self.creditt_list, 1)
+
+        creditt_btn_col = QVBoxLayout()
+        creditt_btn_col.setContentsMargins(0, 0, 0, 0)
+        creditt_btn_col.setSpacing(2)
+        btn_wrapper2 = QWidget()
+        btn_wrapper2.setFixedWidth(130)
+        btn_wrapper2.setLayout(creditt_btn_col)
+        creditt_row.addWidget(btn_wrapper2)
+        btn_ignore_creditt = QPushButton("Ignore Creditt")
+        btn_ignore_creditt.clicked.connect(self._on_ignore_creditt)
+        creditt_btn_col.addWidget(btn_ignore_creditt)
+        creditt_btn_col.addStretch()
+
+        # ── Pane 3: Gratss Log ──
+        pane3 = QWidget()
+        pane3_layout = QVBoxLayout(pane3)
+        pane3_layout.setContentsMargins(10, 10, 10, 10)
+
+        gratss_row = QHBoxLayout()
+        pane3_layout.addLayout(gratss_row)
+
+        self.gratss_list = ObjectTableView(
+            columns=[
+                ColumnDefn("Time", "time", width=160),
+                ColumnDefn("From", "user", width=120),
+                ColumnDefn("Message", "message", width=350),
+            ],
+            parent=self,
+            single_select=True,
+            empty_text="No messages received",
+        )
+        gratss_row.addWidget(self.gratss_list, 1)
+
+        gratss_btn_col = QVBoxLayout()
+        gratss_btn_col.setContentsMargins(0, 0, 0, 0)
+        gratss_btn_col.setSpacing(2)
+        btn_wrapper3 = QWidget()
+        btn_wrapper3.setFixedWidth(130)
+        btn_wrapper3.setLayout(gratss_btn_col)
+        gratss_row.addWidget(btn_wrapper3)
+        btn_ignore_gratss = QPushButton("Ignore Gratss")
+        btn_ignore_gratss.clicked.connect(self._on_ignore_gratss)
+        gratss_btn_col.addWidget(btn_ignore_gratss)
+        gratss_btn_col.addStretch()
+
+        # ── Assemble splitter ──
+        splitter.addWidget(pane1)
+        splitter.addWidget(pane2)
+        splitter.addWidget(pane3)
+        splitter.setChildrenCollapsible(False)
+        splitter.setSizes(
             [
-                ObjectListView.ColumnDefn("Time", "left", 140, "time", fixedWidth=140),
-                ObjectListView.ColumnDefn("Name", "left", 140, lambda x: x.tick_name or "", fixedWidth=140),
-                ObjectListView.ColumnDefn("RT", "left", 25, "raidtick_display", fixedWidth=25),
-                ObjectListView.ColumnDefn("Populations", "left", 357, lambda x: x.populations() or "", fixedWidth=357),
+                config.CREDITT_SASH_POS,
+                config.GRATSS_SASH_POS,
+                150,
             ]
         )
-        attendance_list.SetObjects(config.ATTENDANCE_LOGS)
-        attendance_list.SetEmptyListMsg("No attendance history found.\nPlease type `/who` in-game.")
-        attendance_list.SetToolTip(
-            "Double left-click an attendance record to edit it in a detailed "
-            "view.\n"
-            "Double right-click an attendance record to toggle its RaidTick "
-            "status."
-        )
+        splitter.splitterMoved.connect(self._on_sash_changed)
+        self._splitter = splitter
 
-        # Attendance / Raidtick Buttons
-        attendance_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        attendance_box.Add(attendance_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        attendance_button_raidtick = wx.CheckBox(pane_1, label="Show RaidTicks Only")
-        attendance_buttons_box.Add(attendance_button_raidtick, flag=wx.ALL, border=6)
-        attendance_button_raidtick.Bind(wx.EVT_CHECKBOX, self.OnRaidtickOnly)
-        self.attendance_button_raidtick = attendance_button_raidtick
-        attendance_button_raidtick.SetValue(config.SHOW_RAIDTICK_ONLY)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(splitter)
+
+        # ── Initial data ──
+        self.attendance_list.set_objects(config.ATTENDANCE_LOGS)
+        self.creditt_list.set_objects(config.CREDITT_LOG)
+        self.gratss_list.set_objects(config.GRATSS_LOG)
         if config.SHOW_RAIDTICK_ONLY:
-            self.OnRaidtickOnly(None)
+            self._apply_raidtick_filter()
 
-        attendance_toggle_raidtick = wx.Button(pane_1, label="Toggle RaidTick", size=(140, 22))
-        attendance_toggle_raidtick.Bind(wx.EVT_BUTTON, self.OnMarkRaidtick)
-        attendance_buttons_box.Add(attendance_toggle_raidtick, border=5, flag=wx.ALL)
+        # ── Connect signals ──
+        signals.who_history.connect(self._on_who_history)
+        signals.creditt.connect(self._on_creditt)
+        signals.gratss.connect(self._on_gratss)
+        signals.app_clear.connect(self._on_clear_app)
+        signals.app_reload.connect(self._on_reload_app)
 
-        attendance_export_tick = wx.Button(pane_1, label="Copy Tick to Clipboard", size=(140, 22))
-        attendance_export_tick.Bind(wx.EVT_BUTTON, self.OnExportTick)
-        attendance_buttons_box.Add(attendance_export_tick, border=5, flag=wx.ALL)
+    # ── Splitter persistence ──
 
-        attendance_use_raidgroups = wx.Button(pane_1, label="Calculate Raid Groups", size=(140, 22))
-        attendance_use_raidgroups.Bind(wx.EVT_BUTTON, self.OnCalcRaidGroups)
-        attendance_buttons_box.Add(attendance_use_raidgroups, border=5, flag=wx.ALL)
+    def _on_sash_changed(self, _pos, _index):
+        sizes = self._splitter.sizes()
+        if len(sizes) >= 2:
+            config.CREDITT_SASH_POS = sizes[0]
+            config.GRATSS_SASH_POS = sizes[1]
 
-        attendance_use_raid_ov = wx.Button(pane_1, label="Show Raid Overview", size=(140, 22))
-        attendance_use_raid_ov.Bind(wx.EVT_BUTTON, self.OnShowRaidOverview)
-        attendance_buttons_box.Add(attendance_use_raid_ov, border=5, flag=wx.ALL)
+    # ── Attendance actions ──
 
-        # Creditt Log
-        creditt_box = wx.BoxSizer(wx.HORIZONTAL)
-        creditt_list = ObjectListView.ObjectListView(pane_2, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200))
-        creditt_box.Add(creditt_list, flag=wx.EXPAND | wx.ALL)
-        # creditt_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditCreditt)
-        self.creditt_list = creditt_list
+    def _apply_raidtick_filter(self):
+        if config.SHOW_RAIDTICK_ONLY:
+            self.attendance_list.set_filter_func(lambda x: x.raidtick)
+        else:
+            self.attendance_list.set_filter_func(None)
 
-        creditt_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Time", "left", 160, "time", fixedWidth=160),
-                ObjectListView.ColumnDefn("From", "left", 120, "user", fixedWidth=120),
-                ObjectListView.ColumnDefn("Message", "left", 350, "message", fixedWidth=350),
-            ]
-        )
-        creditt_list.SetObjects(config.CREDITT_LOG)
-        creditt_list.SetEmptyListMsg("No creditt messages received.")
+    def _refresh_attendance(self):
+        self.attendance_list.set_objects(config.ATTENDANCE_LOGS)
+        self._apply_raidtick_filter()
 
-        # Creditt Buttons
-        creditt_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        creditt_box.Add(creditt_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        creditt_button_ignore = wx.Button(pane_2, label="Ignore Creditt", size=(140, 22))
-        creditt_buttons_box.Add(creditt_button_ignore)
-        creditt_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnoreCreditt)
-
-        # Gratss Log
-        gratss_box = wx.BoxSizer(wx.HORIZONTAL)
-        gratss_list = ObjectListView.ObjectListView(pane_3, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(680, 200))
-        gratss_box.Add(gratss_list, flag=wx.EXPAND | wx.ALL)
-        # gratss_list.Bind(wx.EVT_LEFT_DCLICK, self.OnEditGratss)
-        self.gratss_list = gratss_list
-
-        gratss_list.SetColumns(
-            [
-                ObjectListView.ColumnDefn("Time", "left", 160, "time", fixedWidth=160),
-                ObjectListView.ColumnDefn("From", "left", 120, "user", fixedWidth=120),
-                ObjectListView.ColumnDefn("Message", "left", 350, "message", fixedWidth=350),
-            ]
-        )
-        gratss_list.SetObjects(config.GRATSS_LOG)
-        gratss_list.SetEmptyListMsg("No gratss messages received.")
-
-        # Gratss Buttons
-        gratss_buttons_box = wx.BoxSizer(wx.VERTICAL)
-        gratss_box.Add(gratss_buttons_box, flag=wx.EXPAND | wx.TOP | wx.LEFT, border=10)
-        gratss_button_ignore = wx.Button(pane_3, label="Ignore Gratss", size=(140, 22))
-        gratss_buttons_box.Add(gratss_button_ignore)
-        gratss_button_ignore.Bind(wx.EVT_BUTTON, self.OnIgnoreGratss)
-
-        # Set up Splitter
-        pane_1.SetSizer(attendance_box)
-        pane_2.SetSizer(creditt_box)
-        pane_3.SetSizer(gratss_box)
-        attendance_splitter.AppendWindow(pane_1)
-        attendance_splitter.AppendWindow(pane_2)
-        attendance_splitter.AppendWindow(pane_3)
-        attendance_main_box.Add(attendance_splitter, 1, wx.EXPAND, 0)
-
-        # Finalize Tab
-        self.SetSizer(attendance_main_box)
-        attendance_main_box.Fit(self)
-        attendance_splitter.SetMinimumPaneSize(80)
-        attendance_splitter.SetSashPosition(0, config.CREDITT_SASH_POS)
-        attendance_splitter.SetSashPosition(1, config.GRATSS_SASH_POS)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnSashChanged, source=attendance_splitter)
-        parent.AddPage(self, "Attendance Logs")
-
-    @staticmethod
-    def OnSashChanged(e: wx.lib.splitter.MultiSplitterEvent):
-        index, new_pos = e.GetSashIdx(), e.GetSashPosition()
-        if index == 0:
-            config.CREDITT_SASH_POS = new_pos
-        elif index == 1:
-            config.GRATSS_SASH_POS = new_pos
-
-    def OnIgnoreCreditt(self, e: wx.Event):
-        selected_object = self.creditt_list.GetSelectedObject()
-        selected_index = self.creditt_list.GetFirstSelected()
-        if not selected_object:
-            return
-        config.CREDITT_LOG.remove(selected_object)
-        self.creditt_list.SetObjects(config.CREDITT_LOG)
-        item_count = self.creditt_list.GetItemCount()
-        if item_count > 0:
-            self.creditt_list.Select(min(selected_index, item_count - 1))
-        utils.store_state()
-
-    def OnIgnoreGratss(self, e: wx.Event):
-        selected_object = self.gratss_list.GetSelectedObject()
-        selected_index = self.gratss_list.GetFirstSelected()
-        if not selected_object:
-            return
-        config.GRATSS_LOG.remove(selected_object)
-        self.gratss_list.SetObjects(config.GRATSS_LOG)
-        item_count = self.gratss_list.GetItemCount()
-        if item_count > 0:
-            self.gratss_list.Select(min(selected_index, item_count - 1))
-        utils.store_state()
-
-    def OnRaidtickOnly(self, e: wx.Event):
-        config.SHOW_RAIDTICK_ONLY = self.attendance_button_raidtick.IsChecked()
+    def _on_raidtick_only(self):
+        config.SHOW_RAIDTICK_ONLY = self.raidtick_only_cb.isChecked()
         config.CONF.set("default", "raidtick_filter", str(config.SHOW_RAIDTICK_ONLY))
-        self.RefreshList()
+        self._refresh_attendance()
         config.write()
 
-    def RefreshList(self):
-        if config.SHOW_RAIDTICK_ONLY:
-            # Filter to raidtick only
-            raidticks = [x for x in config.ATTENDANCE_LOGS if x.raidtick]
-            self.attendance_list.SetObjects(raidticks)
-        else:
-            self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
-
-    def OnExportTick(self, e: wx.Event):
-        wholog = self.attendance_list.GetSelectedObject()
-
-        if wholog is None or len(wholog.log) == 0:
+    def _on_mark_raidtick(self):
+        selected = self.attendance_list.get_selected_object()
+        if not selected:
             return
+        selected.raidtick = not selected.raidtick
+        self._refresh_attendance()
+        self.attendance_list.select_object(selected)
+        utils.store_state()
 
-        # Make a text version of the values
+    def _on_export_tick(self):
+        wholog = self.attendance_list.get_selected_object()
+        if wholog is None or not wholog.log:
+            return
         tick_lines = utils.parse_tick_for_export(wholog)
         txt = "\n".join(tick_lines) + "\n"
+        QApplication.clipboard().setText(txt)
 
-        cb = wx.Clipboard()
-        if cb.Open():
-            cb.SetData(wx.TextDataObject(txt))
-            cb.Flush()
-            cb.Close()
+    def _on_calc_raid_groups(self):
+        selected = self.attendance_list.get_selected_object()
+        if not selected:
+            return
+        players = list(selected.log.values())
+        self._group_thread = _GroupBuilderThread(players)
+        self._group_thread.finished_signal.connect(self._on_groups_built)
+        self._group_thread.start()
+        signals.calc_raid_groups.emit()
 
-    def OnCalcRaidGroups(self, e: wx.Event):
-        selected_tick = self.attendance_list.GetSelectedObject()
-        if selected_tick:
-            config.RAID_GROUPS.build_groups(list(selected_tick.log.values()))
-            wx.PostEvent(self.GetGrandParent(), models.CalcRaidGroupsEvent())
-        print("raidgroups")
+    def _on_groups_built(self, raid):
+        config.RAID_GROUPS = raid
+        signals.calc_raid_groups.emit()
 
-    def OnShowRaidOverview(self, e: wx.Event):
-        selected_tick = self.attendance_list.GetSelectedObject()
-        if selected_tick:
-            wx.PostEvent(self.GetGrandParent(), models.ShowRaidOverviewEvent(selected_tick))
-        print("raid overview")
+    def _on_show_raid_overview(self):
+        selected = self.attendance_list.get_selected_object()
+        if selected:
+            signals.show_raid_overview.emit(selected)
 
-    def OnWhoHistory(self, e: models.WhoHistoryEvent):
-        if self.attendance_button_raidtick.GetValue():
-            # Filter to raidtick only
-            raidticks = [x for x in config.ATTENDANCE_LOGS if x.raidtick]
-            self.attendance_list.SetObjects(raidticks)
-        else:
-            self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
+    def _show_attendance_detail(self):
+        selected = self.attendance_list.get_selected_object()
+        if not selected:
+            return
+        win = AttendanceDetailWindow(
+            selected,
+            parent=self,
+        )
+        win.closed.connect(self._refresh_attendance)
 
-    def OnCreditt(self, e: models.CredittEvent):
-        self.creditt_list.SetObjects(config.CREDITT_LOG)
+    # ── Creditt / Gratss actions ──
 
-    def OnGratss(self, e: models.GratssEvent):
-        self.gratss_list.SetObjects(config.GRATSS_LOG)
+    def _on_ignore_creditt(self):
+        selected = self.creditt_list.get_selected_object()
+        if not selected:
+            return
+        config.CREDITT_LOG.remove(selected)
+        self.creditt_list.set_objects(config.CREDITT_LOG)
+        utils.store_state()
 
-    def OnClearApp(self, e: models.AppClearEvent):
+    def _on_ignore_gratss(self):
+        selected = self.gratss_list.get_selected_object()
+        if not selected:
+            return
+        config.GRATSS_LOG.remove(selected)
+        self.gratss_list.set_objects(config.GRATSS_LOG)
+        utils.store_state()
+
+    # ── Signal handlers ──
+
+    def _on_who_history(self):
+        self._refresh_attendance()
+
+    def _on_creditt(self):
+        self.creditt_list.set_objects(config.CREDITT_LOG)
+
+    def _on_gratss(self):
+        self.gratss_list.set_objects(config.GRATSS_LOG)
+
+    def _on_clear_app(self):
         config.ATTENDANCE_LOGS.clear()
         config.CREDITT_LOG.clear()
         config.GRATSS_LOG.clear()
-        self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
-        self.creditt_list.SetObjects(config.CREDITT_LOG)
-        self.gratss_list.SetObjects(config.GRATSS_LOG)
-        e.Skip()
+        self.attendance_list.set_objects(config.ATTENDANCE_LOGS)
+        self.creditt_list.set_objects(config.CREDITT_LOG)
+        self.gratss_list.set_objects(config.GRATSS_LOG)
 
-    def OnReloadApp(self, e: models.AppReloadEvent):
-        self.attendance_list.SetObjects(config.ATTENDANCE_LOGS)
-        self.creditt_list.SetObjects(config.CREDITT_LOG)
-        self.gratss_list.SetObjects(config.GRATSS_LOG)
-        e.Skip()
-
-    def ShowAttendanceDetail(self, e: wx.EVT_LEFT_DCLICK):
-        selected_object = self.attendance_list.GetSelectedObject()
-        if not selected_object:
-            return
-        AttendanceDetailWindow(selected_object, parent=self, title="Attendance Record: {}".format(selected_object.time))
-
-    def OnMarkRaidtick(self, e: wx.EVT_RIGHT_DCLICK):
-        selected_object = self.attendance_list.GetSelectedObject()
-        if not selected_object:
-            return
-        selected_object.raidtick = not selected_object.raidtick
-        self.OnRaidtickOnly(e)
-        self.attendance_list.SelectObject(selected_object)
-        utils.store_state()
+    def _on_reload_app(self):
+        self._refresh_attendance()
+        self.creditt_list.set_objects(config.CREDITT_LOG)
+        self.gratss_list.set_objects(config.GRATSS_LOG)
 
 
-class AttendanceDetailWindow(wx.Frame):
-    def __init__(self, item, parent=None, title="Attendance Record"):
-        wx.Frame.__init__(self, parent, title=title, size=(510, 800))
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.item = item
+class AttendanceDetailWindow(QWidget):
+    """Detail view for a single attendance / who log entry."""
 
-        main_box = wx.BoxSizer(wx.VERTICAL)
-        button_box = wx.BoxSizer(wx.HORIZONTAL)
-        main_box.Add(button_box, border=5)
+    closed = Signal()
 
-        add_button = wx.Button(self, label="Add Player")
-        add_button.Bind(wx.EVT_BUTTON, self.OnAddPlayer)
-        button_box.Add(add_button, border=5, flag=wx.ALL)
+    def __init__(self, item, parent=None):
+        super().__init__(parent, Qt.WindowType.Window)
+        self.setWindowTitle(f"Attendance Record: {item.time}")
+        self.resize(520, 800)
+        self._item = item
 
-        remove_button = wx.Button(self, label="Remove Player")
-        remove_button.Bind(wx.EVT_BUTTON, self.OnRemovePlayer)
-        button_box.Add(remove_button, border=5, flag=wx.ALL)
+        main_layout = QVBoxLayout(self)
 
-        self.name_textbox = wx.TextCtrl(self, id=wx.ID_ANY, size=(130, 22), value=item.tick_name or "")
-        if self.item.zone:
-            self.name_textbox.SetHint(f"{self.item.zone}?")
-        else:
-            self.name_textbox.SetHint("Tick Name?")
-        button_box.Add(self.name_textbox, flag=wx.TOP | wx.LEFT, border=6)
+        # ── Top button bar ──
+        button_row = QHBoxLayout()
+        main_layout.addLayout(button_row)
 
-        raidtick_checkbox = wx.CheckBox(self, label="Raidtick")
-        raidtick_checkbox.SetValue(item.raidtick)
-        bs = wx.SizerFlags().Border(wx.LEFT, 5).CenterVertical()
-        button_box.Add(raidtick_checkbox, bs)
-        self.raidtick_checkbox = raidtick_checkbox
+        btn_add = QPushButton("Add Player")
+        btn_add.clicked.connect(self._on_add_player)
+        button_row.addWidget(btn_add)
 
-        attendance_record = ObjectListView.GroupListView(
-            self, wx.ID_ANY, style=wx.LC_REPORT, size=wx.Size(405, 1080), useExpansionColumn=True
-        )
-        attendance_record.CopyObjectsToClipboard = self.CopyObjectsToClipboardAttendance
-        main_box.Add(attendance_record, flag=wx.EXPAND | wx.ALL)
-        self.attendance_record = attendance_record
+        btn_remove = QPushButton("Remove Player")
+        btn_remove.clicked.connect(self._on_remove_player)
+        button_row.addWidget(btn_remove)
 
-        def attendanceGroupKey(player):
-            return config.ALLIANCE_MAP.get(player.guild, "No Alliance")
+        self._tick_name = QLineEdit()
+        self._tick_name.setPlaceholderText(f"{item.zone}?" if item.zone else "Tick Name?")
+        self._tick_name.setText(item.tick_name or "")
+        self._tick_name.setFixedWidth(140)
+        button_row.addWidget(self._tick_name)
 
-        attendance_record.SetColumns(
-            [
-                ObjectListView.ColumnDefn(
-                    "Name", "left", 160, "name", groupKeyGetter=attendanceGroupKey, fixedWidth=160
-                ),
-                ObjectListView.ColumnDefn(
-                    "Guild",
-                    "left",
-                    140,
-                    "sortguild",
-                    groupKeyGetter=attendanceGroupKey,
-                    fixedWidth=140,
-                ),
-                ObjectListView.ColumnDefn(
-                    "Level", "left", 40, "level", groupKeyGetter=attendanceGroupKey, fixedWidth=40
-                ),
-                ObjectListView.ColumnDefn(
-                    "Class",
-                    "left",
-                    110,
-                    "sortclass",
-                    groupKeyGetter=attendanceGroupKey,
-                    fixedWidth=110,
-                ),
-            ]
-        )
-        attendance_list = list(item.log.values())
-        attendance_record.SetObjects(attendance_list)
-        attendance_record.AlwaysShowScrollbars(False, True)
+        self._raidtick_cb = QCheckBox("RaidTick")
+        self._raidtick_cb.setChecked(item.raidtick)
+        button_row.addWidget(self._raidtick_cb)
 
-        self.SetSizer(main_box)
+        button_row.addStretch()
+
+        # ── Player tree (grouped by alliance) ──
+        self._tree = QTreeView(self)
+        self._tree.setAlternatingRowColors(False)
+        self._tree.setRootIsDecorated(True)
+        self._tree.setItemsExpandable(True)
+        self._tree.setAnimated(True)
+        self._tree.setSortingEnabled(True)
+
+        self._tree_model = QStandardItemModel(self)
+        self._tree_model.setHorizontalHeaderLabels(["Name", "Guild", "Level", "Class"])
+        self._tree.setModel(self._tree_model)
+
+        header = self._tree.header()
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.resizeSection(0, 160)
+        header.resizeSection(1, 100)
+        header.resizeSection(2, 50)
+        header_font = header.font()
+        header_font.setPointSize(header_font.pointSize() + 1)
+        header.setFont(header_font)
+
+        main_layout.addWidget(self._tree)
+
+        self._rebuild_tree()
+
         if config.ALWAYS_ON_TOP:
-            self.SetWindowStyle(self.GetWindowStyle() | wx.STAY_ON_TOP)
-        self.Show()
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        self.show()
 
-    def CopyObjectsToClipboardAttendance(self, objects):
-        """
-        Put a textual representation of the given objects onto the clipboard.
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
 
-        Custom version of the copy text from a tick line:
+    def _rebuild_tree(self):
+        self._tree_model.removeRows(0, self._tree_model.rowCount())
+        players = list(self._item.log.values())
 
-        [Sun Jul 17 10:22:15 2022] [ANONYMOUS] Player <Guild> {## Class}
-        """
-        if objects is None or len(objects) == 0:
+        by_alliance: dict[str, list] = defaultdict(list)
+        for p in players:
+            alliance = config.ALLIANCE_MAP.get(p.guild, "No Alliance")
+            by_alliance[alliance].append(p)
+
+        for alliance_name in sorted(by_alliance.keys()):
+            alliance_players = sorted(by_alliance[alliance_name], key=lambda p: p.name)
+
+            group_item = QStandardItem(f"{alliance_name} ({len(alliance_players)})")
+            group_item.setEditable(False)
+            group_item.setBackground(semantic.group_header)
+            font = group_item.font()
+            font.setBold(True)
+            group_item.setFont(font)
+
+            placeholders = [QStandardItem("") for _ in range(3)]
+            for ph in placeholders:
+                ph.setEditable(False)
+                ph.setBackground(semantic.group_header)
+
+            for i, p in enumerate(alliance_players):
+                bg = semantic.alt_row if i % 2 == 1 else semantic.base_row
+                name_item = QStandardItem(p.name)
+                name_item.setEditable(False)
+                name_item.setBackground(bg)
+                guild_item = QStandardItem(p.guild or "")
+                guild_item.setEditable(False)
+                guild_item.setBackground(bg)
+                level_item = QStandardItem(str(p.level) if p.level else "")
+                level_item.setEditable(False)
+                level_item.setBackground(bg)
+                class_item = QStandardItem(p.pclass or "")
+                class_item.setEditable(False)
+                class_item.setBackground(bg)
+                group_item.appendRow([name_item, guild_item, level_item, class_item])
+
+            self._tree_model.appendRow([group_item] + placeholders)
+
+        self._tree.expandAll()
+
+    def _on_remove_player(self):
+        indexes = self._tree.selectionModel().selectedIndexes()
+        if not indexes:
             return
-
-        # Make a text version of the values
-        lines = [(f"[{self.item.eqtime()}] [ANONYMOUS] {x.name} <{x.guild}> {{{x.level} {x.pclass}}}") for x in objects]
-        txt = "\n".join(lines) + "\n"
-
-        cb = wx.Clipboard()
-        if cb.Open():
-            cb.SetData(wx.TextDataObject(txt))
-            cb.Flush()
-            cb.Close()
-
-    def OnRemovePlayer(self, e: wx.EVT_BUTTON):
-        selected_player = self.attendance_record.GetSelectedObject()
-        if not selected_player:
+        idx = indexes[0]
+        if not idx.parent().isValid():
             return
-
-        try:
-            self.item.log.pop(selected_player.name)
-        except KeyError:
-            pass  # already removed a duplicate -- shouldn't happen anymore
-        self.attendance_record.RemoveObject(selected_player)
-        self.Update()
+        name_item = self._tree_model.itemFromIndex(
+            self._tree_model.index(idx.row(), 0, idx.parent())
+        )
+        if not name_item:
+            return
+        player_name = name_item.text()
+        self._item.log.pop(player_name, None)
+        self._rebuild_tree()
         utils.store_state()
 
-    def OnAddPlayer(self, e: wx.EVT_BUTTON):
-        name_dialog = wx.TextEntryDialog(self, "Player name:", "Add Player")
-        result = name_dialog.ShowModal()
-        player_name = name_dialog.GetValue().capitalize()
-        name_dialog.Destroy()
-        if result != wx.ID_OK or not player_name:
+    def _on_add_player(self):
+        name, ok = QInputDialog.getText(self, "Add Player", "Player name:")
+        if not ok or not name.strip():
             return
+        player_name = name.strip().capitalize()
 
         player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
         if player_name in config.PLAYER_DB:
@@ -391,19 +456,18 @@ class AttendanceDetailWindow(wx.Frame):
         else:
             player_record = models.Player(player_name, None, None, player_guild)
 
-        if player_name not in self.item.log:
-            self.item.log[player_name] = player_record
-            self.attendance_record.AddObject(player_record)
-            self.attendance_record.Update()
+        if player_name not in self._item.log:
+            self._item.log[player_name] = player_record
+            self._rebuild_tree()
             utils.store_state()
 
-    def OnClose(self, e: wx.EVT_CLOSE):
-        self.item.raidtick = self.raidtick_checkbox.IsChecked()
-        self.item.tick_name = self.name_textbox.GetValue()[:32]
-        # the following aren't allowed: []:*?/\
+    def closeEvent(self, event):
+        self._item.raidtick = self._raidtick_cb.isChecked()
+        tick_name = self._tick_name.text()[:32]
         for c in "[]:?/\\":
-            self.item.tick_name = self.item.tick_name.replace(c, "-")
-        self.item.tick_name = self.item.tick_name.replace("*", "")
-        self.GetParent().RefreshList()
+            tick_name = tick_name.replace(c, "-")
+        tick_name = tick_name.replace("*", "")
+        self._item.tick_name = tick_name
         utils.store_state()
-        self.Destroy()
+        self.closed.emit()
+        event.accept()

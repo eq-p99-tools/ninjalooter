@@ -1,7 +1,7 @@
 from unittest import mock
 
 import semver
-import wx
+from PySide6.QtWidgets import QMessageBox
 
 from ninjalooter import autoupdate
 from ninjalooter import config
@@ -14,115 +14,149 @@ class TestAutoUpdate(base.NLTestBase):
         self.current_version = semver.VersionInfo.parse(config.VERSION)
         self.new_version = self.current_version.bump_patch()
 
-    @mock.patch("sys.exit")
+    @mock.patch("logging.shutdown")
+    @mock.patch("os._exit")
     @mock.patch("subprocess.Popen")
-    @mock.patch("wx.MessageDialog")
+    @mock.patch("PySide6.QtWidgets.QMessageBox.question")
     @mock.patch("os.rename")
     @mock.patch("os.path.basename")
     @mock.patch("ninjalooter.autoupdate.download_and_unpack")
-    @mock.patch("ninjalooter.autoupdate.get_release_from_github")
+    @mock.patch("ninjalooter.autoupdate.get_recent_releases")
     def _check_update_new_version(
-            self, mock_get_release, mock_download_and_unpack,
-            mock_basename, mock_rename, mock_wx_message_dialog,
-            mock_popen, mock_exit, exe_name, accept_update=True):
+            self, mock_get_releases, mock_download_and_unpack,
+            mock_basename, mock_rename, mock_question,
+            mock_popen, mock_os_exit, mock_logging_shutdown,
+            exe_name, accept_update=True):
 
         if accept_update:
-            (mock_wx_message_dialog.return_value.ShowModal.return_value
-             ) = wx.ID_YES
+            mock_question.return_value = QMessageBox.StandardButton.Yes
         else:
-            (mock_wx_message_dialog.return_value.ShowModal.return_value
-             ) = wx.ID_CANCEL
-        mock_get_release.return_value = (
-            self.new_version,
-            {'assets_url': 'https://some.url'}
-        )
+            mock_question.return_value = QMessageBox.StandardButton.No
+
+        releases = [{
+            'version': self.new_version,
+            'tag_name': f'v{self.new_version}',
+            'name': f'v{self.new_version}',
+            'body': '',
+            'published_at': '',
+            'assets_url': 'https://some.url',
+            'prerelease': False,
+        }]
+        mock_get_releases.return_value = releases
 
         mock_download_and_unpack.return_value = "/path/to/ninjalooter.exe"
         mock_basename.return_value = exe_name
 
-        autoupdate.check_update()
+        autoupdate._on_releases_fetched_main_thread(releases, False)
 
-        return (mock_wx_message_dialog, mock_rename, mock_popen, mock_exit,
+        return (mock_question, mock_rename, mock_popen, mock_os_exit,
                 mock_download_and_unpack)
 
-    def test_check_update_python_exe(self):
-        (mock_wx_message_dialog, mock_rename, mock_popen, mock_exit,
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    def test_check_update_python_exe(self, mock_active_window):
+        (mock_question, mock_rename, mock_popen, mock_os_exit,
          mock_download_and_unpack,
          ) = self._check_update_new_version(exe_name="python.exe")
 
-        mock_wx_message_dialog().ShowModal.assert_called_once_with()
-        mock_popen.assert_called_once_with(
-            [mock_download_and_unpack.return_value])
-        mock_exit.assert_called_once_with()
+        mock_question.assert_called_once()
+        mock_download_and_unpack.assert_called_once()
 
-    def test_check_update_versioned_exe(self):
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    def test_check_update_versioned_exe(self, mock_active_window):
         current_exe_name = f"ninjalooter-{config.VERSION}.exe"
-        (mock_wx_message_dialog, mock_rename, mock_popen, mock_exit,
+        (mock_question, mock_rename, mock_popen, mock_os_exit,
          mock_download_and_unpack,
          ) = self._check_update_new_version(exe_name=current_exe_name)
 
-        mock_wx_message_dialog().ShowModal.assert_called_once_with()
-        mock_popen.assert_called_once_with(
-            [mock_download_and_unpack.return_value])
-        mock_exit.assert_called_once_with()
+        mock_question.assert_called_once()
+        mock_download_and_unpack.assert_called_once()
 
-    def test_check_update_unversioned_exe(self):
-        (mock_wx_message_dialog, mock_rename, mock_popen, mock_exit,
-         mock_download_and_unpack,
-         ) = self._check_update_new_version(exe_name="ninjalooter.exe")
-
-        mock_wx_message_dialog().ShowModal.assert_called_once_with()
-        mock_popen.assert_called_once_with(["ninjalooter.exe"])
-        mock_exit.assert_called_once_with()
-
-    def test_check_update_user_declines(self):
-        (mock_wx_message_dialog, mock_rename, mock_popen, mock_exit,
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    def test_check_update_user_declines(self, mock_active_window):
+        (mock_question, mock_rename, mock_popen, mock_os_exit,
          mock_download_and_unpack,
          ) = self._check_update_new_version(exe_name="ninjalooter.exe",
                                             accept_update=False)
 
-        mock_wx_message_dialog().ShowModal.assert_called_once_with()
+        mock_question.assert_called_once()
         mock_download_and_unpack.assert_not_called()
         mock_popen.assert_not_called()
-        mock_exit.assert_not_called()
+        mock_os_exit.assert_not_called()
 
-    @mock.patch("sys.exit")
-    @mock.patch("subprocess.Popen")
-    @mock.patch("wx.MessageDialog")
-    @mock.patch("os.rename")
-    @mock.patch("os.path.basename")
-    @mock.patch("ninjalooter.autoupdate.download_and_unpack")
-    @mock.patch("ninjalooter.autoupdate.get_release_from_github")
+    @mock.patch("PySide6.QtWidgets.QMessageBox.information")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    @mock.patch("ninjalooter.autoupdate.get_recent_releases")
     def test_check_update_no_new_version(
-            self, mock_get_release, mock_download_and_unpack,
-            mock_basename, mock_rename, mock_wx_message_dialog,
-            mock_popen, mock_exit):
-        mock_wx_message_dialog.return_value.ShowModal.return_value = wx.ID_YES
+            self, mock_get_releases, mock_active_window,
+            mock_information):
+        releases = [{
+            'version': self.current_version,
+            'tag_name': f'v{self.current_version}',
+            'name': f'v{self.current_version}',
+            'body': '',
+            'published_at': '',
+            'assets_url': 'https://some.url',
+            'prerelease': False,
+        }]
+        mock_get_releases.return_value = releases
 
-        mock_get_release.return_value = (
-            self.current_version,
-            {'assets_url': 'https://some.url'}
-        )
+        autoupdate._on_releases_fetched_main_thread(releases, True)
 
-        mock_download_and_unpack.return_value = "/path/to/ninjalooter.exe"
+        mock_information.assert_called_once()
 
-        autoupdate.check_update()
+    @mock.patch("PySide6.QtWidgets.QMessageBox.information")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    def test_check_update_no_releases(self, mock_active_window,
+                                      mock_information):
+        autoupdate._on_releases_fetched_main_thread([], True)
+        mock_information.assert_called_once()
 
-        mock_wx_message_dialog().ShowModal.assert_not_called()
-        mock_download_and_unpack.assert_not_called()
-        mock_popen.assert_not_called()
-        mock_exit.assert_not_called()
+    @mock.patch("PySide6.QtWidgets.QMessageBox.information")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow",
+                return_value=None)
+    def test_check_update_no_releases_silent(self, mock_active_window,
+                                             mock_information):
+        autoupdate._on_releases_fetched_main_thread([], False)
+        mock_information.assert_not_called()
 
-    @mock.patch("io.BytesIO")
-    @mock.patch("wx.GenericProgressDialog")
-    @mock.patch("zipfile.ZipFile")
     @mock.patch("ninjalooter.autoupdate.get")
-    def test_download_and_unpack(
-            self, mock_get, mock_zipfile, mock_wx_progress_dialog,
-            mock_bytesio):
-        mock_get().json.return_value = [
-            {'content_type': 'application/x-zip-compressed',
-             'browser_download_url': 'some_url'}]
-        mock_get().headers.get.return_value = 10
+    def test_get_recent_releases(self, mock_get):
+        mock_get.return_value.raise_for_status = mock.Mock()
+        mock_get.return_value.json.return_value = [
+            {
+                'tag_name': 'v1.2.3',
+                'name': 'Release 1.2.3',
+                'body': 'Some changes',
+                'published_at': '2024-01-01',
+                'assets_url': 'https://api.github.com/repos/test/releases/1/assets',
+                'prerelease': False,
+            },
+            {
+                'tag_name': 'v1.2.2',
+                'name': 'Release 1.2.2',
+                'body': 'Older changes',
+                'published_at': '2023-12-01',
+                'assets_url': 'https://api.github.com/repos/test/releases/2/assets',
+                'prerelease': False,
+            },
+        ]
 
-        autoupdate.download_and_unpack("test_url")
+        releases = autoupdate.get_recent_releases(max_releases=10)
+
+        self.assertEqual(2, len(releases))
+        self.assertEqual(semver.VersionInfo.parse("1.2.3"), releases[0]['version'])
+        self.assertEqual(semver.VersionInfo.parse("1.2.2"), releases[1]['version'])
+        self.assertEqual('Some changes', releases[0]['body'])
+
+    @mock.patch("ninjalooter.autoupdate.get")
+    def test_get_recent_releases_failure(self, mock_get):
+        mock_get.side_effect = Exception("Network error")
+
+        releases = autoupdate.get_recent_releases()
+
+        self.assertEqual([], releases)
