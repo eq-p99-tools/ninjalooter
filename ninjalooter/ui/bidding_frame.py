@@ -55,6 +55,7 @@ class BiddingFrame(QWidget):
         self.pending_list.setToolTip("Double click an item to ignore it")
         self.pending_list.doubleClicked.connect(self._on_ignore_pending)
         self.pending_list.clicked.connect(self._update_min_dkp_spinner)
+        self.pending_list.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         pending_row.addWidget(self.pending_list, 1)
 
         pending_btn_col = QVBoxLayout()
@@ -298,6 +299,19 @@ class BiddingFrame(QWidget):
             config.ACTIVE_SASH_POS = sizes[0]
             config.HISTORICAL_SASH_POS = sizes[1]
 
+    # ── Pending pane helpers ──
+
+    def _pending_visual_row(self) -> int:
+        """Return the visual (proxy) row index of the current pending selection."""
+        indexes = self.pending_list.selectionModel().selectedRows()
+        return indexes[0].row() if indexes else 0
+
+    def _reselect_pending(self, row: int):
+        """Re-select the pending list at *row*, clamping to the last item."""
+        count = self.pending_list.model().rowCount()
+        if count > 0:
+            self.pending_list.selectRow(min(row, count - 1))
+
     # ── Pending pane actions ──
 
     def _update_min_dkp_spinner(self):
@@ -318,8 +332,10 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
+        row = self._pending_visual_row()
         utils.ignore_pending_item(selected)
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self._reselect_pending(row)
         utils.store_state()
         signals.ignore.emit()
 
@@ -327,6 +343,7 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
+        row = self._pending_visual_row()
         auc = utils.start_auction_dkp(selected, config.DEFAULT_ALLIANCE)
         if not auc:
             QMessageBox.critical(
@@ -337,6 +354,7 @@ class BiddingFrame(QWidget):
             )
             return
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self._reselect_pending(row)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.select_object(auc)
         self._copy_bid_text()
@@ -347,6 +365,7 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
+        row = self._pending_visual_row()
         auc = utils.start_auction_random(selected)
         if not auc:
             QMessageBox.critical(
@@ -357,6 +376,7 @@ class BiddingFrame(QWidget):
             )
             return
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        self._reselect_pending(row)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self.active_list.select_object(auc)
         self._copy_bid_text()

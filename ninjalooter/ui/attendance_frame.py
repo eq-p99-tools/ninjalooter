@@ -65,6 +65,7 @@ class AttendanceFrame(QWidget):
         )
         self.attendance_list.setToolTip("Double-click an attendance record to edit it in detail.")
         self.attendance_list.doubleClicked.connect(self._show_attendance_detail)
+        self.attendance_list.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         attendance_row.addWidget(self.attendance_list, 1)
 
         attendance_btn_col = QVBoxLayout()
