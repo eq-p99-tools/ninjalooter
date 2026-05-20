@@ -195,8 +195,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
 class ObjectTableView(QTableView):
     """QTableView preconfigured with common defaults."""
 
-    def __init__(self, columns: list[ColumnDefn], parent=None, sortable=True, single_select=True,
-                 empty_text: str = ""):
+    def __init__(self, columns: list[ColumnDefn], parent=None, sortable=True, single_select=True, empty_text: str = ""):
         super().__init__(parent)
         self._model = ObjectTableModel(columns, self)
 
@@ -228,9 +227,7 @@ class ObjectTableView(QTableView):
         if empty_text:
             self._empty_label = QLabel(empty_text, self.viewport())
             self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._empty_label.setStyleSheet(
-                "font-size: 18px; font-weight: bold; color: rgba(150, 150, 150, 160);"
-            )
+            self._empty_label.setStyleSheet("font-size: 18px; font-weight: bold; color: rgba(150, 150, 150, 160);")
             self._empty_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             self._model.rowsInserted.connect(self._update_empty_label)
             self._model.rowsRemoved.connect(self._update_empty_label)

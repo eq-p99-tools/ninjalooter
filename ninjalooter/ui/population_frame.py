@@ -142,11 +142,7 @@ class PopulationFrame(QWidget):
     def _update_preview(self):
         pops = utils.get_pop_numbers(extras=self._extras())
         pops.update(self._pop_overrides)
-        previews = [
-            PopulationPreview(a, p)
-            for a, p in pops.items()
-            if p > 0 or a in self._pop_overrides
-        ]
+        previews = [PopulationPreview(a, p) for a, p in pops.items() if p > 0 or a in self._pop_overrides]
         self._preview_table.set_objects(previews)
 
     def _effective_pops(self) -> dict[str, int]:

@@ -26,6 +26,7 @@ from ninjalooter.app_signals import signals
 LOG = logger.getLogger(__name__)
 
 RE_EQ_LOGFILE = re.compile(r".*_(.*)_.*\.txt")
+RE_EQ_LOGFILE_FULL = re.compile(r"eqlog_(.+?)_(.+)\.txt", re.IGNORECASE)
 RE_TIMESTAMP = re.compile(config.TIMESTAMP)
 LOG.info("Project working directory: %s", config.PROJECT_DIR)
 
@@ -139,6 +140,28 @@ def get_latest_logfile(logdir: str) -> tuple:
     if latest_file:
         char_name = get_character_name_from_logfile(latest_file)
     return latest_file, char_name
+
+
+def enumerate_logfiles(logdir: str) -> list:
+    """Return all EQ logfiles in a directory as (filepath, charname, server, mtime) tuples.
+
+    Sorted by mtime descending (most recently modified first).
+    """
+    results = []
+    if not os.path.isdir(logdir):
+        return results
+    for root, _, files in os.walk(logdir):
+        for basename in files:
+            match = RE_EQ_LOGFILE_FULL.match(basename)
+            if not match:
+                continue
+            filepath = os.path.join(root, basename)
+            charname = match.group(1).capitalize()
+            server = match.group(2)
+            mtime = os.stat(filepath).st_mtime
+            results.append((filepath, charname, server, mtime))
+    results.sort(key=lambda x: x[3], reverse=True)
+    return results
 
 
 def _duplicate_backtick_apostrophes(items: list) -> list:

@@ -1,4 +1,3 @@
-import datetime
 import os
 
 from PySide6.QtGui import QAction, QActionGroup, QIcon
@@ -9,8 +8,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from ninjalooter import config, logger, logparse, logreplay, utils
+from ninjalooter import config, logger, logparse, utils
 from ninjalooter.app_signals import signals
+from ninjalooter.ui.attendance_replay_dialog import AttendanceReplayDialog
 from ninjalooter.ui.bidding_frame import IgnoredItemsWindow
 from ninjalooter.ui.theme import ThemedQFileDialog, apply_app_theme, apply_windows_window_frame
 
@@ -92,10 +92,9 @@ class MenuBar(QMenuBar):
 
         self._replay_action = menu.addAction(
             QIcon(os.path.join(icons_dir, "reload.png")),
-            "&Replay Log File",
+            "Replay &Attendance Log",
         )
-        self._replay_action.setEnabled(False)
-        self._replay_action.triggered.connect(self._on_replay_log)
+        self._replay_action.triggered.connect(self._on_replay_attendance)
 
         clear_action = menu.addAction(
             QIcon(os.path.join(icons_dir, "clear.png")),
@@ -255,40 +254,10 @@ class MenuBar(QMenuBar):
         utils.load_state(files[0])
         signals.app_reload.emit()
 
-    def _on_replay_log(self):
-        LOG.info("Attempting to replay an eqlog...")
-        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE)
-        dlg.setWindowTitle("Open EQ Logfile")
-        dlg.setNameFilter("EQ Logfile (eqlog_*.txt)")
-        dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
-        dlg.setDirectory(config.LOG_DIRECTORY)
-        if dlg.exec() != QFileDialog.DialogCode.Accepted:
-            return
-        files = dlg.selectedFiles()
-        if not files:
-            return
-        filename = files[0]
-        config.PLAYER_NAME = utils.get_character_name_from_logfile(filename)
-
-        with open(filename, encoding="utf-8", errors="replace") as logfile:
-            loglines = logfile.readlines()
-
-        try:
-            first_time = utils.get_first_timestamp(loglines)
-            last_time = utils.get_first_timestamp(reversed(loglines))
-            epoch = datetime.datetime.fromtimestamp(0)
-            if epoch in (first_time, last_time):
-                raise ValueError("No valid timestamps found")
-        except (TypeError, ValueError):
-            LOG.exception("Failed to find a first/last timestamp")
-            QMessageBox.critical(
-                self._window,
-                "Log Parse Error",
-                "Failed to parse the selected file.\nAre you certain it is a valid EverQuest log file?",
-            )
-            return
-
-        logreplay.replay_logs(loglines)
+    def _on_replay_attendance(self):
+        LOG.info("Opening attendance replay dialog...")
+        dlg = AttendanceReplayDialog(self._window)
+        dlg.exec()
 
     def _on_export_excel(self):
         LOG.info("Exporting to Excel format.")

@@ -59,9 +59,7 @@ class _ClassPanel(QWidget):
             self._table.hide()
             watermark = QLabel(f"No {pclass}s" if not pclass.endswith("s") else f"No {pclass}")
             watermark.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            watermark.setStyleSheet(
-                "font-size: 24px; font-weight: bold; color: rgba(180, 180, 180, 120);"
-            )
+            watermark.setStyleSheet("font-size: 24px; font-weight: bold; color: rgba(180, 180, 180, 120);")
             watermark.setFixedHeight(fixed_h)
             layout.addWidget(watermark)
 
@@ -157,10 +155,7 @@ class RaidOverviewFrame(QScrollArea):
 
         for i, pclass in enumerate(all_classes):
             players = by_class.get(pclass, [])
-            total = len([
-                p for p in self._snapshot.values()
-                if (p.pclass or "Unknown") == pclass
-            ])
+            total = len([p for p in self._snapshot.values() if (p.pclass or "Unknown") == pclass])
             panel = _ClassPanel(pclass, players, total, self._grid_container)
             row = i // COLUMNS
             col = i % COLUMNS

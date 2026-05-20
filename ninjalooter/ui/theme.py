@@ -309,6 +309,7 @@ class ThemedQFileDialog(QFileDialog):
     def __init__(self, parent: QWidget | None, *, dark_mode: bool):
         super().__init__(parent)
         self._dark_mode = dark_mode
+        self.setOption(QFileDialog.Option.DontUseNativeDialog, True)
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)

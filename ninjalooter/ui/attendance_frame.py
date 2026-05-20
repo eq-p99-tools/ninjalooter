@@ -53,8 +53,8 @@ class AttendanceFrame(QWidget):
 
         self.attendance_list = ObjectTableView(
             columns=[
-                ColumnDefn("Time", "time", width=120),
-                ColumnDefn("Name", lambda x: x.tick_name or "", width=140),
+                ColumnDefn("Time", "time", width=115),
+                ColumnDefn("Name", lambda x: x.tick_name or "", width=112),
                 ColumnDefn("RT", lambda x: x.raidtick_display(), width=25),
                 ColumnDefn("Zone", lambda x: x.zone or "", width=100),
                 ColumnDefn("Populations", lambda x: x.populations() or "", width=300),
@@ -96,6 +96,10 @@ class AttendanceFrame(QWidget):
         btn_raid_overview = QPushButton("Show Raid Overview")
         btn_raid_overview.clicked.connect(self._on_show_raid_overview)
         attendance_btn_col.addWidget(btn_raid_overview)
+
+        btn_delete_tick = QPushButton("Delete Tick")
+        btn_delete_tick.clicked.connect(self._on_delete_tick)
+        attendance_btn_col.addWidget(btn_delete_tick)
 
         attendance_btn_col.addStretch()
 
@@ -257,6 +261,19 @@ class AttendanceFrame(QWidget):
         selected = self.attendance_list.get_selected_object()
         if selected:
             signals.show_raid_overview.emit(selected)
+
+    def _on_delete_tick(self):
+        selected = self.attendance_list.get_selected_object()
+        if not selected:
+            return
+        row = config.ATTENDANCE_LOGS.index(selected)
+        config.ATTENDANCE_LOGS.remove(selected)
+        self._refresh_attendance()
+        # Select the next item (or previous if we deleted the last one)
+        if config.ATTENDANCE_LOGS:
+            next_row = min(row, len(config.ATTENDANCE_LOGS) - 1)
+            self.attendance_list.select_object(config.ATTENDANCE_LOGS[next_row])
+        utils.store_state()
 
     def _show_attendance_detail(self):
         selected = self.attendance_list.get_selected_object()
@@ -433,9 +450,7 @@ class AttendanceDetailWindow(QWidget):
         idx = indexes[0]
         if not idx.parent().isValid():
             return
-        name_item = self._tree_model.itemFromIndex(
-            self._tree_model.index(idx.row(), 0, idx.parent())
-        )
+        name_item = self._tree_model.itemFromIndex(self._tree_model.index(idx.row(), 0, idx.parent()))
         if not name_item:
             return
         player_name = name_item.text()
