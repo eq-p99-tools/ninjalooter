@@ -197,6 +197,7 @@ class BiddingFrame(QWidget):
         history_row = QHBoxLayout()
         pane3_layout.addLayout(history_row)
 
+        self._history_completed_col = 6
         self.history_list = ObjectTableView(
             columns=[
                 ColumnDefn("Item", lambda x: x.name(), width=240),
@@ -205,10 +206,13 @@ class BiddingFrame(QWidget):
                 ColumnDefn("Rand/Min", lambda x: str(x.get_target_min()), width=65),
                 ColumnDefn("Bid/Roll", lambda x: str(x.highest_number()), width=65),
                 ColumnDefn("Winner", lambda x: x.highest_players(), width=108),
+                ColumnDefn("Completed", lambda x: x.end_time),
             ],
             parent=self,
             single_select=True,
         )
+        self.history_list.setColumnHidden(self._history_completed_col, True)
+        self.history_list.sortByColumn(self._history_completed_col, Qt.SortOrder.AscendingOrder)
         self.history_list.setToolTip("Double click an auction to view bid history")
         self.history_list.doubleClicked.connect(self._show_history_detail)
         history_row.addWidget(self.history_list, 1)
