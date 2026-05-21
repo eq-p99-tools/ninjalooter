@@ -304,16 +304,19 @@ def apply_windows_window_frame(widget: QWidget, *, dark_mode: bool) -> None:
 
 
 class ThemedQFileDialog(QFileDialog):
-    """Non-native QFileDialog with matching DWM title bar attributes."""
+    """QFileDialog that optionally uses a non-native Qt dialog with themed DWM title bar."""
 
-    def __init__(self, parent: QWidget | None, *, dark_mode: bool):
+    def __init__(self, parent: QWidget | None, *, dark_mode: bool, qt_dialogs: bool = True):
         super().__init__(parent)
         self._dark_mode = dark_mode
-        self.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        self._qt_dialogs = qt_dialogs
+        if qt_dialogs:
+            self.setOption(QFileDialog.Option.DontUseNativeDialog, True)
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
-        apply_windows_window_frame(self, dark_mode=self._dark_mode)
+        if self._qt_dialogs:
+            apply_windows_window_frame(self, dark_mode=self._dark_mode)
 
 
 _populate_semantic(dark=True)

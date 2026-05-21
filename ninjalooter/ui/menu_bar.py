@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtGui import QAction, QActionGroup, QIcon
+from PySide6.QtGui import QAction, QActionGroup, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -23,6 +23,7 @@ class MenuBar(QMenuBar):
         self._window = parent
 
         self._build_file_menu()
+        self._build_options_menu()
         self._build_bidding_menu()
         self._build_alerts_menu()
 
@@ -42,44 +43,21 @@ class MenuBar(QMenuBar):
         )
         configure_action.triggered.connect(self._on_configure_log_dir)
 
-        self._auto_swap_action = menu.addAction("Auto-Switch &Characters")
-        self._auto_swap_action.setCheckable(True)
-        self._auto_swap_action.setChecked(config.AUTO_SWAP_LOGFILE)
-        self._auto_swap_action.triggered.connect(self._on_auto_swap)
-
-        self._always_on_top_action = menu.addAction("&Always On Top")
-        self._always_on_top_action.setCheckable(True)
-        self._always_on_top_action.setChecked(config.ALWAYS_ON_TOP)
-        self._always_on_top_action.triggered.connect(self._on_always_on_top)
-
-        self._confirm_exit_action = menu.addAction("Confirm Exit")
-        self._confirm_exit_action.setCheckable(True)
-        self._confirm_exit_action.setChecked(config.CONFIRM_EXIT)
-        self._confirm_exit_action.triggered.connect(self._on_confirm_exit)
-
-        self._dark_mode_action = menu.addAction("&Dark Mode")
-        self._dark_mode_action.setCheckable(True)
-        self._dark_mode_action.setChecked(config.DARK_MODE)
-        self._dark_mode_action.triggered.connect(self._on_dark_mode)
-
         menu.addSeparator()
-
-        self._export_tz_action = menu.addAction("Export in Eastern Time")
-        self._export_tz_action.setCheckable(True)
-        self._export_tz_action.setChecked(config.EXPORT_TIME_IN_EASTERN)
-        self._export_tz_action.triggered.connect(self._on_export_timezone)
 
         self._export_excel_action = menu.addAction(
             QIcon(os.path.join(icons_dir, "excel.png")),
-            "Export to &Excel\tCtrl+E",
+            "Export to &Excel",
         )
+        self._export_excel_action.setShortcut(QKeySequence("Ctrl+E"))
         self._export_excel_action.setEnabled(config.ALLOW_EXCEL_EXPORT)
         self._export_excel_action.triggered.connect(self._on_export_excel)
 
         self._export_eqdkp_action = menu.addAction(
             QIcon(os.path.join(icons_dir, "export.png")),
-            "Export to EQDKPlus\tCtrl+P",
+            "Export to EQDKPlus",
         )
+        self._export_eqdkp_action.setShortcut(QKeySequence("Ctrl+P"))
         self._export_eqdkp_action.triggered.connect(self._on_export_eqdkp)
 
         menu.addSeparator()
@@ -88,6 +66,7 @@ class MenuBar(QMenuBar):
             QIcon(os.path.join(icons_dir, "import.png")),
             "&Load State",
         )
+        load_action.setShortcut(QKeySequence("Ctrl+L"))
         load_action.triggered.connect(self._on_load_state)
 
         self._replay_action = menu.addAction(
@@ -106,9 +85,47 @@ class MenuBar(QMenuBar):
 
         exit_action = menu.addAction(
             QIcon(os.path.join(icons_dir, "exit.png")),
-            "&Quit\tCtrl+W",
+            "&Quit",
         )
+        exit_action.setShortcut(QKeySequence("Ctrl+W"))
         exit_action.triggered.connect(self._window.close)
+
+    # ------------------------------------------------------------------
+    # Options Menu
+    # ------------------------------------------------------------------
+
+    def _build_options_menu(self):
+        menu = self.addMenu("&Options")
+
+        self._always_on_top_action = menu.addAction("&Always On Top")
+        self._always_on_top_action.setCheckable(True)
+        self._always_on_top_action.setChecked(config.ALWAYS_ON_TOP)
+        self._always_on_top_action.triggered.connect(self._on_always_on_top)
+
+        self._auto_swap_action = menu.addAction("Auto-Switch &Characters")
+        self._auto_swap_action.setCheckable(True)
+        self._auto_swap_action.setChecked(config.AUTO_SWAP_LOGFILE)
+        self._auto_swap_action.triggered.connect(self._on_auto_swap)
+
+        self._confirm_exit_action = menu.addAction("Confirm Exit")
+        self._confirm_exit_action.setCheckable(True)
+        self._confirm_exit_action.setChecked(config.CONFIRM_EXIT)
+        self._confirm_exit_action.triggered.connect(self._on_confirm_exit)
+
+        self._dark_mode_action = menu.addAction("&Dark Mode")
+        self._dark_mode_action.setCheckable(True)
+        self._dark_mode_action.setChecked(config.DARK_MODE)
+        self._dark_mode_action.triggered.connect(self._on_dark_mode)
+
+        self._native_dialogs_action = menu.addAction("Use &Native File Dialogs")
+        self._native_dialogs_action.setCheckable(True)
+        self._native_dialogs_action.setChecked(config.NATIVE_FILE_DIALOGS)
+        self._native_dialogs_action.triggered.connect(self._on_native_file_dialogs)
+
+        self._export_tz_action = menu.addAction("Export in &Eastern Time")
+        self._export_tz_action.setCheckable(True)
+        self._export_tz_action.setChecked(config.EXPORT_TIME_IN_EASTERN)
+        self._export_tz_action.triggered.connect(self._on_export_timezone)
 
     # ------------------------------------------------------------------
     # Bidding Menu
@@ -216,7 +233,7 @@ class MenuBar(QMenuBar):
         existing = config.LOG_DIRECTORY
         if not os.path.isdir(existing):
             existing = os.path.dirname(existing)
-        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE)
+        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE, qt_dialogs=not config.NATIVE_FILE_DIALOGS)
         dlg.setWindowTitle("Select Log Directory")
         dlg.setFileMode(QFileDialog.FileMode.Directory)
         dlg.setDirectory(existing)
@@ -241,7 +258,7 @@ class MenuBar(QMenuBar):
 
     def _on_load_state(self):
         LOG.info("Attempting to load a state.json file...")
-        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE)
+        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE, qt_dialogs=not config.NATIVE_FILE_DIALOGS)
         dlg.setWindowTitle("Open Statefile")
         dlg.setNameFilter("NL State File (state_*.json)")
         dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
@@ -261,7 +278,7 @@ class MenuBar(QMenuBar):
 
     def _on_export_excel(self):
         LOG.info("Exporting to Excel format.")
-        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE)
+        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE, qt_dialogs=not config.NATIVE_FILE_DIALOGS)
         dlg.setWindowTitle("Export to Excel")
         dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         dlg.setNameFilter("Excel Spreadsheet (*.xlsx)")
@@ -293,7 +310,7 @@ class MenuBar(QMenuBar):
 
     def _on_export_eqdkp(self):
         LOG.info("Exporting to EQDKPlus format.")
-        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE)
+        dlg = ThemedQFileDialog(self._window, dark_mode=config.DARK_MODE, qt_dialogs=not config.NATIVE_FILE_DIALOGS)
         dlg.setWindowTitle("Export to EQDKPlus")
         dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         dlg.setNameFilter("Excel Spreadsheet (*.xlsx)")
@@ -418,6 +435,13 @@ class MenuBar(QMenuBar):
         if app:
             apply_app_theme(app, dark_mode=config.DARK_MODE)
             apply_windows_window_frame(self._window, dark_mode=config.DARK_MODE)
+
+    def _on_native_file_dialogs(self, checked: bool):
+        config.NATIVE_FILE_DIALOGS = checked
+        if not config.CONF.has_section("theme"):
+            config.CONF.add_section("theme")
+        config.CONF.set("theme", "native_file_dialogs", str(config.NATIVE_FILE_DIALOGS))
+        config.write()
 
     # ------------------------------------------------------------------
     # Alerts handlers

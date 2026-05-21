@@ -14,7 +14,7 @@ SEMVER = semver.VersionInfo(
     major=1,
     minor=18,
     patch=0,
-    prerelease="rc5",
+    prerelease="rc6",
     build="console",
 )
 VERSION = str(SEMVER)
@@ -204,6 +204,7 @@ PARSER_THREAD = None
 
 # Theme
 DARK_MODE = CONF.getboolean("theme", "dark_mode", fallback=True)
+NATIVE_FILE_DIALOGS = CONF.getboolean("theme", "native_file_dialogs", fallback=False)
 
 # Constants
 BASE_WIKI_URL = "http://wiki.project1999.com"
