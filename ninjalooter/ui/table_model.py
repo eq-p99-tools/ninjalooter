@@ -264,9 +264,12 @@ class ObjectTableView(QTableView):
         return self._model.get_object(index.row())
 
     def select_object(self, obj):
-        try:
-            row = self._model._objects.index(obj)
-        except ValueError:
+        row = None
+        for i, o in enumerate(self._model._objects):
+            if o is obj:
+                row = i
+                break
+        if row is None:
             return
         if self._proxy:
             source_index = self._model.index(row, 0)

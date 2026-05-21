@@ -290,10 +290,9 @@ class BiddingFrame(QWidget):
         return semantic.timer_safe
 
     def _refresh_active_list(self):
-        selected = self.active_list.get_selected_object()
+        row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
-        if selected is not None:
-            self.active_list.select_object(selected)
+        self._reselect_row(self.active_list, row)
 
     # ── Splitter persistence ──
 
@@ -303,18 +302,22 @@ class BiddingFrame(QWidget):
             config.ACTIVE_SASH_POS = sizes[0]
             config.HISTORICAL_SASH_POS = sizes[1]
 
-    # ── Pending pane helpers ──
+    # ── Selection helpers ──
 
-    def _pending_visual_row(self) -> int:
-        """Return the visual (proxy) row index of the current pending selection."""
-        indexes = self.pending_list.selectionModel().selectedRows()
-        return indexes[0].row() if indexes else 0
+    @staticmethod
+    def _visual_row(table_view) -> int:
+        """Return the visual (proxy) row index of the current selection, or -1."""
+        indexes = table_view.selectionModel().selectedRows()
+        return indexes[0].row() if indexes else -1
 
-    def _reselect_pending(self, row: int):
-        """Re-select the pending list at *row*, clamping to the last item."""
-        count = self.pending_list.model().rowCount()
+    @staticmethod
+    def _reselect_row(table_view, row: int):
+        """Re-select *table_view* at *row*, clamping to the last item."""
+        if row < 0:
+            return
+        count = table_view.model().rowCount()
         if count > 0:
-            self.pending_list.selectRow(min(row, count - 1))
+            table_view.selectRow(min(row, count - 1))
 
     # ── Pending pane actions ──
 
@@ -336,10 +339,10 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
-        row = self._pending_visual_row()
+        row = self._visual_row(self.pending_list)
         utils.ignore_pending_item(selected)
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
-        self._reselect_pending(row)
+        self._reselect_row(self.pending_list, row)
         utils.store_state()
         signals.ignore.emit()
 
@@ -347,7 +350,7 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
-        row = self._pending_visual_row()
+        row = self._visual_row(self.pending_list)
         auc = utils.start_auction_dkp(selected, config.DEFAULT_ALLIANCE)
         if not auc:
             QMessageBox.critical(
@@ -358,10 +361,9 @@ class BiddingFrame(QWidget):
             )
             return
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
-        self._reselect_pending(row)
+        self._reselect_row(self.pending_list, row)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
-        self.active_list.select_object(auc)
-        self._copy_bid_text()
+        utils.to_clipboard(auc.bid_text())
         utils.store_state()
         signals.auction_started.emit()
 
@@ -369,7 +371,7 @@ class BiddingFrame(QWidget):
         selected = self.pending_list.get_selected_object()
         if not selected:
             return
-        row = self._pending_visual_row()
+        row = self._visual_row(self.pending_list)
         auc = utils.start_auction_random(selected)
         if not auc:
             QMessageBox.critical(
@@ -380,10 +382,9 @@ class BiddingFrame(QWidget):
             )
             return
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
-        self._reselect_pending(row)
+        self._reselect_row(self.pending_list, row)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
-        self.active_list.select_object(auc)
-        self._copy_bid_text()
+        utils.to_clipboard(auc.bid_text())
         utils.store_state()
         signals.auction_started.emit()
 
@@ -398,12 +399,13 @@ class BiddingFrame(QWidget):
         selected = self.active_list.get_selected_object()
         if not selected:
             return
+        row = self._visual_row(self.active_list)
         selected.cancel()
         config.PENDING_AUCTIONS.append(selected.item)
         config.ACTIVE_AUCTIONS.pop(selected.item.uuid)
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
-        self.pending_list.select_object(selected.item)
+        self._reselect_row(self.active_list, row)
         utils.store_state()
 
     def _auc_time_delta(self, subtract=False):
@@ -428,13 +430,14 @@ class BiddingFrame(QWidget):
         selected = self.active_list.get_selected_object()
         if not selected:
             return
+        row = self._visual_row(self.active_list)
         selected.complete()
         config.HISTORICAL_AUCTIONS[selected.item.uuid] = selected
         config.ACTIVE_AUCTIONS.pop(selected.item.uuid)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._reselect_row(self.active_list, row)
         self._refresh_history()
-        self.history_list.select_object(selected)
-        self._copy_win_text()
+        utils.to_clipboard(selected.win_text())
         utils.store_state()
         signals.auction_completed.emit()
 
@@ -469,8 +472,10 @@ class BiddingFrame(QWidget):
             self.history_list.set_filter_func(None)
 
     def _refresh_history(self):
+        row = self._visual_row(self.history_list)
         self.history_list.set_objects(list(config.HISTORICAL_AUCTIONS.values()))
         self._apply_hide_rot_filter()
+        self._reselect_row(self.history_list, row)
 
     def _undo_complete(self):
         selected = self.history_list.get_selected_object()
@@ -481,7 +486,6 @@ class BiddingFrame(QWidget):
         config.HISTORICAL_AUCTIONS.pop(selected.item.uuid)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self._refresh_history()
-        self.active_list.select_object(selected)
         utils.store_state()
 
     def _copy_win_text(self):
@@ -503,10 +507,9 @@ class BiddingFrame(QWidget):
     # ── Refresh helpers ──
 
     def _refresh_pending(self):
-        selected = self.pending_list.get_selected_object()
+        row = self._visual_row(self.pending_list)
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
-        if selected:
-            self.pending_list.select_object(selected)
+        self._reselect_row(self.pending_list, row)
 
     # ── Signal handlers ──
 
@@ -518,10 +521,14 @@ class BiddingFrame(QWidget):
 
     def _on_auction_started(self):
         self._refresh_pending()
+        row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._reselect_row(self.active_list, row)
 
     def _on_auction_completed(self):
+        row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._reselect_row(self.active_list, row)
         self._refresh_history()
 
     def _on_clear_app(self):
@@ -535,7 +542,9 @@ class BiddingFrame(QWidget):
 
     def _on_reload_app(self):
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
+        row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
+        self._reselect_row(self.active_list, row)
         self._refresh_history()
 
 
