@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from unittest import mock
 
@@ -135,6 +136,14 @@ class NLTestBase(unittest.TestCase):
     def setUp(self) -> None:
         super(NLTestBase, self).setUp()
 
+        # Redirect state file to a temp file so tests never touch the real one
+        self._state_tmp = tempfile.NamedTemporaryFile(
+            suffix=".json", prefix="nl_test_state_", delete=False
+        )
+        self._state_tmp.close()
+        self._orig_save_state_file = config.SAVE_STATE_FILE
+        config.SAVE_STATE_FILE = self._state_tmp.name
+
         # Override alliance data with deterministic test values
         config.ALLIANCES = SAMPLE_ALLIANCES
         config.ALLIANCE_MAP = SAMPLE_ALLIANCE_MAP
@@ -199,3 +208,12 @@ class NLTestBase(unittest.TestCase):
         sound_patcher = mock.patch('playsound.playsound', self.mock_playsound)
         sound_patcher.start()
         self.addCleanup(sound_patcher.stop)
+
+    def tearDown(self) -> None:
+        config.SAVE_STATE_FILE = self._orig_save_state_file
+        import os
+        try:
+            os.unlink(self._state_tmp.name)
+        except OSError:
+            pass
+        super(NLTestBase, self).tearDown()
