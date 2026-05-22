@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import dateutil.parser
 
-from ninjalooter import config, logger, logparse, message_handlers, utils
+from ninjalooter import config, logger, logparse, message_handlers, models, utils
 
 # This is the app logger, not related to EQ logs
 LOG = logger.getLogger(__name__)
@@ -97,6 +97,8 @@ ATTENDANCE_MATCHERS = {
     config.MATCH_WHO: message_handlers.handle_who,
     config.MATCH_END_WHO: message_handlers.handle_end_who,
     config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
+    config.MATCH_CREDITT: message_handlers.handle_creditt,
+    config.MATCH_GRATSS: message_handlers.handle_gratss,
 }
 
 
@@ -104,6 +106,8 @@ ATTENDANCE_MATCHERS = {
 class ScanResult:
     total_whos: int
     raidtick_whos: int
+    creditt_count: int = 0
+    gratss_count: int = 0
 
 
 def _iter_lines_in_range(lines, start_time, end_time):
@@ -119,12 +123,14 @@ def _iter_lines_in_range(lines, start_time, end_time):
 
 
 def scan_attendance(lines, start_time, end_time):
-    """Quick count of /who snapshots and raid ticks in a time range.
+    """Quick count of /who snapshots, raid ticks, creditts, and gratss in a time range.
 
     Does NOT mutate any global state.
     """
     total_whos = 0
     raidtick_whos = 0
+    creditt_count = 0
+    gratss_count = 0
     last_raidtick = datetime.datetime.fromtimestamp(0)
     in_who = False
 
@@ -135,6 +141,14 @@ def scan_attendance(lines, start_time, end_time):
         if match:
             tick_time = match.group("time")
             last_raidtick = dateutil.parser.parse(tick_time)
+            continue
+
+        if config.MATCH_CREDITT.match(stripped):
+            creditt_count += 1
+            continue
+
+        if config.MATCH_GRATSS.match(stripped):
+            gratss_count += 1
             continue
 
         if config.MATCH_START_WHO.match(stripped):
@@ -150,7 +164,12 @@ def scan_attendance(lines, start_time, end_time):
                 if (who_time - last_raidtick) <= datetime.timedelta(seconds=3):
                     raidtick_whos += 1
 
-    return ScanResult(total_whos=total_whos, raidtick_whos=raidtick_whos)
+    return ScanResult(
+        total_whos=total_whos,
+        raidtick_whos=raidtick_whos,
+        creditt_count=creditt_count,
+        gratss_count=gratss_count,
+    )
 
 
 def replay_attendance(lines, start_time, end_time, progress_callback=None):
@@ -199,5 +218,143 @@ def replay_attendance(lines, start_time, end_time, progress_callback=None):
                 break
 
     LOG.info("Finished attendance replay!")
+    config.LAST_RAIDTICK = old_raidtick
+    utils.store_state()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Full replay (attendance + auctions)
+# ──────────────────────────────────────────────────────────────────────────────
+
+ALL_DROP_MATCHERS = [
+    config.MATCH_DROP_SAY,
+    config.MATCH_DROP_OOC,
+    config.MATCH_DROP_AUC,
+    config.MATCH_DROP_SHOUT,
+    config.MATCH_DROP_GU,
+]
+
+ALL_BID_MATCHERS = [
+    config.MATCH_BID_SAY,
+    config.MATCH_BID_OOC,
+    config.MATCH_BID_AUC,
+    config.MATCH_BID_SHOUT,
+    config.MATCH_BID_GU,
+    config.MATCH_BID_TELL,
+]
+
+
+def _build_full_matchers():
+    """Build matcher dict for full replay using all channels."""
+    matchers = {}
+    matchers[config.MATCH_START_WHO] = message_handlers.handle_start_who
+    matchers[config.MATCH_WHO] = message_handlers.handle_who
+    matchers[config.MATCH_END_WHO] = message_handlers.handle_end_who
+    matchers[config.MATCH_RAND1] = message_handlers.handle_rand1
+    matchers[config.MATCH_RAND2] = message_handlers.handle_rand2
+    matchers[config.MATCH_KILL] = message_handlers.handle_kill
+    matchers[config.MATCH_RAIDTICK] = message_handlers.handle_raidtick
+    matchers[config.MATCH_CREDITT] = message_handlers.handle_creditt
+    matchers[config.MATCH_GRATSS] = message_handlers.handle_gratss
+    for matcher in ALL_BID_MATCHERS:
+        matchers[matcher] = message_handlers.handle_bid
+    for matcher in ALL_DROP_MATCHERS:
+        matchers[matcher] = message_handlers.handle_drop
+    return matchers
+
+
+def _replay_handle_auc_start(match, skip_store=True):
+    """Wrapper that synthesizes a pending item if needed."""
+    result = message_handlers.handle_auc_start(match, skip_store=skip_store)
+    if not result:
+        item_name = match.group("item")
+        timestamp = match.group("time")
+        synthetic = models.ItemDrop(item_name, "(replay)", timestamp)
+        config.PENDING_AUCTIONS.append(synthetic)
+        result = message_handlers.handle_auc_start(match, skip_store=skip_store)
+    return result
+
+
+FULL_SELF_MATCHERS = {
+    MATCH_START_AUCTION_DKP: _replay_handle_auc_start,
+    MATCH_START_AUCTION_RANDOM: _replay_handle_auc_start,
+    MATCH_END_AUCTION_DKP: message_handlers.handle_auc_end,
+    MATCH_END_AUCTION_RANDOM: message_handlers.handle_auc_end,
+}
+
+
+def replay_full(lines, start_time, end_time, progress_callback=None):
+    """Full replay: attendance + auctions + creditt/gratss + kills.
+
+    Uses all channels for drops/bids and synthesizes pending items for
+    auctions that started before the time window.
+
+    Args:
+        lines: Full list of log file lines.
+        start_time: Start of time range (inclusive).
+        end_time: End of time range (inclusive).
+        progress_callback: Optional callable(current, total) -> bool.
+                          Returns False to cancel.
+    """
+    if config.TRIE is None:
+        utils.setup_aho()
+
+    old_raidtick = config.LAST_RAIDTICK
+    config.LAST_RAIDTICK = datetime.datetime.fromtimestamp(0)
+
+    start_idx = utils.find_timestamp(lines, start_time)
+    if start_idx is None:
+        LOG.info("No lines found in time range for full replay.")
+        config.LAST_RAIDTICK = old_raidtick
+        return
+
+    subset = []
+    for line in lines[start_idx:]:
+        ts = utils.get_timestamp(line)
+        if ts and ts > end_time:
+            break
+        subset.append(line)
+
+    full_matchers = _build_full_matchers()
+    total = len(subset)
+    last_rand_player = None
+
+    for idx, line in enumerate(subset):
+        if progress_callback:
+            if not progress_callback(idx, total):
+                LOG.debug("User cancelled full replay.")
+                break
+
+        current_line = line.strip()
+        if last_rand_player:
+            current_line = current_line + last_rand_player
+            last_rand_player = None
+
+        # Pass 1: operator self-messages (auction start/end)
+        result = None
+        for matcher, match_func in FULL_SELF_MATCHERS.items():
+            match = matcher.match(current_line)
+            if match:
+                try:
+                    result = match_func(match, skip_store=True)
+                except Exception:
+                    LOG.exception("Failed to parse SELF line: %s", current_line)
+        if result:
+            continue
+
+        # Pass 2: all other matchers (drops, bids, who, etc.)
+        for matcher, match_func in full_matchers.items():
+            match = matcher.match(current_line)
+            if match:
+                try:
+                    result = match_func(match, skip_store=True)
+                except Exception:
+                    LOG.exception("Failed to parse line: %s", current_line)
+                    break
+                if matcher == config.MATCH_RAND1:
+                    last_rand_player = result
+                break
+
+    LOG.info("Finished full replay!")
     config.LAST_RAIDTICK = old_raidtick
     utils.store_state()

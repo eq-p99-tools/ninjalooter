@@ -2,6 +2,7 @@ import datetime
 
 from PySide6.QtCore import QDateTime, QThread, Signal
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDateTimeEdit,
     QDialog,
@@ -37,27 +38,39 @@ class _ScanThread(QThread):
 
 
 class _ImportThread(QThread):
-    """Runs attendance replay (commit) in background."""
+    """Runs replay (commit) in background."""
 
     finished_signal = Signal()
 
-    def __init__(self, lines, start_time, end_time, parent=None):
+    def __init__(self, lines, start_time, end_time, full_replay=False, parent=None):
         super().__init__(parent)
         self._lines = lines
         self._start = start_time
         self._end = end_time
+        self._full_replay = full_replay
         self._cancelled = False
 
     def cancel(self):
         self._cancelled = True
 
+    def _is_cancelled(self, cur, tot):  # pylint: disable=unused-argument
+        return not self._cancelled
+
     def run(self):
-        logreplay.replay_attendance(
-            self._lines,
-            self._start,
-            self._end,
-            progress_callback=lambda cur, tot: not self._cancelled,
-        )
+        if self._full_replay:
+            logreplay.replay_full(
+                self._lines,
+                self._start,
+                self._end,
+                progress_callback=self._is_cancelled,
+            )
+        else:
+            logreplay.replay_attendance(
+                self._lines,
+                self._start,
+                self._end,
+                progress_callback=self._is_cancelled,
+            )
         if not self._cancelled:
             self.finished_signal.emit()
 
@@ -119,6 +132,11 @@ class AttendanceReplayDialog(QDialog):
             quick_layout.addWidget(btn)
         quick_layout.addStretch()
         layout.addLayout(quick_layout)
+
+        # Include auctions checkbox
+        self._auctions_check = QCheckBox("Include auctions (full replay)")
+        self._auctions_check.stateChanged.connect(self._invalidate_cache)
+        layout.addWidget(self._auctions_check)
 
         # Scan button + results
         scan_layout = QHBoxLayout()
@@ -222,11 +240,16 @@ class AttendanceReplayDialog(QDialog):
         self._cached_start = start
         self._cached_end = end
 
-        self._result_label.setText(
-            f"Found {scan_result.total_whos} /who snapshot(s), "
-            f"{scan_result.raidtick_whos} raid tick(s)"
-        )
-        has_data = scan_result.total_whos > 0
+        parts = [
+            f"{scan_result.total_whos} /who snapshot(s)",
+            f"{scan_result.raidtick_whos} raid tick(s)",
+        ]
+        if scan_result.creditt_count:
+            parts.append(f"{scan_result.creditt_count} creditt(s)")
+        if scan_result.gratss_count:
+            parts.append(f"{scan_result.gratss_count} gratss")
+        self._result_label.setText("Found " + ", ".join(parts))
+        has_data = scan_result.total_whos > 0 or scan_result.creditt_count > 0 or scan_result.gratss_count > 0
         self._import_btn.setEnabled(has_data)
 
     def _on_accept(self):
@@ -249,7 +272,10 @@ class AttendanceReplayDialog(QDialog):
         self._end_edit.setEnabled(False)
         self._result_label.setText("Importing...")
 
-        self._thread = _ImportThread(self._lines, start, end, parent=self)
+        full = self._auctions_check.isChecked()
+        self._thread = _ImportThread(
+            self._lines, start, end, full_replay=full, parent=self
+        )
         self._thread.finished_signal.connect(self._on_import_done)
         self._thread.start()
 

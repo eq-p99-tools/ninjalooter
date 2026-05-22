@@ -1,10 +1,10 @@
+# ruff: noqa: E501
 import datetime
 import os
 import tempfile
 
 from ninjalooter import config, logreplay
 from ninjalooter.tests import base
-
 
 SAMPLE_RAIDTICK_LOG = """\
 [Sun Aug 16 22:46:29 2020] Toald tells the guild, 'RAIDTICK'
@@ -186,6 +186,143 @@ class TestEnumerateLogfiles(base.NLTestBase):
     def test_enumerate_nonexistent_dir(self):
         results = utils.enumerate_logfiles("/nonexistent/path/abc123")
         self.assertEqual(results, [])
+
+
+SAMPLE_CREDITT_GRATSS_LOG = """\
+[Sun Aug 16 22:46:29 2020] Toald tells the guild, 'RAIDTICK'
+[Sun Aug 16 22:46:32 2020] Players on EverQuest:
+[Sun Aug 16 22:46:32 2020] ---------------------------
+[Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
+[Sun Aug 16 22:46:32 2020] There are 1 player in Plane of Sky.
+[Sun Aug 16 22:50:00 2020] Bill -> Toald: creditt Bill 10 for tanking
+[Sun Aug 16 22:55:00 2020] Tom tells the guild, 'Gratss Bill on [Blade of Carnage] (10 DKP)!'
+[Sun Aug 16 23:00:00 2020] Jim -> Toald: creditt Jim 5 for healing
+"""
+
+SAMPLE_AUCTION_LOG = """\
+[Sun Aug 16 22:46:29 2020] Toald tells the guild, 'RAIDTICK'
+[Sun Aug 16 22:46:32 2020] Players on EverQuest:
+[Sun Aug 16 22:46:32 2020] ---------------------------
+[Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
+[Sun Aug 16 22:46:32 2020] There are 1 player in Plane of Sky.
+[Sun Aug 16 22:50:00 2020] Peter says out of character, 'Blade of Carnage'
+[Sun Aug 16 22:51:00 2020] Toald tells the guild, '[Blade of Carnage] - BID IN /GU, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
+[Sun Aug 16 22:52:00 2020] Bill tells the guild, 'Blade of Carnage 15'
+[Sun Aug 16 22:55:00 2020] Toald tells the guild, 'Gratss Bill on [Blade of Carnage] (15 DKP)!'
+"""
+
+SAMPLE_MIDSTREAM_AUCTION_LOG = """\
+[Sun Aug 16 22:51:00 2020] Toald tells the guild, '[Blade of Carnage] - BID IN /GU, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
+[Sun Aug 16 22:52:00 2020] Bill tells the guild, 'Blade of Carnage 15'
+[Sun Aug 16 22:55:00 2020] Toald tells the guild, 'Gratss Bill on [Blade of Carnage] (15 DKP)!'
+"""
+
+
+class TestScanCredittGratss(base.NLTestBase):
+
+    def test_scan_counts_creditt(self):
+        lines = SAMPLE_CREDITT_GRATSS_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        result = logreplay.scan_attendance(lines, start, end)
+
+        self.assertEqual(result.creditt_count, 2)
+
+    def test_scan_counts_gratss(self):
+        lines = SAMPLE_CREDITT_GRATSS_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        result = logreplay.scan_attendance(lines, start, end)
+
+        self.assertEqual(result.gratss_count, 1)
+
+    def test_scan_time_filter_excludes_creditt(self):
+        lines = SAMPLE_CREDITT_GRATSS_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 53, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        result = logreplay.scan_attendance(lines, start, end)
+
+        self.assertEqual(result.creditt_count, 1)
+        self.assertEqual(result.gratss_count, 1)
+
+
+class TestReplayCredittGratss(base.NLTestBase):
+
+    def test_replay_captures_creditt(self):
+        lines = SAMPLE_CREDITT_GRATSS_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_attendance(lines, start, end)
+
+        self.assertEqual(len(config.CREDITT_LOG), 2)
+
+    def test_replay_captures_gratss(self):
+        lines = SAMPLE_CREDITT_GRATSS_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_attendance(lines, start, end)
+
+        self.assertEqual(len(config.GRATSS_LOG), 1)
+
+
+class TestReplayFull(base.NLTestBase):
+
+    def test_replay_full_captures_attendance(self):
+        lines = SAMPLE_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_full(lines, start, end)
+
+        self.assertEqual(len(config.ATTENDANCE_LOGS), 1)
+        self.assertTrue(config.ATTENDANCE_LOGS[0].raidtick)
+
+    def test_replay_full_captures_drop_and_auction(self):
+        lines = SAMPLE_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_full(lines, start, end)
+
+        self.assertEqual(len(config.HISTORICAL_AUCTIONS), 1)
+        auc = list(config.HISTORICAL_AUCTIONS.values())[0]
+        self.assertEqual(auc.name(), "Blade of Carnage")
+        highest = auc.highest()
+        self.assertEqual(highest[0][0], "Bill")
+        self.assertEqual(highest[0][1], 15)
+
+    def test_replay_full_synthetic_pending(self):
+        """Auction start without a prior drop should synthesize the pending item."""
+        lines = SAMPLE_MIDSTREAM_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 50, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_full(lines, start, end)
+
+        self.assertEqual(len(config.HISTORICAL_AUCTIONS), 1)
+        auc = list(config.HISTORICAL_AUCTIONS.values())[0]
+        self.assertEqual(auc.name(), "Blade of Carnage")
+        self.assertEqual(auc.item.reporter, "(replay)")
+
+    def test_replay_full_cancellation(self):
+        lines = SAMPLE_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        call_count = [0]
+
+        def cancel_immediately(current, total):  # pylint: disable=unused-argument
+            call_count[0] += 1
+            return call_count[0] <= 1
+
+        logreplay.replay_full(lines, start, end, progress_callback=cancel_immediately)
+        # Should have stopped very early
+        self.assertEqual(len(config.HISTORICAL_AUCTIONS), 0)
 
 
 # Need utils import for TestEnumerateLogfiles
