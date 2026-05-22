@@ -13,6 +13,22 @@ The user runs Windows 11 with PowerShell as their default shell.
 - Use `\` for path separators (or `/` which PowerShell also accepts).
 - Use PowerShell cmdlets and operators where appropriate (e.g., `Remove-Item` over `rm`, `Get-Content` over `cat`).
 
+## Git Commits in PowerShell
+
+Bash heredocs (`<<'EOF'`) do NOT work. Use PowerShell here-strings for multiline commit messages:
+
+```powershell
+$msg = @"
+feat(scope): subject line here
+
+Body paragraph here without double quotes inside.
+Use single quotes or rephrase to avoid them.
+"@
+git commit -m $msg
+```
+
+**Important:** Avoid double quotes (`"`) inside the message body — git on Windows splits arguments on them. Rephrase or use single quotes instead.
+
 ## Common Differences
 
 | Bash | PowerShell |
