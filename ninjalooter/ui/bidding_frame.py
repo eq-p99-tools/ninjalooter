@@ -3,15 +3,22 @@ import datetime
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QSpinBox,
     QSplitter,
-    QTextEdit,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -416,7 +423,7 @@ class BiddingFrame(QWidget):
         if subtract:
             selected.start_time -= delta
         else:
-            if selected.time_remaining().seconds <= 0:
+            if selected.time_remaining().total_seconds() <= 0:
                 selected.start_time = datetime.datetime.now() - datetime.timedelta(seconds=config.MIN_BID_TIME)
             selected.start_time += delta
 
@@ -449,7 +456,7 @@ class BiddingFrame(QWidget):
     def _show_active_detail(self):
         selected = self.active_list.get_selected_object()
         if selected:
-            ItemDetailWindow(selected, self.active_list, parent=self)
+            BidDetailWindow(selected, self.active_list, parent=self)
 
     @staticmethod
     def _select_bid_target(text):
@@ -502,7 +509,7 @@ class BiddingFrame(QWidget):
     def _show_history_detail(self):
         selected = self.history_list.get_selected_object()
         if selected:
-            ItemDetailWindow(selected, self.history_list, parent=self)
+            BidDetailWindow(selected, self.history_list, parent=self)
 
     # ── Refresh helpers ──
 
@@ -548,24 +555,50 @@ class BiddingFrame(QWidget):
         self._refresh_history()
 
 
-class ItemDetailWindow(QWidget):
-    """Editable view of bids/rolls for an auction."""
+class BidDetailWindow(QWidget):
+    """Table-based editor for bids/rolls with live-sync and inline editing."""
 
     def __init__(self, item, listview, parent=None):
         super().__init__(parent, Qt.WindowType.Window)
-        self.setWindowTitle("Item Detail")
+        self.setWindowTitle(f"Bid Detail - {item.name()}")
         self.resize(400, 400)
 
         self._item = item
         self._listview = listview
+        self._is_random = isinstance(item, models.RandomAuction)
+        self._refreshing = False
 
         layout = QVBoxLayout(self)
-        self._text = QTextEdit()
-        layout.addWidget(self._text)
 
-        data = getattr(item, "rolls", getattr(item, "bids", {}))
-        lines = [f"{number}: {players}" for number, players in data.items()]
-        self._text.setPlainText("\n".join(lines))
+        btn_row = QHBoxLayout()
+        layout.addLayout(btn_row)
+
+        btn_add = QPushButton("Add")
+        btn_add.clicked.connect(self._add_entry)
+        btn_row.addWidget(btn_add)
+
+        btn_remove = QPushButton("Remove")
+        btn_remove.clicked.connect(self._remove_entry)
+        btn_row.addWidget(btn_remove)
+
+        btn_row.addStretch()
+
+        self._table = QTableWidget()
+        self._table.setColumnCount(2)
+        if self._is_random:
+            self._table.setHorizontalHeaderLabels(["Player", "Roll"])
+        else:
+            self._table.setHorizontalHeaderLabels(["Bid", "Player"])
+        self._table.horizontalHeader().setStretchLastSection(True)
+        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        layout.addWidget(self._table)
+
+        self._table.cellChanged.connect(self._on_cell_changed)
+        signals.bid.connect(self._on_live_bid)
+
+        self._refresh_table()
 
         if config.ALWAYS_ON_TOP:
             self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
@@ -576,25 +609,130 @@ class ItemDetailWindow(QWidget):
         apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
 
     def closeEvent(self, event):
-        text_data = self._text.toPlainText()
-        data = getattr(self._item, "rolls", getattr(self._item, "bids", {}))
-        bid_data = {}
         try:
-            for line in text_data.split("\n"):
-                if not line.strip():
-                    continue
-                if isinstance(self._item, models.RandomAuction):
-                    bidder, bid = line.split(":")
-                    bid_data[bidder.strip()] = int(bid)
-                else:
-                    bid, bidder = line.split(":")
-                    bid_data[int(bid)] = bidder.strip()
-            data.clear()
-            data.update(bid_data)
-            self._listview.object_model.refresh_object(self._item)
-        except Exception:
+            signals.bid.disconnect(self._on_live_bid)
+        except RuntimeError:
             pass
         event.accept()
+
+    def _data_dict(self):
+        return getattr(self._item, "rolls", getattr(self._item, "bids", {}))
+
+    def _refresh_table(self):
+        self._refreshing = True
+        try:
+            data = self._data_dict()
+            self._table.setRowCount(0)
+            if self._is_random:
+                sorted_items = sorted(data.items(), key=lambda x: x[1], reverse=True)
+                for player, roll in sorted_items:
+                    row = self._table.rowCount()
+                    self._table.insertRow(row)
+                    self._table.setItem(row, 0, QTableWidgetItem(str(player)))
+                    self._table.setItem(row, 1, QTableWidgetItem(str(roll)))
+            else:
+                sorted_items = sorted(data.items(), key=lambda x: x[0], reverse=True)
+                for bid, player in sorted_items:
+                    row = self._table.rowCount()
+                    self._table.insertRow(row)
+                    self._table.setItem(row, 0, QTableWidgetItem(str(bid)))
+                    self._table.setItem(row, 1, QTableWidgetItem(str(player)))
+        finally:
+            self._refreshing = False
+
+    def _on_live_bid(self, auction):
+        if auction is self._item:
+            self._refresh_table()
+
+    def _on_cell_changed(self, row, col):
+        if self._refreshing:
+            return
+        data = self._data_dict()
+        try:
+            if self._is_random:
+                self._apply_random_edit(data, row, col)
+            else:
+                self._apply_dkp_edit(data, row, col)
+            self._refresh_table()
+            self._listview.object_model.refresh_object(self._item)
+            utils.store_state()
+        except (ValueError, KeyError):
+            self._refresh_table()
+
+    def _apply_dkp_edit(self, data, row, col):
+        new_val = self._table.item(row, col).text().strip()
+        sorted_keys = sorted(data.keys(), reverse=True)
+        old_bid = sorted_keys[row]
+        old_player = data[old_bid]
+        if col == 0:
+            new_bid = int(new_val)
+            if new_bid != old_bid:
+                del data[old_bid]
+                data[new_bid] = old_player
+        else:
+            data[old_bid] = new_val
+
+    def _apply_random_edit(self, data, row, col):
+        new_val = self._table.item(row, col).text().strip()
+        sorted_items = sorted(data.items(), key=lambda x: x[1], reverse=True)
+        old_player, old_roll = sorted_items[row]
+        if col == 0:
+            if new_val != old_player:
+                del data[old_player]
+                data[new_val] = old_roll
+        else:
+            data[old_player] = int(new_val)
+
+    def _add_entry(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Add Roll" if self._is_random else "Add Bid")
+        form = QFormLayout(dlg)
+
+        player_edit = QLineEdit()
+        number_edit = QSpinBox()
+        number_edit.setRange(0, 100000 if not self._is_random else 10000)
+
+        form.addRow("Player:", player_edit)
+        form.addRow("Roll:" if self._is_random else "Bid:", number_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dlg.accept)
+        buttons.rejected.connect(dlg.reject)
+        form.addRow(buttons)
+
+        player_edit.setFocus()
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        player = player_edit.text().strip()
+        number = number_edit.value()
+        if not player:
+            return
+
+        data = self._data_dict()
+        if self._is_random:
+            data[player] = number
+        else:
+            data[number] = player
+        self._refresh_table()
+        self._listview.object_model.refresh_object(self._item)
+        utils.store_state()
+
+    def _remove_entry(self):
+        row = self._table.currentRow()
+        if row < 0:
+            return
+        data = self._data_dict()
+        if self._is_random:
+            sorted_items = sorted(data.items(), key=lambda x: x[1], reverse=True)
+            player, _ = sorted_items[row]
+            del data[player]
+        else:
+            sorted_keys = sorted(data.keys(), reverse=True)
+            del data[sorted_keys[row]]
+        self._refresh_table()
+        self._listview.object_model.refresh_object(self._item)
+        utils.store_state()
 
 
 class IgnoredItemsWindow(QWidget):

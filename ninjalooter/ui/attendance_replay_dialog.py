@@ -273,9 +273,7 @@ class AttendanceReplayDialog(QDialog):
         self._result_label.setText("Importing...")
 
         full = self._auctions_check.isChecked()
-        self._thread = _ImportThread(
-            self._lines, start, end, full_replay=full, parent=self
-        )
+        self._thread = _ImportThread(self._lines, start, end, full_replay=full, parent=self)
         self._thread.finished_signal.connect(self._on_import_done)
         self._thread.start()
 
