@@ -1,15 +1,22 @@
 import copy
 from collections import defaultdict
 
+import dateutil.parser
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QShowEvent, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
+    QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSplitter,
     QTreeView,
@@ -116,6 +123,7 @@ class AttendanceFrame(QWidget):
                 ColumnDefn("Time", "time", width=160),
                 ColumnDefn("From", "user", width=120),
                 ColumnDefn("Message", "message", width=350),
+                ColumnDefn("\u2713", lambda x: "\u2713" if x.applied else "", width=30),
             ],
             parent=self,
             single_select=True,
@@ -130,6 +138,9 @@ class AttendanceFrame(QWidget):
         btn_wrapper2.setFixedWidth(130)
         btn_wrapper2.setLayout(creditt_btn_col)
         creditt_row.addWidget(btn_wrapper2)
+        btn_apply_creditt = QPushButton("Apply Creditt")
+        btn_apply_creditt.clicked.connect(self._on_apply_creditt)
+        creditt_btn_col.addWidget(btn_apply_creditt)
         btn_ignore_creditt = QPushButton("Ignore Creditt")
         btn_ignore_creditt.clicked.connect(self._on_ignore_creditt)
         creditt_btn_col.addWidget(btn_ignore_creditt)
@@ -286,6 +297,15 @@ class AttendanceFrame(QWidget):
         win.closed.connect(self._refresh_attendance)
 
     # ── Creditt / Gratss actions ──
+
+    def _on_apply_creditt(self):
+        selected = self.creditt_list.get_selected_object()
+        if not selected:
+            return
+        dlg = ApplyCredittDialog(selected, parent=self)
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            self._refresh_attendance()
+            self.creditt_list.set_objects(config.CREDITT_LOG)
 
     def _on_ignore_creditt(self):
         selected = self.creditt_list.get_selected_object()
@@ -487,3 +507,182 @@ class AttendanceDetailWindow(QWidget):
         utils.store_state()
         self.closed.emit()
         event.accept()
+
+
+def _find_last_raidtick_before(raidticks, creditt_time):
+    """Return the index of the last raidtick whose time < creditt_time, or -1."""
+    result = -1
+    for i, tick in enumerate(raidticks):
+        if tick.time < creditt_time:
+            result = i
+    return result
+
+
+class ApplyCredittDialog(QDialog):
+    """Confirmation dialog for applying a creditt entry to a raidtick."""
+
+    def __init__(self, creditt_entry, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Apply Creditt")
+        self.setMinimumWidth(460)
+        self._creditt = creditt_entry
+
+        self._raidticks = [w for w in config.ATTENDANCE_LOGS if w.raidtick]
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+
+        # -- Creditt details card --
+        details = QLabel(
+            f"<table cellpadding='2'>"
+            f"<tr><td style='color:gray;'>From</td>"
+            f"<td><b>{creditt_entry.user}</b></td></tr>"
+            f"<tr><td style='color:gray;'>Time</td>"
+            f"<td>{creditt_entry.time}</td></tr>"
+            f"<tr><td style='color:gray;'>Message</td>"
+            f"<td><i>{creditt_entry.message}</i></td></tr>"
+            f"</table>"
+        )
+        details.setWordWrap(True)
+        details.setStyleSheet(
+            "QLabel { background: palette(base); border: 1px solid palette(mid);"
+            " border-radius: 4px; padding: 8px; }"
+        )
+        layout.addWidget(details)
+
+        # -- Form fields --
+        form = QFormLayout()
+        form.setSpacing(8)
+        layout.addLayout(form)
+
+        self._tick_combo = QComboBox()
+        if self._raidticks:
+            creditt_time = dateutil.parser.parse(creditt_entry.time)
+            for tick in self._raidticks:
+                label = tick.tick_name or tick.zone or ""
+                self._tick_combo.addItem(f"{tick.time}  {label}".strip())
+            default_idx = _find_last_raidtick_before(self._raidticks, creditt_time)
+            if default_idx >= 0:
+                self._tick_combo.setCurrentIndex(default_idx)
+        form.addRow("Target tick:", self._tick_combo)
+
+        self._name_edit = QLineEdit(creditt_entry.user)
+        self._name_edit.textChanged.connect(self._update_status)
+        form.addRow("Player name to add:", self._name_edit)
+
+        self._replace_edit = QLineEdit(creditt_entry.user)
+        self._replace_edit.textChanged.connect(self._update_status)
+        form.addRow("Replace existing player:", self._replace_edit)
+
+        # -- Status indicators --
+        self._status_label = QLabel()
+        self._status_label.setWordWrap(True)
+        self._status_label.setStyleSheet("QLabel { padding: 4px 0; }")
+        layout.addWidget(self._status_label)
+
+        # -- Button box --
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        self._buttons.accepted.connect(self._on_accept)
+        self._buttons.rejected.connect(self.reject)
+        layout.addWidget(self._buttons)
+
+        self._tick_combo.currentIndexChanged.connect(self._update_status)
+        self._update_status()
+
+        if config.ALWAYS_ON_TOP:
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
+
+    def _selected_tick(self):
+        idx = self._tick_combo.currentIndex()
+        if idx < 0 or idx >= len(self._raidticks):
+            return None
+        return self._raidticks[idx]
+
+    def _update_status(self):
+        tick = self._selected_tick()
+        ok_btn = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
+        if tick is None:
+            self._status_label.setText(
+                "<span style='color:#e05050; font-weight:600;'>"
+                "\u26A0 No raidticks available.</span>"
+            )
+            ok_btn.setEnabled(False)
+            return
+
+        ok_btn.setEnabled(True)
+        parts = []
+
+        add_name = self._name_edit.text().strip().capitalize()
+        replace_name = self._replace_edit.text().strip().capitalize()
+
+        if replace_name:
+            if replace_name in tick.log:
+                parts.append(
+                    f"<span style='color:#e05050; font-weight:600;'>"
+                    f"\u2713 {replace_name}</span> found on tick (will be removed)"
+                )
+            else:
+                parts.append(
+                    f"<span style='color:#ff9800;'>"
+                    f"\u2717 {replace_name}</span> not found on tick"
+                )
+
+        if add_name:
+            if add_name == replace_name:
+                if replace_name not in tick.log:
+                    parts.append(
+                        f"<span style='color:#4caf50;'>"
+                        f"\u2713 {add_name}</span> will be added"
+                    )
+                else:
+                    parts.append(
+                        f"<span style='color:gray;'>"
+                        f"\u2194 {add_name}</span> will be re-added (no net change)"
+                    )
+            elif add_name in tick.log:
+                parts.append(
+                    f"<span style='color:#ff9800;'>"
+                    f"\u26A0 {add_name}</span> is already on this tick"
+                )
+            else:
+                parts.append(
+                    f"<span style='color:#4caf50;'>"
+                    f"\u2713 {add_name}</span> will be added"
+                )
+
+        self._status_label.setText("<br>".join(parts))
+
+    def _on_accept(self):
+        tick = self._selected_tick()
+        if tick is None:
+            return
+
+        player_name = self._name_edit.text().strip().capitalize()
+        if not player_name:
+            QMessageBox.warning(self, "Apply Creditt", "Player name cannot be empty.")
+            return
+
+        replace_name = self._replace_edit.text().strip()
+        if replace_name:
+            replace_name = replace_name.capitalize()
+            tick.log.pop(replace_name, None)
+
+        if player_name not in tick.log:
+            player_guild = config.ALLIANCES[config.DEFAULT_ALLIANCE][0]
+            if player_name in config.PLAYER_DB:
+                player_record = copy.copy(config.PLAYER_DB[player_name])
+                if not player_record.guild:
+                    player_record.guild = player_guild
+            else:
+                player_record = models.Player(player_name, None, None, player_guild)
+            tick.log[player_name] = player_record
+
+        self._creditt.applied = True
+        utils.store_state()
+        self.accept()

@@ -30,6 +30,32 @@ class TestModels(base.NLTestBase):
         self.assertEqual('cReDiTt john', creditt.message)
         self.assertEqual('raw', creditt.raw_message)
         self.assertEqual('John', creditt.target())
+        self.assertFalse(creditt.applied)
+
+    def test_CredittLog_applied_field(self):
+        creditt = models.CredittLog('time', 'user', 'creditt john', 'raw')
+        self.assertFalse(creditt.applied)
+        creditt.applied = True
+        self.assertTrue(creditt.applied)
+
+        creditt2 = models.CredittLog('t', 'u', 'm', 'r', applied=True)
+        self.assertTrue(creditt2.applied)
+
+    def test_CredittLog_applied_serialization(self):
+        creditt = models.CredittLog('time', 'user', 'creditt john', 'raw', applied=True)
+        creditt_json = json.dumps(creditt, cls=utils.JSONEncoder)
+        loaded = json.loads(creditt_json, cls=utils.JSONDecoder)
+        self.assertEqual(creditt, loaded)
+        self.assertTrue(loaded.applied)
+
+    def test_CredittLog_target_name_returns_sender(self):
+        creditt = models.CredittLog('time', 'Bill', 'creditt dead on pull', 'raw')
+        self.assertEqual('Bill', creditt.target_name())
+        self.assertEqual('Dead on pull', creditt.target())
+
+    def test_CredittLog_target_name_reason_only(self):
+        creditt = models.CredittLog('time', 'Sender', 'creditt ported out', 'raw')
+        self.assertEqual('Sender', creditt.target_name())
 
     def test_GratssLog_model(self):
         gratss = models.GratssLog(
@@ -634,3 +660,47 @@ class TestModels(base.NLTestBase):
         restored = models.Player.from_json(
             name="Jim", pclass=constants.CLERIC, level=50, guild="Guild")
         self.assertEqual(player, restored)
+
+
+class TestFindLastRaidtickBefore(base.NLTestBase):
+    def setUp(self):
+        super().setUp()
+        from ninjalooter.ui.attendance_frame import _find_last_raidtick_before
+        self._find = _find_last_raidtick_before
+
+    def test_finds_last_raidtick(self):
+        t1 = dateutil.parser.parse("Mon Aug 17 07:00:00 2020")
+        t2 = dateutil.parser.parse("Mon Aug 17 08:00:00 2020")
+        tick1 = models.WhoLog(t1, {"Bill": models.Player("Bill")}, raidtick=True)
+        tick2 = models.WhoLog(t2, {"Ted": models.Player("Ted")}, raidtick=True)
+        ticks = [tick1, tick2]
+
+        creditt_time = dateutil.parser.parse("Mon Aug 17 08:05:00 2020")
+        result = self._find(ticks, creditt_time)
+        self.assertEqual(1, result)
+
+    def test_no_tick_before_returns_neg1(self):
+        t1 = dateutil.parser.parse("Mon Aug 17 09:00:00 2020")
+        tick1 = models.WhoLog(t1, {}, raidtick=True)
+
+        creditt_time = dateutil.parser.parse("Mon Aug 17 08:00:00 2020")
+        result = self._find([tick1], creditt_time)
+        self.assertEqual(-1, result)
+
+    def test_empty_list_returns_neg1(self):
+        creditt_time = dateutil.parser.parse("Mon Aug 17 08:00:00 2020")
+        result = self._find([], creditt_time)
+        self.assertEqual(-1, result)
+
+    def test_multiple_before_picks_last(self):
+        t1 = dateutil.parser.parse("Mon Aug 17 07:00:00 2020")
+        t2 = dateutil.parser.parse("Mon Aug 17 07:30:00 2020")
+        t3 = dateutil.parser.parse("Mon Aug 17 09:00:00 2020")
+        ticks = [
+            models.WhoLog(t1, {}, raidtick=True),
+            models.WhoLog(t2, {}, raidtick=True),
+            models.WhoLog(t3, {}, raidtick=True),
+        ]
+        creditt_time = dateutil.parser.parse("Mon Aug 17 08:00:00 2020")
+        result = self._find(ticks, creditt_time)
+        self.assertEqual(1, result)

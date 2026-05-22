@@ -743,12 +743,14 @@ class CredittLog(DictEquals):
     user = None
     message = None
     raw_message = None
+    applied = False
 
-    def __init__(self, time, user, message, raw_message):
+    def __init__(self, time, user, message, raw_message, applied=False):
         self.time = time
         self.user = user
         self.message = message
         self.raw_message = raw_message
+        self.applied = applied
 
     def target(self) -> str:
         try:
@@ -756,6 +758,10 @@ class CredittLog(DictEquals):
         except:  # noqa
             message_cleaned = self.message
         return message_cleaned
+
+    def target_name(self) -> str:
+        """Best-guess player name for Apply dialog -- defaults to sender."""
+        return self.user
 
 
 class GratssLog(DictEquals):
