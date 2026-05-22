@@ -916,8 +916,9 @@ class Auction(DictEquals):
         else:
             self.start_time = datetime.datetime.now()
 
-        if self.time_remaining().seconds > 0:
-            self._alert_timer = threading.Timer(self.time_remaining().seconds, self._do_alert)
+        alert_delay = self.time_remaining().total_seconds() - 30
+        if alert_delay > 0:
+            self._alert_timer = threading.Timer(alert_delay, self._do_alert)
             config.AUCTION_ALERT_TIMERS.append(self._alert_timer)
             self._alert_timer.start()
 
