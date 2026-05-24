@@ -3,17 +3,17 @@ name: tox testing
 on: [pull_request]
 
 jobs:
-  build:
+  test:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-          cache: 'pip'
-      - name: Install Tox and any other packages
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+      - name: Install Tox
         run: pip install tox
       - name: Run Tox
-        # Run tox using the version of Python in `PATH`
-        run: tox -v -e pep8,coverage
+        run: tox -v -e lint,coverage
