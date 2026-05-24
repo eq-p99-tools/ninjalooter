@@ -10,24 +10,24 @@ from ninjalooter import config, logger, logparse, message_handlers, models, util
 LOG = logger.getLogger(__name__)
 
 MATCH_START_AUCTION_DKP = re.compile(
-    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
-    r"\[(?P<item>.*?)\](?P<classes> \(.*?\))? - BID IN /GU"
+    config.TIMESTAMP + r"(?P<name>\w+) .*?, '"
+    r"~?\[(?P<item>.*?)\](?P<classes> \(.*?\))? - BID IN /\w+"
     r"(, MIN (?P<min_dkp>\d+) DKP)?\. "
     r"You MUST include the item name in your bid! "
     r"(Currently: `(?P<player>\w+)` with (?P<bid>\d+) DKP - )?Closing in "
     r"(?P<time_remaining>.*?)(\.|!).*'"
 )
 MATCH_END_AUCTION_DKP = re.compile(
-    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
-    r"Gratss (?P<player>\w+) on \[(?P<item>.*?)] \((?P<number>\d+) DKP\)!.*'"
+    config.TIMESTAMP + r"(?P<name>\w+) .*?, '"
+    r"~?Gratss (?P<player>\w+) on \[(?P<item>.*?)] \((?P<number>\d+) DKP\)!.*'"
 )
 MATCH_START_AUCTION_RANDOM = re.compile(
-    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
-    r"\[(?P<item>.*?)\](?P<classes> \(.*?\))? ROLL (?P<number>\d+) NOW!.*'"
+    config.TIMESTAMP + r"(?P<name>\w+) .*?, '"
+    r"~?\[(?P<item>.*?)\](?P<classes> \(.*?\))? ROLL (?P<number>\d+) NOW!.*'"
 )
 MATCH_END_AUCTION_RANDOM = re.compile(
-    config.TIMESTAMP + r"(?P<name>\w+) (tells the guild|say to your guild), '"
-    r"Gratss (?P<player>\w+) on \[(?P<item>.*?)] with "
+    config.TIMESTAMP + r"(?P<name>\w+) .*?, '"
+    r"~?Gratss (?P<player>\w+) on \[(?P<item>.*?)] with "
     r"(?P<number>\d+) / (?P<target>\d+)!.*'"
 )
 SELF_MESSAGE_MATCHERS = {
@@ -275,11 +275,55 @@ def _replay_handle_auc_start(match, skip_store=True):
     return result
 
 
+def _replay_handle_auc_end(match, skip_store=True):
+    """End auction and override bids with the authoritative gratss data.
+
+    The gratss message is the definitive source of winner/price. Replay
+    may accumulate spurious bids from all-channel matching, so we replace
+    the bid data with what the gratss message says actually happened.
+    """
+    result = message_handlers.handle_auc_end(match, skip_store=skip_store)
+    if not result:
+        # Auction wasn't active -- synthesize directly from the gratss data
+        item_name = match.group("item")
+        player = match.group("player")
+        number = int(match.group("number"))
+        timestamp = match.group("time")
+        end_time = dateutil.parser.parse(timestamp)
+
+        synthetic_item = models.ItemDrop(item_name, "(replay)", timestamp)
+        if "target" in match.groupdict():
+            auc = models.RandomAuction(synthetic_item)
+            if player != "ROT":
+                auc.rolls[player] = number
+        else:
+            auc = models.DKPAuction(synthetic_item, alliance="")
+            if player != "ROT" and number > 0:
+                auc.bids[number] = player
+        auc.start_time = end_time
+        auc.end_time = end_time
+        config.HISTORICAL_AUCTIONS[synthetic_item.uuid] = auc
+        result = True
+    else:
+        # Auction was active -- override bids with authoritative gratss data
+        item_name = match.group("item")
+        player = match.group("player")
+        number = int(match.group("number"))
+        for auc in reversed(list(config.HISTORICAL_AUCTIONS.values())):
+            if auc.name().lower() == item_name.lower():
+                if isinstance(auc, models.DKPAuction):
+                    auc.bids = {number: player} if player != "ROT" else {}
+                elif isinstance(auc, models.RandomAuction):
+                    auc.rolls = {player: number} if player != "ROT" else {}
+                break
+    return result
+
+
 FULL_SELF_MATCHERS = {
     MATCH_START_AUCTION_DKP: _replay_handle_auc_start,
     MATCH_START_AUCTION_RANDOM: _replay_handle_auc_start,
-    MATCH_END_AUCTION_DKP: message_handlers.handle_auc_end,
-    MATCH_END_AUCTION_RANDOM: message_handlers.handle_auc_end,
+    MATCH_END_AUCTION_DKP: _replay_handle_auc_end,
+    MATCH_END_AUCTION_RANDOM: _replay_handle_auc_end,
 }
 
 

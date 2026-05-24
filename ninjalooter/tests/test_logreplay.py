@@ -206,15 +206,15 @@ SAMPLE_AUCTION_LOG = """\
 [Sun Aug 16 22:46:32 2020] [50 Warrior] Bill (Dark Elf) <Kingdom> LFG
 [Sun Aug 16 22:46:32 2020] There are 1 player in Plane of Sky.
 [Sun Aug 16 22:50:00 2020] Peter says out of character, 'Blade of Carnage'
-[Sun Aug 16 22:51:00 2020] Toald tells the guild, '[Blade of Carnage] - BID IN /GU, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
-[Sun Aug 16 22:52:00 2020] Bill tells the guild, 'Blade of Carnage 15'
-[Sun Aug 16 22:55:00 2020] Toald tells the guild, 'Gratss Bill on [Blade of Carnage] (15 DKP)!'
+[Sun Aug 16 22:51:00 2020] You auction, '~[Blade of Carnage] - BID IN /AUC, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
+[Sun Aug 16 22:52:00 2020] Bill auctions, 'Blade of Carnage 15'
+[Sun Aug 16 22:55:00 2020] You auction, '~Gratss Bill on [Blade of Carnage] (15 DKP)!'
 """
 
 SAMPLE_MIDSTREAM_AUCTION_LOG = """\
-[Sun Aug 16 22:51:00 2020] Toald tells the guild, '[Blade of Carnage] - BID IN /GU, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
-[Sun Aug 16 22:52:00 2020] Bill tells the guild, 'Blade of Carnage 15'
-[Sun Aug 16 22:55:00 2020] Toald tells the guild, 'Gratss Bill on [Blade of Carnage] (15 DKP)!'
+[Sun Aug 16 22:51:00 2020] You auction, '~[Blade of Carnage] - BID IN /AUC, MIN 10 DKP. You MUST include the item name in your bid! Closing in 5 minutes.'
+[Sun Aug 16 22:52:00 2020] Bill auctions, 'Blade of Carnage 15'
+[Sun Aug 16 22:55:00 2020] You auction, '~Gratss Bill on [Blade of Carnage] (15 DKP)!'
 """
 
 
@@ -323,6 +323,28 @@ class TestReplayFull(base.NLTestBase):
         logreplay.replay_full(lines, start, end, progress_callback=cancel_immediately)
         # Should have stopped very early
         self.assertEqual(len(config.HISTORICAL_AUCTIONS), 0)
+
+    def test_replay_full_sets_end_time(self):
+        """Completed auctions should have end_time set from the log timestamp."""
+        lines = SAMPLE_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_full(lines, start, end)
+
+        auc = list(config.HISTORICAL_AUCTIONS.values())[0]
+        self.assertIsNotNone(auc.end_time)
+        self.assertEqual(auc.end_time, datetime.datetime(2020, 8, 16, 22, 55, 0))
+
+    def test_replay_full_own_gratss_not_in_gratss_log(self):
+        """App's own ~Gratss message should not appear in GRATSS_LOG."""
+        lines = SAMPLE_AUCTION_LOG.splitlines(keepends=True)
+        start = datetime.datetime(2020, 8, 16, 22, 0, 0)
+        end = datetime.datetime(2020, 8, 17, 0, 0, 0)
+
+        logreplay.replay_full(lines, start, end)
+
+        self.assertEqual(len(config.GRATSS_LOG), 0)
 
 
 # Need utils import for TestEnumerateLogfiles

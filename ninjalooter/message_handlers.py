@@ -412,6 +412,7 @@ def handle_auc_end(match: re.Match, skip_store=False) -> bool:
         LOG.debug("Tried to stop auction for %s but one was not active.", item_name)
         return False
 
+    active_item.end_time = dateutil.parser.parse(match.group("time"))
     config.HISTORICAL_AUCTIONS[active_item.item.uuid] = active_item
     config.ACTIVE_AUCTIONS.pop(active_item.item.uuid)
     signals.auction_completed.emit()

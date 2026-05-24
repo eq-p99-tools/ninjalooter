@@ -64,6 +64,7 @@ def complete_old_auctions(cutoff_time: datetime.datetime):
     for auc in list(config.ACTIVE_AUCTIONS.values()):
         if auc.start_time < cutoff_time:
             LOG.debug("Completing old auction")
+            auc.end_time = cutoff_time
             config.ACTIVE_AUCTIONS.pop(auc.item.uuid)
             config.HISTORICAL_AUCTIONS[auc.item.uuid] = auc
 
@@ -589,7 +590,7 @@ def parse_auction_for_loot_export(auction):
     #     timestamp = datetime_to_eq_format(item_time)
     # else:
     #     timestamp = auction.item.timestamp
-    timestamp = datetime_to_eq_format(auction.end_time)
+    timestamp = datetime_to_eq_format(auction.end_time or auction.start_time)
     text = None
     if highest and isinstance(auction, models.DKPAuction):
         winner, dkp = highest[0]
