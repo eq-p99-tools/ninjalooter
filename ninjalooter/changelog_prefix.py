@@ -1,4 +1,4 @@
-"""Shared release-notes prefix shown on GitHub releases and in-app changelog."""
+"""In-app changelog prefix (prepended in the Changelog tab only)."""
 
 from pathlib import Path
 
