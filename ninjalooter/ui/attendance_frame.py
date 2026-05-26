@@ -545,8 +545,7 @@ class ApplyCredittDialog(QDialog):
         )
         details.setWordWrap(True)
         details.setStyleSheet(
-            "QLabel { background: palette(base); border: 1px solid palette(mid);"
-            " border-radius: 4px; padding: 8px; }"
+            "QLabel { background: palette(base); border: 1px solid palette(mid); border-radius: 4px; padding: 8px; }"
         )
         layout.addWidget(details)
 
@@ -581,9 +580,7 @@ class ApplyCredittDialog(QDialog):
         layout.addWidget(self._status_label)
 
         # -- Button box --
-        self._buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        self._buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self._buttons.accepted.connect(self._on_accept)
         self._buttons.rejected.connect(self.reject)
         layout.addWidget(self._buttons)
@@ -609,8 +606,7 @@ class ApplyCredittDialog(QDialog):
         ok_btn = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
         if tick is None:
             self._status_label.setText(
-                "<span style='color:#e05050; font-weight:600;'>"
-                "\u26A0 No raidticks available.</span>"
+                "<span style='color:#e05050; font-weight:600;'>\u26a0 No raidticks available.</span>"
             )
             ok_btn.setEnabled(False)
             return
@@ -628,33 +624,18 @@ class ApplyCredittDialog(QDialog):
                     f"\u2713 {replace_name}</span> found on tick (will be removed)"
                 )
             else:
-                parts.append(
-                    f"<span style='color:#ff9800;'>"
-                    f"\u2717 {replace_name}</span> not found on tick"
-                )
+                parts.append(f"<span style='color:#ff9800;'>\u2717 {replace_name}</span> not found on tick")
 
         if add_name:
             if add_name == replace_name:
                 if replace_name not in tick.log:
-                    parts.append(
-                        f"<span style='color:#4caf50;'>"
-                        f"\u2713 {add_name}</span> will be added"
-                    )
+                    parts.append(f"<span style='color:#4caf50;'>\u2713 {add_name}</span> will be added")
                 else:
-                    parts.append(
-                        f"<span style='color:gray;'>"
-                        f"\u2194 {add_name}</span> will be re-added (no net change)"
-                    )
+                    parts.append(f"<span style='color:gray;'>\u2194 {add_name}</span> will be re-added (no net change)")
             elif add_name in tick.log:
-                parts.append(
-                    f"<span style='color:#ff9800;'>"
-                    f"\u26A0 {add_name}</span> is already on this tick"
-                )
+                parts.append(f"<span style='color:#ff9800;'>\u26a0 {add_name}</span> is already on this tick")
             else:
-                parts.append(
-                    f"<span style='color:#4caf50;'>"
-                    f"\u2713 {add_name}</span> will be added"
-                )
+                parts.append(f"<span style='color:#4caf50;'>\u2713 {add_name}</span> will be added")
 
         self._status_label.setText("<br>".join(parts))
 
