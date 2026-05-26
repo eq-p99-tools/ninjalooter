@@ -9,8 +9,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QSystemTrayIcon,
     QTabWidget,
-    QTextBrowser,
-    QVBoxLayout,
     QWidget,
 )
 from watchdog.events import FileSystemEventHandler
@@ -133,12 +131,17 @@ class MainWindow(QMainWindow):
         if os.path.isdir(config.LOG_DIRECTORY):
             self._start_log_observer(config.LOG_DIRECTORY)
 
-        # Show changelog on version bump
+        # Switch to Changelog tab on version bump
         try:
             last_run = semver.VersionInfo.parse(config.LAST_RUN_VERSION)
             current = semver.VersionInfo.parse(config.VERSION)
             if current > last_run:
-                ChangeLogWindow(self)
+                idx = self._notebook.indexOf(self.changelog_frame)
+                if idx >= 0:
+                    self._notebook.setCurrentIndex(idx)
+                config.LAST_RUN_VERSION = config.VERSION
+                config.CONF.set("default", "last_run_version", config.VERSION)
+                config.write()
         except (ValueError, TypeError):
             config.LAST_RUN_VERSION = config.VERSION
             config.CONF.set("default", "last_run_version", config.VERSION)
@@ -230,55 +233,4 @@ class MainWindow(QMainWindow):
             config.PARSER_THREAD.join(timeout=2)
         utils.store_state()
         self._tray_icon.hide()
-        event.accept()
-
-
-class ChangeLogWindow(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent, Qt.WindowType.Window)
-        try:
-            releases = autoupdate.get_recent_releases(max_releases=5)
-            current = semver.VersionInfo.parse(config.VERSION)
-            if config.LAST_RUN_VERSION:
-                last_run = semver.VersionInfo.parse(config.LAST_RUN_VERSION)
-            else:
-                last_run = semver.VersionInfo(0, 0, 0)
-            new_releases = [r for r in releases if last_run < r["version"] <= current]
-            if not new_releases:
-                LOG.info("No new releases to show in changelog.")
-                self.deleteLater()
-                return
-        except Exception:
-            LOG.exception("Failed to fetch changelog data from GitHub.")
-            self.deleteLater()
-            return
-
-        self.setWindowTitle(f"Changelog — v{config.VERSION}")
-        self.resize(600, 400)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        self._browser = QTextBrowser()
-        self._browser.setOpenExternalLinks(False)
-        self._browser.anchorClicked.connect(self._open_url)
-        self._browser.setHtml(changelog_frame.format_changelog_html(new_releases))
-        layout.addWidget(self._browser)
-
-        if config.ALWAYS_ON_TOP:
-            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
-        self.show()
-
-    def showEvent(self, event: QShowEvent) -> None:
-        super().showEvent(event)
-        apply_windows_window_frame(self, dark_mode=config.DARK_MODE)
-
-    @staticmethod
-    def _open_url(url):
-        utils.open_generic_url(url.toString())
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        config.LAST_RUN_VERSION = config.VERSION
-        config.CONF.set("default", "last_run_version", config.VERSION)
-        config.write()
         event.accept()
