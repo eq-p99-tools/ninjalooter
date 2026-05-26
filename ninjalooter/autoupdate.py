@@ -50,25 +50,59 @@ class UpdaterBridge(QObject):
 
 
 _updater_bridge_instance: UpdaterBridge | None = None
+_updater_signals_connected = False
+
+
+def init_updater_bridge() -> UpdaterBridge | None:
+    """Create the updater bridge on the GUI thread (call after QApplication exists)."""
+    global _updater_bridge_instance
+    app = QApplication.instance()
+    if app is None:
+        return None
+    if _updater_bridge_instance is None:
+        _updater_bridge_instance = UpdaterBridge(app)
+    return _updater_bridge_instance
 
 
 def _get_updater_bridge() -> UpdaterBridge | None:
-    global _updater_bridge_instance
-    if _updater_bridge_instance is None:
-        app = QApplication.instance()
-        if app is None:
-            return None
-        _updater_bridge_instance = UpdaterBridge(app)
     return _updater_bridge_instance
 
 
 def connect_updater_signals():
     """Connect updater bridge signals to main-thread handlers (call after QApplication exists)."""
-    b = _get_updater_bridge()
-    if b is None:
+    global _updater_signals_connected
+    b = init_updater_bridge()
+    if b is None or _updater_signals_connected:
         return
     b.releases_ready.connect(_on_releases_fetched_main_thread)
     b.fetch_failed.connect(_show_update_error_main_thread)
+    _updater_signals_connected = True
+
+
+def parse_release_version(tag_name: str) -> semver.VersionInfo:
+    """Parse a GitHub release tag into a semver VersionInfo."""
+    return semver.VersionInfo.parse(tag_name.lstrip("v"))
+
+
+def is_upgrade_available(remote: semver.VersionInfo, local: semver.VersionInfo) -> bool:
+    """True when remote is a semver upgrade over local (e.g. 1.18.0 over 1.18.0-rc11+console)."""
+    return remote > local
+
+
+def visible_releases_for(releases: list, current: semver.VersionInfo) -> list:
+    """Releases the user may upgrade to, based on their running version."""
+    if current.prerelease is not None:
+        return releases
+    return [r for r in releases if not r["prerelease"]]
+
+
+def find_newest_upgrade(releases: list, current: semver.VersionInfo) -> semver.VersionInfo | None:
+    """Highest release strictly newer than current (releases should be semver-sorted desc)."""
+    for release in releases:
+        candidate = release["version"]
+        if is_upgrade_available(candidate, current):
+            return candidate
+    return None
 
 
 def get_recent_releases(max_releases=10):
@@ -79,7 +113,7 @@ def get_recent_releases(max_releases=10):
         releases_data = resp.json()
         releases = []
         for release in releases_data:
-            version = semver.VersionInfo.parse(release["tag_name"].lstrip("v"))
+            version = parse_release_version(release["tag_name"])
             releases.append(
                 {
                     "version": version,
@@ -251,8 +285,7 @@ def _on_releases_fetched_main_thread(releases, notify_no_update):
         return
 
     current_version = semver.VersionInfo.parse(config.VERSION)
-    prerelease_ok = current_version.prerelease is not None
-    visible_releases = releases if prerelease_ok else [r for r in releases if not r["prerelease"]]
+    visible_releases = visible_releases_for(releases, current_version)
 
     if not visible_releases:
         if notify_no_update:
@@ -264,10 +297,10 @@ def _on_releases_fetched_main_thread(releases, notify_no_update):
             )
         return
 
-    latest_version = visible_releases[0]["version"]
-    if latest_version > current_version:
-        LOG.info("Update available: %s", latest_version)
-        _prompt_and_apply_update(releases, latest_version)
+    newest_upgrade = find_newest_upgrade(visible_releases, current_version)
+    if newest_upgrade is not None:
+        LOG.info("Update available: %s", newest_upgrade)
+        _prompt_and_apply_update(releases, newest_upgrade)
     else:
         LOG.info("No update available.")
         if notify_no_update:
@@ -294,7 +327,7 @@ def check_update(notify_no_update=False):
             if b:
                 b.releases_ready.emit(releases, notify_no_update)
             else:
-                _on_releases_fetched_main_thread(releases, notify_no_update)
+                LOG.warning("Updater bridge not initialized; update check result dropped")
         except Exception as e:
             LOG.exception("Failed to check for update")
             if notify_no_update:
@@ -302,7 +335,7 @@ def check_update(notify_no_update=False):
                 if eb:
                     eb.fetch_failed.emit(str(e))
                 else:
-                    _show_update_error_main_thread(str(e))
+                    LOG.warning("Updater bridge not initialized; update error not shown")
 
     thread = threading.Thread(target=_background, daemon=True)
     thread.start()

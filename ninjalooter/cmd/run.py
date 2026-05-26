@@ -13,6 +13,7 @@ LOG = logger.getLogger(__name__)
 def run():
     app = QApplication(sys.argv)
     apply_app_theme(app, dark_mode=config.DARK_MODE)
+    autoupdate.connect_updater_signals()
 
     if getattr(sys, "frozen", False):
         try:

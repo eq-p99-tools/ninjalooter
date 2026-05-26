@@ -106,6 +106,9 @@ class MainWindow(QMainWindow):
         self._tray_aot_action.setChecked(config.ALWAYS_ON_TOP)
         self._tray_aot_action.triggered.connect(self._on_tray_always_on_top)
         tray_menu.addSeparator()
+        check_updates_action = tray_menu.addAction("Check for Updates")
+        check_updates_action.triggered.connect(self._on_tray_check_updates)
+        tray_menu.addSeparator()
         quit_action = tray_menu.addAction("Quit")
         quit_action.triggered.connect(self.close)
         self._tray_icon.setContextMenu(tray_menu)
@@ -181,6 +184,9 @@ class MainWindow(QMainWindow):
         config.write()
         self.update_always_on_top()
         self._menu_bar.sync_always_on_top()
+
+    def _on_tray_check_updates(self):
+        autoupdate.check_update(notify_no_update=True)
 
     def _on_filesystem_event(self):
         if not config.AUTO_SWAP_LOGFILE:

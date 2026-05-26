@@ -160,3 +160,78 @@ class TestAutoUpdate(base.NLTestBase):
         releases = autoupdate.get_recent_releases()
 
         self.assertEqual([], releases)
+
+    def test_is_upgrade_available_stable_over_rc_console_build(self):
+        local = semver.VersionInfo.parse("1.18.0-rc11+console")
+        remote = semver.VersionInfo.parse("1.18.0")
+        self.assertTrue(autoupdate.is_upgrade_available(remote, local))
+
+    def test_is_upgrade_available_equal_rc_ignores_build_metadata(self):
+        local = semver.VersionInfo.parse("1.18.0-rc11+console")
+        remote = semver.VersionInfo.parse("1.18.0-rc11")
+        self.assertFalse(autoupdate.is_upgrade_available(remote, local))
+
+    def test_find_newest_upgrade_prefers_stable_over_matching_rc_tag(self):
+        current = semver.VersionInfo.parse("1.18.0-rc11+console")
+        releases = [
+            {"version": semver.VersionInfo.parse("1.18.0-rc11")},
+            {"version": semver.VersionInfo.parse("1.18.0")},
+        ]
+        self.assertEqual(
+            semver.VersionInfo.parse("1.18.0"),
+            autoupdate.find_newest_upgrade(releases, current),
+        )
+
+    def test_find_newest_upgrade_none_when_only_equal_rc(self):
+        current = semver.VersionInfo.parse("1.18.0-rc11+console")
+        releases = [{"version": semver.VersionInfo.parse("1.18.0-rc11")}]
+        self.assertIsNone(autoupdate.find_newest_upgrade(releases, current))
+
+    @mock.patch("logging.shutdown")
+    @mock.patch("os._exit")
+    @mock.patch("subprocess.Popen")
+    @mock.patch("PySide6.QtWidgets.QMessageBox.question")
+    @mock.patch("os.rename")
+    @mock.patch("os.path.basename")
+    @mock.patch("ninjalooter.autoupdate.download_and_unpack")
+    @mock.patch.object(config, "VERSION", "1.18.0-rc11+console")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow", return_value=None)
+    def test_check_update_stable_from_rc_console_build(
+        self,
+        mock_active_window,
+        mock_download_and_unpack,
+        mock_basename,
+        mock_rename,
+        mock_question,
+        mock_popen,
+        mock_os_exit,
+        mock_logging_shutdown,
+    ):
+        mock_question.return_value = QMessageBox.StandardButton.Yes
+        mock_download_and_unpack.return_value = "ninjalooter.exe"
+        mock_basename.return_value = "ninjalooter.exe"
+
+        releases = [
+            {
+                "version": semver.VersionInfo.parse("1.18.0-rc11"),
+                "tag_name": "1.18.0-rc11",
+                "name": "1.18.0-rc11",
+                "body": "",
+                "published_at": "",
+                "assets_url": "https://example.com/assets",
+                "prerelease": True,
+            },
+            {
+                "version": semver.VersionInfo.parse("1.18.0"),
+                "tag_name": "1.18.0",
+                "name": "1.18.0",
+                "body": "",
+                "published_at": "",
+                "assets_url": "https://example.com/assets",
+                "prerelease": False,
+            },
+        ]
+
+        autoupdate._on_releases_fetched_main_thread(releases, False)
+
+        mock_question.assert_called_once()
