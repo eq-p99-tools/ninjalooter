@@ -235,3 +235,113 @@ class TestAutoUpdate(base.NLTestBase):
         autoupdate._on_releases_fetched_main_thread(releases, False)
 
         mock_question.assert_called_once()
+
+    def test_parse_release_version_bare_tag(self):
+        v = autoupdate.parse_release_version("1.18.2")
+        self.assertEqual(v, semver.VersionInfo.parse("1.18.2"))
+
+    def test_parse_release_version_v_prefixed_tag(self):
+        v = autoupdate.parse_release_version("v1.18.2")
+        self.assertEqual(v, semver.VersionInfo.parse("1.18.2"))
+
+    def test_parse_release_version_prerelease(self):
+        v = autoupdate.parse_release_version("v1.18.0-rc1")
+        self.assertEqual(v.prerelease, "rc1")
+
+    @mock.patch("ninjalooter.autoupdate.get")
+    def test_get_recent_releases_filters_drafts(self, mock_get):
+        mock_get.return_value.raise_for_status = mock.Mock()
+        mock_get.return_value.json.return_value = [
+            {
+                "tag_name": "1.19.0",
+                "name": "1.19.0",
+                "body": "",
+                "published_at": "2025-01-01",
+                "assets_url": "https://api.github.com/repos/test/releases/3/assets",
+                "prerelease": False,
+                "draft": True,
+            },
+            {
+                "tag_name": "1.18.2",
+                "name": "1.18.2",
+                "body": "Fix",
+                "published_at": "2025-01-01",
+                "assets_url": "https://api.github.com/repos/test/releases/4/assets",
+                "prerelease": False,
+                "draft": False,
+            },
+        ]
+
+        releases = autoupdate.get_recent_releases(max_releases=10)
+
+        self.assertEqual(1, len(releases))
+        self.assertEqual(semver.VersionInfo.parse("1.18.2"), releases[0]["version"])
+
+    @mock.patch("PySide6.QtWidgets.QMessageBox.critical")
+    @mock.patch("PySide6.QtWidgets.QMessageBox.question")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow", return_value=None)
+    def test_prompt_and_apply_missing_assets_url_shows_error(
+        self, mock_active_window, mock_question, mock_critical
+    ):
+        mock_question.return_value = QMessageBox.StandardButton.Yes
+        releases = [
+            {
+                "version": semver.VersionInfo.parse("1.19.0"),
+                "tag_name": "1.19.0",
+                "name": "1.19.0",
+                "body": "",
+                "published_at": "",
+                "assets_url": "",
+                "prerelease": False,
+            },
+        ]
+
+        autoupdate._prompt_and_apply_update(releases, semver.VersionInfo.parse("1.19.0"))
+
+        mock_critical.assert_called_once()
+        self.assertIn("Could not locate", mock_critical.call_args[0][2])
+
+    @mock.patch("logging.shutdown")
+    @mock.patch("os._exit")
+    @mock.patch("subprocess.Popen")
+    @mock.patch("PySide6.QtWidgets.QMessageBox.question")
+    @mock.patch("os.rename")
+    @mock.patch("os.path.basename")
+    @mock.patch("os.chdir")
+    @mock.patch("ninjalooter.autoupdate.download_and_unpack")
+    @mock.patch("PySide6.QtWidgets.QApplication.activeWindow", return_value=None)
+    def test_versioned_exe_launches_downloaded_exe_directly(
+        self,
+        mock_active_window,
+        mock_download_and_unpack,
+        mock_chdir,
+        mock_basename,
+        mock_rename,
+        mock_question,
+        mock_popen,
+        mock_os_exit,
+        mock_logging_shutdown,
+    ):
+        """When running a versioned exe (not ninjalooter.exe), launch the new exe directly."""
+        mock_question.return_value = QMessageBox.StandardButton.Yes
+        mock_download_and_unpack.return_value = "ninjalooter-1.19.0.exe"
+        mock_basename.return_value = "ninjalooter-1.18.1.exe"
+
+        releases = [
+            {
+                "version": semver.VersionInfo.parse("1.19.0"),
+                "tag_name": "1.19.0",
+                "name": "1.19.0",
+                "body": "",
+                "published_at": "",
+                "assets_url": "https://example.com/assets",
+                "prerelease": False,
+            },
+        ]
+
+        autoupdate._prompt_and_apply_update(releases, semver.VersionInfo.parse("1.19.0"))
+
+        mock_rename.assert_not_called()
+        mock_popen.assert_called_once()
+        launched_path = mock_popen.call_args[0][0][0]
+        self.assertIn("ninjalooter-1.19.0.exe", launched_path)

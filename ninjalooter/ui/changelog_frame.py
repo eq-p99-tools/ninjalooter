@@ -21,7 +21,7 @@ def _changelog_body_style() -> str:
 
 
 def _wrap_changelog_html(content: str) -> str:
-    return f"{_CHANGELOG_HEAD}<body style=\"{_changelog_body_style()}\">{content}</body>"
+    return f'{_CHANGELOG_HEAD}<body style="{_changelog_body_style()}">{content}</body>'
 
 
 def format_changelog_html(releases: list) -> str:

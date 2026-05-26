@@ -3,13 +3,13 @@ name: Build
 on:
   push:
     branches: ["master"]
-    tags: ["v*"]
+    tags: ["v*", "[0-9]*"]
   pull_request:
     branches: ["master"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to build and publish (e.g. v1.18.0). Leave empty for build-only."
+        description: "Tag to build and publish (e.g. 1.18.2). Leave empty for build-only."
         required: false
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Stamp version from tag
-        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.tag
         shell: bash
         env:
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -89,7 +89,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.tag
     permissions:
       contents: write
     steps:
@@ -97,7 +97,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ninjalooter
-          path: dist
+          path: .
+
+      - name: Resolve release zip
+        id: release_zip
+        run: |
+          ZIP="$(find . -name 'ninjalooter-*.zip' -type f | head -1)"
+          if [ -z "$ZIP" ]; then
+            echo "No ninjalooter-*.zip found after artifact download" >&2
+            find . -type f >&2 || true
+            exit 1
+          fi
+          echo "path=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$ZIP")" >> "$GITHUB_OUTPUT"
+          ls -la "$ZIP"
 
       - name: Detect pre-release tag
         id: prerelease
@@ -112,18 +125,33 @@ jobs:
           fi
 
       - name: Create GitHub Release
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           name: ${{ steps.prerelease.outputs.display_version || github.ref_name }}
           draft: true
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
-          files: dist/ninjalooter-*.zip
+
+      - name: Upload release zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPLOAD_URL: ${{ steps.release.outputs.upload_url }}
+        run: |
+          ZIP="${{ steps.release_zip.outputs.path }}"
+          NAME="${{ steps.release_zip.outputs.name }}"
+          BASE="${UPLOAD_URL%\{*}"
+          curl -fL -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/x-zip-compressed" \
+            --data-binary @"$ZIP" \
+            "${BASE}?name=${NAME}"
 
   notify:
     runs-on: ubuntu-latest
     needs: [build, release]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag
+    if: false
+    # if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.tag
     steps:
       - name: Post to Discord
         env:

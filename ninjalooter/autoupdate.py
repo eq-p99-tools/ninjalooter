@@ -106,13 +106,15 @@ def find_newest_upgrade(releases: list, current: semver.VersionInfo) -> semver.V
 
 
 def get_recent_releases(max_releases=10):
-    """Fetch the most recent releases from GitHub."""
+    """Fetch the most recent releases from GitHub (excludes drafts)."""
     try:
         resp = get(GITHUB_API_RELEASES_URL.format(max_releases=max_releases))
         resp.raise_for_status()
         releases_data = resp.json()
         releases = []
         for release in releases_data:
+            if release.get("draft", False):
+                continue
             version = parse_release_version(release["tag_name"])
             releases.append(
                 {
@@ -221,6 +223,20 @@ def _prompt_and_apply_update(releases, latest_version):
 
     assets_url = next((r.get("assets_url") for r in releases if r["version"] == latest_version), None)
     if not assets_url:
+        LOG.error("No assets_url for version %s", latest_version)
+        _show_update_error_main_thread(
+            f"Could not locate download assets for version {latest_version}.\n\n"
+            "Try downloading the update manually from GitHub."
+        )
+        return
+
+    app_dir = os.path.dirname(os.path.abspath(sys.executable))
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(app_dir)
+    except OSError as e:
+        LOG.exception("Cannot chdir to application directory: %s", app_dir)
+        _show_update_error_main_thread(f"Cannot access application directory:\n{app_dir}\n\n{e}")
         return
 
     current_exe = os.path.basename(sys.executable)
@@ -228,47 +244,56 @@ def _prompt_and_apply_update(releases, latest_version):
     backed_up = False
     backup_name = f"ninjalooter-{config.VERSION}.exe"
 
-    if is_packaged and current_exe.lower() == STABLE_EXE_NAME.lower():
-        try:
-            if os.path.exists(backup_name):
-                os.remove(backup_name)
-            os.rename(current_exe, backup_name)
-            backed_up = True
-        except OSError as e:
-            LOG.exception("Failed to backup current exe before update")
-            _show_update_error_main_thread(f"Failed to prepare for update: {e}")
+    try:
+        if is_packaged and current_exe.lower() == STABLE_EXE_NAME.lower():
+            try:
+                if os.path.exists(backup_name):
+                    os.remove(backup_name)
+                os.rename(current_exe, backup_name)
+                backed_up = True
+            except OSError as e:
+                LOG.exception("Failed to backup current exe before update")
+                _show_update_error_main_thread(f"Failed to prepare for update: {e}")
+                return
+
+        newest_exe = download_and_unpack(assets_url)
+        if not newest_exe:
+            LOG.error("Failed to download update.")
+            if backed_up:
+                with contextlib.suppress(OSError):
+                    os.rename(backup_name, STABLE_EXE_NAME)
+            _show_update_error_main_thread("Failed to download update. Continuing with existing version.")
             return
 
-    newest_exe = download_and_unpack(assets_url)
-    if not newest_exe:
-        LOG.error("Failed to download update.")
-        if backed_up:
-            with contextlib.suppress(OSError):
-                os.rename(backup_name, STABLE_EXE_NAME)
-        _show_update_error_main_thread("Failed to download update. Continuing with existing version.")
-        return
+        LOG.info("Downloaded new version: %s", newest_exe)
 
-    LOG.info("Downloaded new version: %s", newest_exe)
+        if is_packaged and current_exe.lower() == STABLE_EXE_NAME.lower():
+            if newest_exe.lower() != STABLE_EXE_NAME.lower():
+                try:
+                    if os.path.exists(STABLE_EXE_NAME):
+                        os.remove(STABLE_EXE_NAME)
+                    os.rename(newest_exe, STABLE_EXE_NAME)
+                except OSError as rename_err:
+                    LOG.error("Failed to rename new exe: %s", rename_err)
+                    _show_update_error_main_thread(
+                        f"Failed to rename update files: {rename_err}\n\n"
+                        f"The new version was downloaded as '{newest_exe}'. "
+                        "You can rename it manually and restart."
+                    )
+                    return
+            launch_exe = STABLE_EXE_NAME
+        elif is_packaged:
+            launch_exe = newest_exe
+        else:
+            launch_exe = newest_exe
 
-    if is_packaged and newest_exe.lower() != STABLE_EXE_NAME.lower():
-        try:
-            if os.path.exists(STABLE_EXE_NAME):
-                os.remove(STABLE_EXE_NAME)
-            os.rename(newest_exe, STABLE_EXE_NAME)
-        except OSError as rename_err:
-            LOG.error("Failed to rename new exe: %s", rename_err)
-            _show_update_error_main_thread(
-                f"Failed to rename update files: {rename_err}\n\n"
-                f"The new version was downloaded as '{newest_exe}'. "
-                "You can rename it manually and restart."
-            )
-            return
-
-    launch_exe = STABLE_EXE_NAME if is_packaged else newest_exe
-
-    logging.shutdown()
-    with subprocess.Popen([launch_exe]):
-        os._exit(0)
+        logging.shutdown()
+        with subprocess.Popen([os.path.join(app_dir, launch_exe)]):
+            os._exit(0)
+    except Exception as e:
+        LOG.exception("Unexpected error during update apply")
+        _show_update_error_main_thread(f"Update failed unexpectedly:\n\n{e}")
+        os.chdir(original_cwd)
 
 
 def _on_releases_fetched_main_thread(releases, notify_no_update):
