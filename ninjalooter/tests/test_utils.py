@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 from unittest import mock
+
 import requests_mock
 
 from ninjalooter import config
@@ -420,3 +421,38 @@ class TestUtils(base.NLTestBase):
             self.assertGreater(os.path.getsize(path), 0)
         finally:
             os.unlink(path)
+
+
+class TestPurgeExpiredKillTimers(base.NLTestBase):
+    def test_purge_removes_old_entries(self):
+        now = datetime.datetime.now()
+        old_time = (now - datetime.timedelta(days=10)).strftime("%a %b %d %H:%M:%S %Y")
+        recent_time = (now - datetime.timedelta(days=1)).strftime("%a %b %d %H:%M:%S %Y")
+        config.KILL_TIMERS = [
+            models.KillTimer(old_time, "old mob"),
+            models.KillTimer(recent_time, "recent mob"),
+        ]
+        config.KILL_TIMER_TTL_DAYS = 7
+        utils.purge_expired_kill_timers()
+        self.assertEqual(1, len(config.KILL_TIMERS))
+        self.assertEqual("recent mob", config.KILL_TIMERS[0].name)
+
+    def test_purge_disabled_when_ttl_zero(self):
+        now = datetime.datetime.now()
+        old_time = (now - datetime.timedelta(days=100)).strftime("%a %b %d %H:%M:%S %Y")
+        config.KILL_TIMERS = [models.KillTimer(old_time, "ancient mob")]
+        config.KILL_TIMER_TTL_DAYS = 0
+        utils.purge_expired_kill_timers()
+        self.assertEqual(1, len(config.KILL_TIMERS))
+
+    def test_purge_keeps_unparseable_times(self):
+        config.KILL_TIMERS = [models.KillTimer("not a real time", "mystery mob")]
+        config.KILL_TIMER_TTL_DAYS = 7
+        utils.purge_expired_kill_timers()
+        self.assertEqual(1, len(config.KILL_TIMERS))
+
+    def test_purge_empty_list(self):
+        config.KILL_TIMERS = []
+        config.KILL_TIMER_TTL_DAYS = 7
+        utils.purge_expired_kill_timers()
+        self.assertEqual(0, len(config.KILL_TIMERS))

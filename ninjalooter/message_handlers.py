@@ -109,6 +109,8 @@ def handle_end_who(match: re.Match, skip_store=False) -> bool:
     zone = match.group("zone")
     if zone.lower() == "everquest":
         zone = None
+    if zone:
+        config.CURRENT_ZONE = zone
     parsed_time = dateutil.parser.parse(who_time)
     raidtick_was = parsed_time - config.LAST_RAIDTICK
     raidtick_who = False
@@ -442,10 +444,20 @@ def handle_rand2(match: re.Match, skip_store=False) -> bool:
     return False
 
 
+def handle_zone_change(match: re.Match, skip_store=False) -> bool:
+    config.CURRENT_ZONE = match.group("zone")
+    return True
+
+
 def handle_kill(match: re.Match, skip_store=False) -> bool:
     time = match.group("time")
     victim = match.group("victim")
-    kt_obj = models.KillTimer(time, victim)
+    if victim in config.PLAYER_DB or victim in config.LAST_WHO_SNAPSHOT:
+        LOG.debug("Ignoring player death: %s", victim)
+        return False
+    if victim in extra_data.IGNORED_KILL_MOBS:
+        return False
+    kt_obj = models.KillTimer(time, victim, zone=config.CURRENT_ZONE)
     config.KILL_TIMERS.append(kt_obj)
     signals.kill.emit()
     if not skip_store:

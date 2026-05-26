@@ -253,6 +253,7 @@ def _build_full_matchers():
     matchers[config.MATCH_RAND1] = message_handlers.handle_rand1
     matchers[config.MATCH_RAND2] = message_handlers.handle_rand2
     matchers[config.MATCH_KILL] = message_handlers.handle_kill
+    matchers[config.MATCH_ZONE_CHANGE] = message_handlers.handle_zone_change
     matchers[config.MATCH_RAIDTICK] = message_handlers.handle_raidtick
     matchers[config.MATCH_CREDITT] = message_handlers.handle_creditt
     matchers[config.MATCH_GRATSS] = message_handlers.handle_gratss

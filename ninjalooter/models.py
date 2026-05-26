@@ -850,14 +850,21 @@ class PopulationPreview(DictEquals):
 class KillTimer(DictEquals):
     time = None
     name = None
+    zone = None
 
-    def __init__(self, time, name):
+    def __init__(self, time, name, zone=None):
         super().__init__()
         self.time = time
         self.name = name
+        self.zone = zone
 
     def island(self):
         return str(extra_data.TIMER_MOBS.get(self.name, "Other"))
+
+    def effective_zone(self):
+        if self.island() != "Other":
+            return "Plane of Sky"
+        return self.zone or "Unknown"
 
 
 class ItemDrop(DictEquals):

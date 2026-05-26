@@ -21,6 +21,7 @@ def reset_matchers():
             config.MATCH_RAND1: message_handlers.handle_rand1,
             config.MATCH_RAND2: message_handlers.handle_rand2,
             config.MATCH_KILL: message_handlers.handle_kill,
+            config.MATCH_ZONE_CHANGE: message_handlers.handle_zone_change,
             config.MATCH_RAIDTICK: message_handlers.handle_raidtick,
             config.MATCH_CREDITT: message_handlers.handle_creditt,
             config.MATCH_GRATSS: message_handlers.handle_gratss,

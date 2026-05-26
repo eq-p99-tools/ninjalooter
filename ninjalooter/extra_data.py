@@ -11,6 +11,7 @@ TIMER_MOBS = {
     "a thunder spirit": 1,
     "a thunder spirit princess": 1,
     "an azarack": 2,
+    "Protector of Sky": 2,
     "a gorgalask": 3,
     "a crystalline cloud": 3,
     "a gust of wind": 3,
@@ -18,7 +19,7 @@ TIMER_MOBS = {
     "an avenging gazer": 3,
     "heart harpie": 3,
     "a watchful guard": 3,
-    "a spirited harpie": 3,
+    "a sprited harpie": 3,
     "Gorgalosk": 3,
     "a soul carrier": 4,
     "an essence harvester": 4,
@@ -42,6 +43,22 @@ TIMER_MOBS = {
     "a blade storm": 1.5,
     "Overseer of Air": 4,
     "the Hand of Veeshan": 8,
+}
+
+IGNORED_KILL_MOBS = {
+    "a sprited harpie pet",
+    "heart harpie pet",
+    "a watchful guard pet",
+    "an essence carrier",
+    "an essence tamer",
+    "a soul harvester",
+    "a soul tamer",
+    "a spiroc arbiter",
+    "a spiroc banisher",
+    "a spiroc caller",
+    "a spiroc expulser",
+    "a spiroc revolter",
+    "a spiroc walker",
 }
 
 CLASS_TITLES = {

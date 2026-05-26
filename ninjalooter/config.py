@@ -83,6 +83,7 @@ OVERVIEW_CLASS_ORDER = CONF.get(
 OVERVIEW_CLASS_ORDER = [pclass.strip() for pclass in OVERVIEW_CLASS_ORDER.split(",")]
 CONF.set("default", "overview_class_order", ", ".join(OVERVIEW_CLASS_ORDER))
 REMEMBER_PLAYER_DATA = CONF.getboolean("default", "remember_player_data", fallback=True)
+KILL_TIMER_TTL_DAYS = CONF.getint("default", "kill_timer_ttl_days", fallback=7)
 
 
 if not CONF.has_section("min_dkp"):
@@ -177,6 +178,7 @@ ATTENDANCE_LOGS = list()
 CREDITT_LOG = list()
 GRATSS_LOG = list()
 KILL_TIMERS = list()
+CURRENT_ZONE = None
 RAID_GROUPS = None
 CREDITT_SASH_POS = 400
 GRATSS_SASH_POS = 150
@@ -255,6 +257,7 @@ MATCH_WHO = re.compile(
 )
 MATCH_END_WHO = re.compile(TIMESTAMP + r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
 MATCH_KILL = re.compile(TIMESTAMP + r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")
+MATCH_ZONE_CHANGE = re.compile(TIMESTAMP + r"You have entered (?P<zone>[\w' ]+)\.")
 MATCH_RAIDTICK = re.compile(TIMESTAMP + r".*RAID ?TICK.*", flags=re.IGNORECASE)
 MATCH_CREDITT = re.compile(
     TIMESTAMP + r"(?P<from>.*) (-> (?P<name>\w+): |tells you, ')"

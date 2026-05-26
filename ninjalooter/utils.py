@@ -388,6 +388,26 @@ def get_first_timestamp(iterable_obj) -> datetime.datetime:
     return datetime.datetime.fromtimestamp(0)
 
 
+def purge_expired_kill_timers():
+    """Remove kill timer entries older than the configured TTL."""
+    if config.KILL_TIMER_TTL_DAYS <= 0:
+        return
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=config.KILL_TIMER_TTL_DAYS)
+    before = len(config.KILL_TIMERS)
+    config.KILL_TIMERS[:] = [kt for kt in config.KILL_TIMERS if _parse_kill_time(kt.time) >= cutoff]
+    removed = before - len(config.KILL_TIMERS)
+    if removed:
+        LOG.info("Purged %d expired kill timer(s) (TTL=%d days).", removed, config.KILL_TIMER_TTL_DAYS)
+
+
+def _parse_kill_time(time_str):
+    """Parse an EQ timestamp string, returning now on failure (keeps the entry)."""
+    try:
+        return dateutil.parser.parse(time_str)
+    except (ValueError, TypeError):
+        return datetime.datetime.now()
+
+
 def load_state(state_file=config.SAVE_STATE_FILE):
     try:
         with open(state_file) as ssfp:
@@ -417,6 +437,7 @@ def load_state(state_file=config.SAVE_STATE_FILE):
         LOG.exception("Failed to load state, couldn't parse JSON.")
     except Exception:
         LOG.exception("Failed to load state, unknown exception.")
+    purge_expired_kill_timers()
 
 
 def store_state(backup=False):
@@ -488,6 +509,7 @@ def export_to_excel(filename):
             "time": datetime_from_eq_format(killtime.time),
             "mob": killtime.name,
             "island": killtime.island(),
+            "zone": killtime.effective_zone(),
         }
         excel_data["Kill Times"].append(killtime_data)
 

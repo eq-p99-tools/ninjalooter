@@ -92,7 +92,7 @@ class TestModels(base.NLTestBase):
     def test_KillTimer_model(self):
         # KillTimers just use string-times
         killtime = models.KillTimer(
-            "Mon Aug 17 07:15:39 2020", "A Mob")
+            "Mon Aug 17 07:15:39 2020", "A Mob", zone="West Commonlands")
 
         # Should be JSON Encodable
         killtime_json = json.dumps(killtime, cls=utils.JSONEncoder)
@@ -100,6 +100,20 @@ class TestModels(base.NLTestBase):
         # Should be JSON Decodable
         loaded_killtime = json.loads(killtime_json, cls=utils.JSONDecoder)
         self.assertEqual(killtime, loaded_killtime)
+        self.assertEqual("West Commonlands", loaded_killtime.zone)
+
+    def test_KillTimer_model_no_zone(self):
+        killtime = models.KillTimer("Mon Aug 17 07:15:39 2020", "A Mob")
+        killtime_json = json.dumps(killtime, cls=utils.JSONEncoder)
+        loaded_killtime = json.loads(killtime_json, cls=utils.JSONDecoder)
+        self.assertEqual(killtime, loaded_killtime)
+        self.assertIsNone(loaded_killtime.zone)
+
+    def test_KillTimer_model_old_state_compat(self):
+        old_json = '{"json_type": "KillTimer", "time": "Mon Aug 17 07:15:39 2020", "name": "A Mob"}'
+        loaded = json.loads(old_json, cls=utils.JSONDecoder)
+        self.assertIsInstance(loaded, models.KillTimer)
+        self.assertIsNone(loaded.zone)
 
     def test_ItemDrop_model(self):
         # ItemDrops just use string-times
@@ -415,6 +429,19 @@ class TestModels(base.NLTestBase):
 
         kt_unknown = models.KillTimer("Mon Aug 17 07:15:39 2020", "Unknown Mob")
         self.assertEqual("Other", kt_unknown.island())
+
+    def test_KillTimer_effective_zone(self):
+        kt_posky = models.KillTimer("Mon Aug 17 07:15:39 2020", "an azarack", zone="Plane of Sky")
+        self.assertEqual("Plane of Sky", kt_posky.effective_zone())
+
+        kt_posky_no_zone = models.KillTimer("Mon Aug 17 07:15:39 2020", "an azarack")
+        self.assertEqual("Plane of Sky", kt_posky_no_zone.effective_zone())
+
+        kt_zoned = models.KillTimer("Mon Aug 17 07:15:39 2020", "a gnoll", zone="West Commonlands")
+        self.assertEqual("West Commonlands", kt_zoned.effective_zone())
+
+        kt_no_zone = models.KillTimer("Mon Aug 17 07:15:39 2020", "a gnoll")
+        self.assertEqual("Unknown", kt_no_zone.effective_zone())
 
     def test_Group_tank_score(self):
         group = models.Group(constants.GT_TANK)

@@ -81,6 +81,12 @@ class MenuBar(QMenuBar):
         )
         clear_action.triggered.connect(self._on_clear_app)
 
+        clear_tod_action = menu.addAction(
+            QIcon(os.path.join(icons_dir, "clear.png")),
+            "Clear &Kill Timers",
+        )
+        clear_tod_action.triggered.connect(self._on_clear_kill_timers)
+
         menu.addSeparator()
 
         exit_action = menu.addAction(
@@ -351,6 +357,18 @@ class MenuBar(QMenuBar):
             utils.store_state(backup=True)
             signals.app_clear.emit()
             utils.clear_alerts()
+
+    def _on_clear_kill_timers(self):
+        reply = QMessageBox.question(
+            self._window,
+            "Confirm Clear",
+            "Are you sure you want to clear all kill timer data?",
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+        )
+        if reply == QMessageBox.StandardButton.Ok:
+            config.KILL_TIMERS.clear()
+            signals.kill.emit()
+            utils.store_state()
 
     # ------------------------------------------------------------------
     # Bidding handlers

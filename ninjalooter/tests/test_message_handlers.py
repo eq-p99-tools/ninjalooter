@@ -772,6 +772,79 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertEqual("an azarack", config.KILL_TIMERS[0].name)
         mock_signals.kill.emit.assert_called_once()
 
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_stamps_zone(self, mock_signals, mock_store_state):
+        config.CURRENT_ZONE = "Plane of Sky"
+        line = "[Sun Aug 16 17:41:25 2020] an azarack has been slain by Peter!"
+        match = config.MATCH_KILL.match(line)
+        message_handlers.handle_kill(match)
+        self.assertEqual("Plane of Sky", config.KILL_TIMERS[0].zone)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_no_zone(self, mock_signals, mock_store_state):
+        line = "[Sun Aug 16 17:41:25 2020] an azarack has been slain by Peter!"
+        match = config.MATCH_KILL.match(line)
+        message_handlers.handle_kill(match)
+        self.assertIsNone(config.KILL_TIMERS[0].zone)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_ignores_player_death(self, mock_signals, mock_store_state):
+        config.PLAYER_DB["Peter"] = models.Player("Peter", "Warrior", 60, "Castle")
+        line = "[Sun Aug 16 17:41:25 2020] Peter has been slain by an azarack!"
+        match = config.MATCH_KILL.match(line)
+        result = message_handlers.handle_kill(match)
+        self.assertFalse(result)
+        self.assertEqual(0, len(config.KILL_TIMERS))
+        mock_signals.kill.emit.assert_not_called()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_ignores_who_snapshot_player(self, mock_signals, mock_store_state):
+        config.LAST_WHO_SNAPSHOT["Jim"] = models.Player("Jim", "Cleric", 60, "Castle")
+        line = "[Sun Aug 16 17:41:25 2020] Jim has been slain by a gnoll!"
+        match = config.MATCH_KILL.match(line)
+        result = message_handlers.handle_kill(match)
+        self.assertFalse(result)
+        self.assertEqual(0, len(config.KILL_TIMERS))
+
+    def test_handle_zone_change(self):
+        line = "[Sun Aug 16 17:40:00 2020] You have entered Plane of Sky."
+        match = config.MATCH_ZONE_CHANGE.match(line)
+        self.assertIsNotNone(match)
+        result = message_handlers.handle_zone_change(match)
+        self.assertTrue(result)
+        self.assertEqual("Plane of Sky", config.CURRENT_ZONE)
+
+    def test_handle_zone_change_different_zone(self):
+        line = "[Sun Aug 16 17:40:00 2020] You have entered West Commonlands."
+        match = config.MATCH_ZONE_CHANGE.match(line)
+        self.assertIsNotNone(match)
+        message_handlers.handle_zone_change(match)
+        self.assertEqual("West Commonlands", config.CURRENT_ZONE)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_end_who_sets_current_zone(self, mock_signals, mock_store_state):
+        config.LAST_WHO_SNAPSHOT.clear()
+        line = "[Sun Aug 16 22:46:32 2020] There are 25 players in Plane of Sky."
+        match = config.MATCH_END_WHO.match(line)
+        self.assertIsNotNone(match)
+        message_handlers.handle_end_who(match)
+        self.assertEqual("Plane of Sky", config.CURRENT_ZONE)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_end_who_everquest_no_zone_update(self, mock_signals, mock_store_state):
+        config.CURRENT_ZONE = "Plane of Sky"
+        config.LAST_WHO_SNAPSHOT.clear()
+        line = "[Sun Aug 16 22:46:32 2020] There are 25 players in EverQuest."
+        match = config.MATCH_END_WHO.match(line)
+        message_handlers.handle_end_who(match)
+        self.assertEqual("Plane of Sky", config.CURRENT_ZONE)
+
     @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_rand1(self, mock_signals):
         line = "[Sun Aug 16 22:47:31 2020] **A Magic Die is rolled by Jim."
