@@ -52,9 +52,9 @@ class BiddingFrame(QWidget):
                 ColumnDefn("Report Time", "timestamp", width=170),
                 ColumnDefn("Reporter", "reporter", width=95),
                 ColumnDefn("Item", "name", width=225),
-                ColumnDefn("Min. DKP", lambda x: str(x.min_dkp()), width=61, center=True),
+                ColumnDefn("Min. DKP", lambda x: str(x.min_dkp()), width=63, center=True),
                 ColumnDefn("Restrictions", lambda x: x.classes(), width=85, center=True),
-                ColumnDefn("Droppable", lambda x: x.droppable(), width=70, center=True),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=68, center=True),
             ],
             parent=self,
             single_select=True,
@@ -101,9 +101,9 @@ class BiddingFrame(QWidget):
         pane2_layout = QVBoxLayout(pane2)
         pane2_layout.setContentsMargins(10, 10, 10, 0)
 
-        active_label = QLabel("Active Auctions")
-        active_label.setStyleSheet("font-size: 13px; font-weight: bold;")
-        pane2_layout.addWidget(active_label)
+        self._active_label = QLabel()
+        self._active_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        pane2_layout.addWidget(self._active_label)
 
         active_row = QHBoxLayout()
         pane2_layout.addLayout(active_row)
@@ -197,9 +197,9 @@ class BiddingFrame(QWidget):
         pane3_layout = QVBoxLayout(pane3)
         pane3_layout.setContentsMargins(10, 10, 10, 10)
 
-        history_label = QLabel("Historical Auctions")
-        history_label.setStyleSheet("font-size: 13px; font-weight: bold;")
-        pane3_layout.addWidget(history_label)
+        self._history_label = QLabel()
+        self._history_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        pane3_layout.addWidget(self._history_label)
 
         history_row = QHBoxLayout()
         pane3_layout.addLayout(history_row)
@@ -209,9 +209,9 @@ class BiddingFrame(QWidget):
             columns=[
                 ColumnDefn("Item", lambda x: x.name(), width=240),
                 ColumnDefn("Restrictions", lambda x: x.classes(), width=95, center=True),
-                ColumnDefn("Droppable", lambda x: x.droppable(), width=70),
-                ColumnDefn("Rand/Min", lambda x: str(x.get_target_min()), width=65),
-                ColumnDefn("Bid/Roll", lambda x: str(x.highest_number()), width=65),
+                ColumnDefn("Droppable", lambda x: x.droppable(), width=70, center=True),
+                ColumnDefn("Rand/Min", lambda x: str(x.get_target_min()), width=65, center=True),
+                ColumnDefn("Bid/Roll", lambda x: str(x.highest_number()), width=65, center=True),
                 ColumnDefn("Winner", lambda x: x.highest_players(), width=108),
                 ColumnDefn("Completed", lambda x: x.end_time),
             ],
@@ -270,6 +270,7 @@ class BiddingFrame(QWidget):
         self.history_list.set_objects(list(config.HISTORICAL_AUCTIONS.values()))
         if config.HIDE_ROTS:
             self._apply_hide_rot_filter()
+        self._update_dkp_labels()
 
         # ── Connect signals ──
         signals.drop.connect(self._on_drop)
@@ -300,6 +301,7 @@ class BiddingFrame(QWidget):
         row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self._reselect_row(self.active_list, row)
+        self._update_active_label()
 
     # ── Splitter persistence ──
 
@@ -413,6 +415,7 @@ class BiddingFrame(QWidget):
         self.pending_list.set_objects(config.PENDING_AUCTIONS)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self._reselect_row(self.active_list, row)
+        self._update_active_label()
         utils.store_state()
 
     def _auc_time_delta(self, subtract=False):
@@ -478,11 +481,35 @@ class BiddingFrame(QWidget):
         else:
             self.history_list.set_filter_func(None)
 
+    @staticmethod
+    def _dkp_total(auctions: dict) -> int:
+        total = 0
+        for auc in auctions.values():
+            if not isinstance(auc, models.DKPAuction):
+                continue
+            highest = auc.highest()
+            if highest:
+                total += int(highest[0][1])
+        return total
+
+    def _update_active_label(self):
+        dkp = self._dkp_total(config.ACTIVE_AUCTIONS)
+        self._active_label.setText(f"Active Auctions (DKP: {dkp})")
+
+    def _update_history_label(self):
+        dkp = self._dkp_total(config.HISTORICAL_AUCTIONS)
+        self._history_label.setText(f"Historical Auctions (DKP: {dkp})")
+
+    def _update_dkp_labels(self):
+        self._update_active_label()
+        self._update_history_label()
+
     def _refresh_history(self):
         row = self._visual_row(self.history_list)
         self.history_list.set_objects(list(config.HISTORICAL_AUCTIONS.values()))
         self._apply_hide_rot_filter()
         self._reselect_row(self.history_list, row)
+        self._update_dkp_labels()
 
     def _undo_complete(self):
         selected = self.history_list.get_selected_object()
@@ -525,12 +552,14 @@ class BiddingFrame(QWidget):
 
     def _on_bid(self, item):
         self.active_list.object_model.refresh_object(item)
+        self._update_active_label()
 
     def _on_auction_started(self):
         self._refresh_pending()
         row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self._reselect_row(self.active_list, row)
+        self._update_active_label()
 
     def _on_auction_completed(self):
         row = self._visual_row(self.active_list)
@@ -618,6 +647,11 @@ class BidDetailWindow(QWidget):
     def _data_dict(self):
         return getattr(self._item, "rolls", getattr(self._item, "bids", {}))
 
+    def _notify_bidding_frame(self):
+        parent = self.parent()
+        if isinstance(parent, BiddingFrame):
+            parent._update_dkp_labels()
+
     def _refresh_table(self):
         self._refreshing = True
         try:
@@ -656,6 +690,7 @@ class BidDetailWindow(QWidget):
             self._refresh_table()
             self._listview.object_model.refresh_object(self._item)
             utils.store_state()
+            self._notify_bidding_frame()
         except (ValueError, KeyError):
             self._refresh_table()
 
@@ -717,6 +752,7 @@ class BidDetailWindow(QWidget):
         self._refresh_table()
         self._listview.object_model.refresh_object(self._item)
         utils.store_state()
+        self._notify_bidding_frame()
 
     def _remove_entry(self):
         row = self._table.currentRow()
@@ -733,6 +769,7 @@ class BidDetailWindow(QWidget):
         self._refresh_table()
         self._listview.object_model.refresh_object(self._item)
         utils.store_state()
+        self._notify_bidding_frame()
 
 
 class IgnoredItemsWindow(QWidget):
