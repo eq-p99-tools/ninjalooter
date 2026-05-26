@@ -99,6 +99,11 @@ jobs:
           name: ninjalooter
           path: dist
 
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ninjalooter/changelog_prefix.md
+
       - name: Detect pre-release tag
         id: prerelease
         run: |
@@ -116,6 +121,8 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           name: ${{ steps.prerelease.outputs.display_version || github.ref_name }}
+          body_path: ninjalooter/changelog_prefix.md
+          generate_release_notes: true
           draft: true
           prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
           files: dist/ninjalooter-*.zip

@@ -14,6 +14,7 @@ datas = [('data/icons', 'data/icons')]
 datas += [('data/sounds/*.mp3', 'data/sounds')]
 datas += [('data/items.json', 'data')]
 datas += [('data/spells.json', 'data')]
+datas += [('ninjalooter/changelog_prefix.md', 'ninjalooter')]
 
 a = Analysis(['ninjalooter\\cmd\\run.py'],
              pathex=[],

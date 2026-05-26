@@ -21,13 +21,14 @@ from ninjalooter.app_signals import signals
 from ninjalooter.ui import (
     attendance_frame,
     bidding_frame,
+    changelog_frame,
     killtimes_frame,
     menu_bar,
     population_frame,
     raid_overview_frame,
     raidgroups_frame,
 )
-from ninjalooter.ui.theme import apply_windows_window_frame, semantic
+from ninjalooter.ui.theme import apply_windows_window_frame
 
 LOG = logger.getLogger(__name__)
 
@@ -90,6 +91,9 @@ class MainWindow(QMainWindow):
 
         self.raid_ov_frame = raid_overview_frame.RaidOverviewFrame(self._notebook)
         self._notebook.addTab(self.raid_ov_frame, "Raid Overview")
+
+        self.changelog_frame = changelog_frame.ChangelogFrame(self._notebook)
+        self._notebook.addTab(self.changelog_frame, "Changelog")
 
         self._notebook.setCurrentIndex(config.TAB_SELECTION)
 
@@ -252,12 +256,7 @@ class ChangeLogWindow(QWidget):
         self._browser = QTextBrowser()
         self._browser.setOpenExternalLinks(False)
         self._browser.anchorClicked.connect(self._open_url)
-        html = autoupdate.compile_changelog(new_releases)
-        styled_html = (
-            f'<body style="background-color:{semantic.changelog_bg}; '
-            f'color:{semantic.changelog_fg}; padding:12px;">{html}</body>'
-        )
-        self._browser.setHtml(styled_html)
+        self._browser.setHtml(changelog_frame.format_changelog_html(new_releases))
         layout.addWidget(self._browser)
 
         if config.ALWAYS_ON_TOP:

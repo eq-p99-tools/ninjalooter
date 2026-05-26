@@ -18,6 +18,7 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
 from ninjalooter import config
+from ninjalooter.changelog_prefix import get_changelog_prefix, strip_changelog_prefix
 
 LOG = logging.getLogger(__name__)
 
@@ -99,11 +100,11 @@ def get_recent_releases(max_releases=10):
 
 def compile_changelog(releases):
     """Compile release notes into HTML."""
-    changelog = ""
+    changelog = get_changelog_prefix() + "\n\n"
     for release in releases:
         version_str = f"v{release['version']}"
         changelog += f"## {version_str}\n"
-        body = release["body"].strip()
+        body = strip_changelog_prefix(release["body"])
         if body:
             for raw_line in body.split("\n"):
                 stripped = raw_line.strip()
