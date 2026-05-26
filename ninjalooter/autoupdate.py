@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import zipfile
 
@@ -288,8 +289,13 @@ def _prompt_and_apply_update(releases, latest_version):
             launch_exe = newest_exe
 
         logging.shutdown()
-        with subprocess.Popen([os.path.join(app_dir, launch_exe)]):
-            os._exit(0)
+        exe_path = os.path.join(app_dir, launch_exe)
+        update_tmp = tempfile.mkdtemp(prefix="ninjalooter_update_")
+        env = os.environ.copy()
+        env["TEMP"] = update_tmp
+        env["TMP"] = update_tmp
+        subprocess.Popen([exe_path], env=env)
+        os._exit(0)
     except Exception as e:
         LOG.exception("Unexpected error during update apply")
         _show_update_error_main_thread(f"Update failed unexpectedly:\n\n{e}")

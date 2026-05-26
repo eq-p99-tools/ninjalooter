@@ -1,4 +1,8 @@
+import contextlib
+import os
+import shutil
 import sys
+import tempfile
 import traceback
 
 from PySide6.QtWidgets import QApplication
@@ -10,10 +14,23 @@ from ninjalooter.ui.window import MainWindow
 LOG = logger.getLogger(__name__)
 
 
+def _cleanup_update_temps():
+    """Remove leftover ninjalooter_update_* dirs from previous auto-updates."""
+    try:
+        tmp = tempfile.gettempdir()
+        for entry in os.scandir(tmp):
+            if entry.is_dir() and entry.name.startswith("ninjalooter_update_"):
+                with contextlib.suppress(OSError):
+                    shutil.rmtree(entry.path)
+    except Exception:
+        pass
+
+
 def run():
     app = QApplication(sys.argv)
     apply_app_theme(app, dark_mode=config.DARK_MODE)
     autoupdate.connect_updater_signals()
+    _cleanup_update_temps()
 
     if getattr(sys, "frozen", False):
         try:
