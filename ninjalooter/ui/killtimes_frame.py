@@ -112,9 +112,9 @@ class KillTimesFrame(QWidget):
         timers = config.KILL_TIMERS
         if filter_text:
             timers = [
-                kt for kt in timers
-                if filter_text in (kt.name or "").lower()
-                or filter_text in kt.effective_zone().lower()
+                kt
+                for kt in timers
+                if filter_text in (kt.name or "").lower() or filter_text in kt.effective_zone().lower()
             ]
 
         by_zone: dict[str, list] = defaultdict(list)

@@ -136,7 +136,7 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_drop(self, mock_signals, mock_store_state):
-        config.LAST_WHO_SNAPSHOT = {
+        config.PLAYER_DB = {
             'Jim': models.Player('Jim', None, None, 'Force of Will'),
             'James': models.Player('James', None, None, 'Kingdom'),
             'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
@@ -408,7 +408,7 @@ class TestMessageHandlers(base.NLTestBase):
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_bid(self, mock_signals, mock_store_state):
-        config.LAST_WHO_SNAPSHOT = {
+        config.PLAYER_DB = {
             'Jim': models.Player('Jim', None, None, 'Venerate'),
             'Pim': models.Player('Pim', None, None, 'Castle'),
             'Tim': models.Player('Tim', None, None, 'Kingdom'),
@@ -593,6 +593,30 @@ class TestMessageHandlers(base.NLTestBase):
         match = config.MATCH_BID_GU.match(line)
         result = message_handlers.handle_bid(match)
         self.assertTrue(result)
+
+        config.ACTIVE_AUCTIONS.clear()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_bid_restricts_via_player_db_without_snapshot(
+            self, mock_signals, mock_store_state):
+        config.LAST_WHO_SNAPSHOT = {}
+        config.PLAYER_DB = {
+            'Dan': models.Player('Dan', None, None, 'Dial a Daniel'),
+        }
+        config.RESTRICT_BIDS = True
+        item_name = 'Copper Disc'
+        itemdrop = models.ItemDrop(item_name, "Jim", "timestamp")
+        disc_auction = models.DKPAuction(itemdrop, 'VCR')
+        config.ACTIVE_AUCTIONS = {itemdrop.uuid: disc_auction}
+
+        line = ("[Sun Aug 16 22:47:31 2020] Dan auctions, "
+                "'Copper Disc 10 DKP'")
+        match = config.MATCH_BID[1].match(line)
+        result = message_handlers.handle_bid(match)
+        self.assertFalse(result)
+        self.assertEqual([], disc_auction.highest())
+        mock_signals.bid.emit.assert_not_called()
 
         config.ACTIVE_AUCTIONS.clear()
 

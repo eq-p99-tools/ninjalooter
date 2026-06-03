@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QSystemTrayIcon,
     QTabWidget,
-    QWidget,
 )
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer

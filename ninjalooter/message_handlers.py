@@ -205,7 +205,7 @@ def handle_drop(match: re.Match, skip_store=False) -> list:
     timestamp = match.group("time")
     name = match.group("name")
     text = match.group("text")
-    guild = config.LAST_WHO_SNAPSHOT.get(name, models.Player(name)).guild
+    guild = config.PLAYER_DB.get(name, models.Player(name)).guild
     if text.lower().startswith("looted"):
         LOG.info("Ignoring drop message starting with 'looted'")
         return list()
@@ -265,7 +265,7 @@ def handle_bid(match: re.Match, skip_store=False) -> bool:
     name = match.group("name")
     if name == "You":
         name = config.PLAYER_NAME
-    guild = config.LAST_WHO_SNAPSHOT.get(name, models.Player(name)).guild
+    guild = config.PLAYER_DB.get(name, models.Player(name)).guild
     alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
     bid = int(match.group("bid"))
