@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -16,25 +14,27 @@ from PySide6.QtWidgets import (
 from ninjalooter import config
 from ninjalooter.app_signals import signals
 from ninjalooter.models import Player
+from ninjalooter.raid_overview import (
+    GUILDLESS_LABEL,
+    group_players_by_class,
+    guilds_in_snapshot,
+    total_filtered_count,
+)
 from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
 
 COLUMNS = 3
-MAX_POPULATION = 14
-
-
-class _ClassPanel(QWidget):
     """A single class panel: header label, compact table, and watermark for empty."""
 
     TABLE_ROWS = 6  # Fixed row count so all panels are uniform height
 
-    def __init__(self, pclass: str, players: list[Player], total: int, parent=None):
+    def __init__(self, pclass: str, players: list[Player], total_filtered: int, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(2)
 
         shown = len(players)
-        header = QLabel(f"<b>{pclass} ({shown} / {MAX_POPULATION})</b>")
+        header = QLabel(f"<b>{pclass} ({shown} / {total_filtered})</b>")
         layout.addWidget(header)
 
         self._table = ObjectTableView(
@@ -113,10 +113,7 @@ class RaidOverviewFrame(QScrollArea):
             if item.widget():
                 item.widget().deleteLater()
 
-        guilds: set[str] = set()
-        for player in self._snapshot.values():
-            if player.guild:
-                guilds.add(player.guild)
+        guilds = guilds_in_snapshot(self._snapshot)
 
         for guild in sorted(guilds):
             cb = QCheckBox(guild)
@@ -141,13 +138,9 @@ class RaidOverviewFrame(QScrollArea):
             if item.widget():
                 item.widget().deleteLater()
 
-        by_class: dict[str, list[Player]] = defaultdict(list)
         enabled_guilds = self._enabled_guilds()
-
-        for player in self._snapshot.values():
-            key = player.pclass or "Unknown"
-            if player.guild in enabled_guilds:
-                by_class[key].append(player)
+        by_class = group_players_by_class(self._snapshot, enabled_guilds)
+        total_filtered = total_filtered_count(by_class)
 
         all_classes = list(config.OVERVIEW_CLASS_ORDER)
         remaining = set(by_class.keys()) - set(all_classes)
@@ -155,8 +148,7 @@ class RaidOverviewFrame(QScrollArea):
 
         for i, pclass in enumerate(all_classes):
             players = by_class.get(pclass, [])
-            total = len([p for p in self._snapshot.values() if (p.pclass or "Unknown") == pclass])
-            panel = _ClassPanel(pclass, players, total, self._grid_container)
+            panel = _ClassPanel(pclass, players, total_filtered, self._grid_container)
             row = i // COLUMNS
             col = i % COLUMNS
             self._grid.addWidget(panel, row, col)
