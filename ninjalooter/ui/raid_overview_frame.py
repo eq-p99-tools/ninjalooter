@@ -23,6 +23,9 @@ from ninjalooter.raid_overview import (
 from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
 
 COLUMNS = 3
+
+
+class _ClassPanel(QWidget):
     """A single class panel: header label, compact table, and watermark for empty."""
 
     TABLE_ROWS = 6  # Fixed row count so all panels are uniform height
