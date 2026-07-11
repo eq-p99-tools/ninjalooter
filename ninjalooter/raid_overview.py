@@ -23,9 +23,7 @@ def guilds_in_snapshot(snapshot: dict[str, Player]) -> set[str]:
     return guilds
 
 
-def group_players_by_class(
-    snapshot: dict[str, Player], enabled_guilds: set[str]
-) -> dict[str, list[Player]]:
+def group_players_by_class(snapshot: dict[str, Player], enabled_guilds: set[str]) -> dict[str, list[Player]]:
     by_class: dict[str, list[Player]] = defaultdict(list)
     for player in snapshot.values():
         if player_visible(player, enabled_guilds):

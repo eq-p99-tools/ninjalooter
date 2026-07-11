@@ -15,7 +15,6 @@ from ninjalooter import config
 from ninjalooter.app_signals import signals
 from ninjalooter.models import Player
 from ninjalooter.raid_overview import (
-    GUILDLESS_LABEL,
     group_players_by_class,
     guilds_in_snapshot,
     total_filtered_count,
