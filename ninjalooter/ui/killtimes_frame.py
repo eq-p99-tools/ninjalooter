@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from PySide6.QtCore import QModelIndex
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
@@ -12,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ninjalooter import config
+from ninjalooter import config, utils
 from ninjalooter.app_signals import signals
 from ninjalooter.ui.theme import semantic
 
@@ -62,6 +63,10 @@ class KillTimesFrame(QWidget):
 
         layout.addWidget(self._tree)
 
+        self._restoring_expansion = False
+        self._tree.expanded.connect(self._on_section_expanded)
+        self._tree.collapsed.connect(self._on_section_collapsed)
+
         signals.kill.connect(self._on_kill)
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
@@ -103,6 +108,58 @@ class KillTimesFrame(QWidget):
             bg = semantic.alt_row if i % 2 == 1 else semantic.base_row
             parent_item.appendRow(KillTimesFrame._make_mob_row(kt, bg))
 
+    def _section_cache_key(self, index: QModelIndex) -> str | None:
+        item = self._tree_model.itemFromIndex(index)
+        if item is None or not item.hasChildren():
+            return None
+        text = item.text()
+        parent = item.parent()
+        if parent is not None:
+            return f"{parent.text()}/{text}"
+        return text
+
+    def _set_section_expanded(self, key: str, expanded: bool) -> None:
+        config.KILL_TIMER_SECTIONS_EXPANDED_CACHE[key] = expanded
+        utils.store_state()
+
+    def _on_section_expanded(self, index: QModelIndex) -> None:
+        if self._restoring_expansion:
+            return
+        key = self._section_cache_key(index)
+        if key is not None:
+            self._set_section_expanded(key, True)
+
+    def _on_section_collapsed(self, index: QModelIndex) -> None:
+        if self._restoring_expansion:
+            return
+        key = self._section_cache_key(index)
+        if key is not None:
+            self._set_section_expanded(key, False)
+
+    def _apply_expansion_state(self) -> None:
+        cache = config.KILL_TIMER_SECTIONS_EXPANDED_CACHE
+        self._restoring_expansion = True
+        try:
+            for row in range(self._tree_model.rowCount()):
+                zone_item = self._tree_model.item(row, 0)
+                zone_index = self._tree_model.indexFromItem(zone_item)
+                if cache.get(zone_item.text(), True):
+                    self._tree.expand(zone_index)
+                else:
+                    self._tree.collapse(zone_index)
+                for child_row in range(zone_item.rowCount()):
+                    child = zone_item.child(child_row, 0)
+                    if child is None or not child.hasChildren():
+                        continue
+                    child_key = f"{zone_item.text()}/{child.text()}"
+                    child_index = self._tree_model.indexFromItem(child)
+                    if cache.get(child_key, True):
+                        self._tree.expand(child_index)
+                    else:
+                        self._tree.collapse(child_index)
+        finally:
+            self._restoring_expansion = False
+
     # ── refresh ───────────────────────────────────────────────────────────
 
     def _refresh(self, _filter_text=None):
@@ -141,7 +198,7 @@ class KillTimesFrame(QWidget):
 
             self._tree_model.appendRow(zone_row)
 
-        self._tree.expandAll()
+        self._apply_expansion_state()
 
     def _on_kill(self):
         self._refresh()

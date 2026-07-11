@@ -361,6 +361,7 @@ class TestUtils(base.NLTestBase):
             self.assertIn('HISTORICAL_AUCTIONS', data)
             self.assertIn('ATTENDANCE_LOGS', data)
             self.assertIn('PLAYER_DB', data)
+            self.assertIn('KILL_TIMER_SECTIONS_EXPANDED_CACHE', data)
         finally:
             os.unlink(tmp_path)
 

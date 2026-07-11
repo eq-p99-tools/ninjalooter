@@ -455,6 +455,10 @@ def handle_kill(match: re.Match, skip_store=False) -> bool:
     if victim in config.PLAYER_DB or victim in config.LAST_WHO_SNAPSHOT:
         LOG.debug("Ignoring player death: %s", victim)
         return False
+    # Player-cast "Eye of <name>" pets spam ToD; keep only the real Sky boss.
+    if victim.startswith("Eye of ") and victim != "Eye of Veeshan":
+        LOG.debug("Ignoring player eye pet death: %s", victim)
+        return False
     if victim in extra_data.IGNORED_KILL_MOBS:
         return False
     kt_obj = models.KillTimer(time, victim, zone=config.CURRENT_ZONE)

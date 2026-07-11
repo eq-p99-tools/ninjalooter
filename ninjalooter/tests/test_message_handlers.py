@@ -834,6 +834,27 @@ class TestMessageHandlers(base.NLTestBase):
         self.assertFalse(result)
         self.assertEqual(0, len(config.KILL_TIMERS))
 
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_ignores_player_eye(self, mock_signals, mock_store_state):
+        line = "[Sun Aug 16 17:41:25 2020] Eye of Peter has been slain by a gnoll!"
+        match = config.MATCH_KILL.match(line)
+        result = message_handlers.handle_kill(match)
+        self.assertFalse(result)
+        self.assertEqual(0, len(config.KILL_TIMERS))
+        mock_signals.kill.emit.assert_not_called()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_kill_keeps_eye_of_veeshan(self, mock_signals, mock_store_state):
+        line = "[Sun Aug 16 17:41:25 2020] Eye of Veeshan has been slain by Peter!"
+        match = config.MATCH_KILL.match(line)
+        result = message_handlers.handle_kill(match)
+        self.assertTrue(result)
+        self.assertEqual(1, len(config.KILL_TIMERS))
+        self.assertEqual("Eye of Veeshan", config.KILL_TIMERS[0].name)
+        mock_signals.kill.emit.assert_called_once()
+
     def test_handle_zone_change(self):
         line = "[Sun Aug 16 17:40:00 2020] You have entered Plane of Sky."
         match = config.MATCH_ZONE_CHANGE.match(line)

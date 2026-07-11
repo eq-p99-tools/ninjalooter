@@ -14,7 +14,7 @@ SEMVER = semver.VersionInfo(
     major=1,
     minor=18,
     patch=3,
-    prerelease="rc1",
+    prerelease="rc2",
     build="console",
 )
 VERSION = str(SEMVER)
@@ -188,6 +188,7 @@ RAIDTICK_ALERT_TIMER = None
 RAIDTICK_REMINDER_COUNT = 0
 AUCTION_ALERT_TIMERS = list()
 RAID_OVERVIEW_GUILDS_ENABLED_CACHE = dict()
+KILL_TIMER_SECTIONS_EXPANDED_CACHE = dict()
 TAB_SELECTION = 0
 
 # Calculated variables

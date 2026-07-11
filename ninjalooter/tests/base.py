@@ -198,6 +198,7 @@ class NLTestBase(unittest.TestCase):
         config.CREDITT_LOG = list()
         config.GRATSS_LOG = list()
         config.KILL_TIMERS = list()
+        config.KILL_TIMER_SECTIONS_EXPANDED_CACHE = dict()
         config.CURRENT_ZONE = None
         config.AUCTION_ALERT_TIMERS = list()
 

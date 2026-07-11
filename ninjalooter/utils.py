@@ -464,6 +464,7 @@ def store_state(backup=False):
             "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
             "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
             "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
+            "KILL_TIMER_SECTIONS_EXPANDED_CACHE": config.KILL_TIMER_SECTIONS_EXPANDED_CACHE,
             "TAB_SELECTION": config.TAB_SELECTION,
         }
         with open(statefile_name, "w") as ssfp:
