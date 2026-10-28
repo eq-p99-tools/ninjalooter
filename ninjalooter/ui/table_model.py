@@ -259,6 +259,21 @@ class ObjectTableView(QTableView):
     def set_objects(self, objects: list):
         self._model.set_objects(objects)
 
+    def append_new_objects(self, source: list):
+        """Insert rows appended to *source* without rebuilding the table.
+
+        A full reset drops scroll position and re-sorts every existing row.
+        When the rows already on screen are still the head of *source*, only
+        the new objects are inserted. Anything else replaces the table.
+        """
+        shown = self._model.get_objects()
+        incoming = list(source)
+        if len(shown) <= len(incoming) and all(shown[index] is incoming[index] for index in range(len(shown))):
+            for obj in incoming[len(shown) :]:
+                self._model.add_object(obj)
+            return
+        self.set_objects(incoming)
+
     def get_selected_object(self):
         indexes = self.selectionModel().selectedRows()
         if not indexes:

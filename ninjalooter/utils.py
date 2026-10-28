@@ -8,6 +8,8 @@ import inspect
 import json
 import os
 import re
+import tempfile
+import threading
 import webbrowser
 
 import dateutil.parser
@@ -458,37 +460,142 @@ def load_state(state_file=config.SAVE_STATE_FILE):
     purge_expired_kill_timers()
 
 
-def store_state(backup=False):
-    try:
-        statefile_name = config.SAVE_STATE_FILE
-        if backup and config.BACKUP_ON_CLEAR:
-            now = datetime.datetime.now()
-            timestr = now.isoformat().replace(":", "-").split(".")[0]
-            statefile_name = "state_{}.json".format(timestr)
+# Log events arrive in bursts. One write per burst keeps the parser reading
+# the log instead of rewriting the whole save file on every line.
+_STATE_SAVE_DELAY = 1.0
+_state_lock = threading.Lock()
+_schedule_lock = threading.Lock()
+_save_pending = False
+_save_timer = None
 
-        json_state = {
-            "PENDING_AUCTIONS": config.PENDING_AUCTIONS,
-            "IGNORED_AUCTIONS": config.IGNORED_AUCTIONS,
-            "ACTIVE_AUCTIONS": config.ACTIVE_AUCTIONS,
-            "HISTORICAL_AUCTIONS": config.HISTORICAL_AUCTIONS,
-            "LAST_WHO_SNAPSHOT": config.LAST_WHO_SNAPSHOT,
-            "PLAYER_DB": config.PLAYER_DB,
-            "ATTENDANCE_LOGS": config.ATTENDANCE_LOGS,
-            "KILL_TIMERS": config.KILL_TIMERS,
-            "CREDITT_LOG": config.CREDITT_LOG,
-            "GRATSS_LOG": config.GRATSS_LOG,
-            "CREDITT_SASH_POS": config.CREDITT_SASH_POS,
-            "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
-            "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
-            "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
-            "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE,
-            "KILL_TIMER_SECTIONS_EXPANDED_CACHE": config.KILL_TIMER_SECTIONS_EXPANDED_CACHE,
-            "TAB_SELECTION": config.TAB_SELECTION,
-        }
-        with open(statefile_name, "w") as ssfp:
-            json.dump(json_state, ssfp, cls=JSONEncoder)
+
+def _capture_state():
+    """Shallow-copy the containers a log line may append to while we write."""
+    return {
+        "PENDING_AUCTIONS": list(config.PENDING_AUCTIONS),
+        "IGNORED_AUCTIONS": list(config.IGNORED_AUCTIONS),
+        "ACTIVE_AUCTIONS": dict(config.ACTIVE_AUCTIONS),
+        "HISTORICAL_AUCTIONS": dict(config.HISTORICAL_AUCTIONS),
+        "LAST_WHO_SNAPSHOT": dict(config.LAST_WHO_SNAPSHOT),
+        "PLAYER_DB": dict(config.PLAYER_DB),
+        "ATTENDANCE_LOGS": list(config.ATTENDANCE_LOGS),
+        "KILL_TIMERS": list(config.KILL_TIMERS),
+        "CREDITT_LOG": list(config.CREDITT_LOG),
+        "GRATSS_LOG": list(config.GRATSS_LOG),
+        "CREDITT_SASH_POS": config.CREDITT_SASH_POS,
+        "GRATSS_SASH_POS": config.GRATSS_SASH_POS,
+        "ACTIVE_SASH_POS": config.ACTIVE_SASH_POS,
+        "HISTORICAL_SASH_POS": config.HISTORICAL_SASH_POS,
+        "RAID_OVERVIEW_GUILDS_ENABLED_CACHE": dict(config.RAID_OVERVIEW_GUILDS_ENABLED_CACHE),
+        "KILL_TIMER_SECTIONS_EXPANDED_CACHE": dict(config.KILL_TIMER_SECTIONS_EXPANDED_CACHE),
+        "TAB_SELECTION": config.TAB_SELECTION,
+    }
+
+
+def _write_json_atomic(path, payload):
+    destination = os.path.abspath(path)
+    directory = os.path.dirname(destination) or "."
+    fd, tmp_path = tempfile.mkstemp(prefix=".ninjalooter-state-", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(fd, "w") as handle:
+            json.dump(payload, handle, cls=JSONEncoder)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, destination)
     except Exception:
-        LOG.exception("Failed to store state.")
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def store_state(backup=False):
+    """Write the save file now. Callers on the log thread should request a save instead."""
+    with _state_lock:
+        try:
+            statefile_name = config.SAVE_STATE_FILE
+            if backup and config.BACKUP_ON_CLEAR:
+                now = datetime.datetime.now()
+                timestr = now.isoformat().replace(":", "-").split(".")[0]
+                statefile_name = "state_{}.json".format(timestr)
+            _write_json_atomic(statefile_name, _capture_state())
+        except Exception:
+            LOG.exception("Failed to store state.")
+
+
+def request_store_state():
+    """Schedule a single save. Further requests before it runs share that save."""
+    global _save_pending, _save_timer
+    with _schedule_lock:
+        if _save_pending:
+            return
+        _save_pending = True
+        timer = threading.Timer(_STATE_SAVE_DELAY, _deliver_pending_save)
+        timer.daemon = True
+        _save_timer = timer
+        timer.start()
+
+
+def _deliver_pending_save():
+    global _save_pending, _save_timer
+    with _schedule_lock:
+        _save_pending = False
+        _save_timer = None
+    store_state()
+
+
+def cancel_pending_state_save():
+    """Drop a scheduled save without writing."""
+    global _save_pending, _save_timer
+    with _schedule_lock:
+        timer = _save_timer
+        _save_pending = False
+        _save_timer = None
+    if timer is not None:
+        timer.cancel()
+
+
+def flush_store_state():
+    """Write immediately, including anything a log line scheduled."""
+    cancel_pending_state_save()
+    store_state()
+
+
+def consider_logfile_switch(path, current):
+    """Return (path, character) when *path* is a newer EQ log than *current*.
+
+    The file being tailed changes on every line. Comparing that path avoids
+    walking the log directory on each write.
+    """
+    if not path:
+        return None
+    try:
+        candidate = os.path.abspath(path)
+    except OSError:
+        return None
+    if current:
+        try:
+            if os.path.normcase(candidate) == os.path.normcase(os.path.abspath(current)):
+                return None
+        except OSError:
+            return None
+    if not RE_EQ_LOGFILE_FULL.match(os.path.basename(candidate)):
+        return None
+    try:
+        mtime = os.stat(candidate).st_mtime
+    except OSError:
+        return None
+    if current and os.path.isfile(current):
+        try:
+            if mtime <= os.stat(current).st_mtime:
+                return None
+        except OSError:
+            pass
+    name = get_character_name_from_logfile(candidate)
+    if name == "NO MATCH":
+        return None
+    return candidate, name
 
 
 def eastern_time_offset():

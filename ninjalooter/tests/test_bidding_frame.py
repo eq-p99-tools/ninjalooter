@@ -129,3 +129,21 @@ class TestHistorySortCycle(base.NLTestBase):
         _click_header(view, 0)
         self.assertEqual(["A", "C", "B"], names())
         self.assertEqual(-1, view.horizontalHeader().sortIndicatorSection())
+
+
+class TestAppendNewObjects(base.NLTestBase):
+    def test_appends_only_new_rows(self):
+        view = ObjectTableView(columns=[ColumnDefn("Name", "name")])
+        self.addCleanup(view.deleteLater)
+        first = models.Player("First")
+        second = models.Player("Second")
+        view.set_objects([first])
+        view.append_new_objects([first, second])
+        shown = view.object_model.get_objects()
+        self.assertIs(shown[0], first)
+        self.assertIs(shown[1], second)
+
+        replacement = models.Player("Replacement")
+        view.append_new_objects([replacement])
+        shown = view.object_model.get_objects()
+        self.assertEqual([replacement], shown)

@@ -15,7 +15,7 @@ class AppSignals(QObject):
     clear_who = Signal()
     who_history = Signal()
     who_end = Signal()
-    kill = Signal()
+    kill = Signal(object)  # KillTimer, so the tree can append one row
     creditt = Signal()
     gratss = Signal()
 
@@ -35,6 +35,7 @@ class AppSignals(QObject):
     alert = Signal(str, str, int)  # title, message, msec
     play_sound = Signal(str)  # sound file path, played on the UI thread
     alliance_changed = Signal(str)  # alliance name
+    min_dkp_sheet_loaded = Signal()  # Google sheet overrides applied
 
 
 signals = AppSignals()

@@ -41,12 +41,12 @@ class _LogDirHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.is_directory:
             return
-        self._window._on_filesystem_event()
+        self._window._on_filesystem_event(event.src_path)
 
     def on_created(self, event):
         if event.is_directory:
             return
-        self._window._on_filesystem_event()
+        self._window._on_filesystem_event(event.src_path)
 
 
 class MainWindow(QMainWindow):
@@ -178,10 +178,21 @@ class MainWindow(QMainWindow):
         self._log_observer.start()
 
     def restart_parser(self):
-        if config.PARSER_THREAD:
-            config.PARSER_THREAD.abort()
-        config.PARSER_THREAD = logparse.ParseThread()
-        config.PARSER_THREAD.start()
+        """Stop the current parser before starting another.
+
+        A character switch used to leave the old thread running, so two
+        parsers wrote the same auctions and the same save file.
+        """
+        old = config.PARSER_THREAD
+        if old is not None and old.is_alive():
+            old.abort()
+            old.join(timeout=2)
+            if old.is_alive():
+                LOG.error("Log parser did not stop; leaving the current parser running")
+                return
+        thread = logparse.ParseThread()
+        config.PARSER_THREAD = thread
+        thread.start()
 
     def _on_tray_always_on_top(self, checked: bool):
         config.ALWAYS_ON_TOP = checked
@@ -193,14 +204,16 @@ class MainWindow(QMainWindow):
     def _on_tray_check_updates(self):
         autoupdate.check_update(notify_no_update=True)
 
-    def _on_filesystem_event(self):
+    def _on_filesystem_event(self, path):
         if not config.AUTO_SWAP_LOGFILE:
             return
-        logfile, name = utils.get_latest_logfile(config.LOG_DIRECTORY)
-        if logfile and logfile != config.LATEST_LOGFILE:
-            config.PLAYER_NAME = name
-            config.LATEST_LOGFILE = logfile
-            self.restart_parser()
+        found = utils.consider_logfile_switch(path, config.LATEST_LOGFILE)
+        if not found:
+            return
+        logfile, name = found
+        config.PLAYER_NAME = name
+        config.LATEST_LOGFILE = logfile
+        self.restart_parser()
 
     def _show_tray_notification(self, title: str, message: str, msec: int):
         if self._tray_icon.supportsMessages():
@@ -233,6 +246,6 @@ class MainWindow(QMainWindow):
         if config.PARSER_THREAD:
             config.PARSER_THREAD.abort()
             config.PARSER_THREAD.join(timeout=2)
-        utils.store_state()
+        utils.flush_store_state()
         self._tray_icon.hide()
         event.accept()
