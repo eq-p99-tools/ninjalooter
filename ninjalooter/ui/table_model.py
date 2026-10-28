@@ -59,21 +59,26 @@ class ObjectTableModel(QAbstractTableModel):
         self._objects.pop(row)
         self.endRemoveRows()
 
-    def refresh_object(self, obj):
+    def refresh_object(self, obj, roles=None):
         try:
             row = self._objects.index(obj)
         except ValueError:
             return
         left = self.index(row, 0)
         right = self.index(row, self.columnCount() - 1)
-        self.dataChanged.emit(left, right)
+        if roles:
+            self.dataChanged.emit(left, right, roles)
+        else:
+            self.dataChanged.emit(left, right)
 
-    def refresh_all(self):
+    def refresh_all(self, roles=None):
         if self._objects:
-            self.dataChanged.emit(
-                self.index(0, 0),
-                self.index(self.rowCount() - 1, self.columnCount() - 1),
-            )
+            top = self.index(0, 0)
+            bottom = self.index(self.rowCount() - 1, self.columnCount() - 1)
+            if roles:
+                self.dataChanged.emit(top, bottom, roles)
+            else:
+                self.dataChanged.emit(top, bottom)
 
     def get_object(self, row: int):
         if 0 <= row < len(self._objects):
