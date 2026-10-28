@@ -5,6 +5,8 @@ import sys
 import tempfile
 import traceback
 
+# Size probe only: import Qt's media player so PyInstaller bundles it.
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer  # noqa: F401
 from PySide6.QtWidgets import QApplication
 
 from ninjalooter import autoupdate, config, extra_data, logger, utils
