@@ -28,6 +28,7 @@ LOG = logger.getLogger(__name__)
 RE_EQ_LOGFILE = re.compile(r".*_(.*)_.*\.txt")
 RE_EQ_LOGFILE_FULL = re.compile(r"eqlog_(.+?)_(.+)\.txt", re.IGNORECASE)
 RE_TIMESTAMP = re.compile(config.TIMESTAMP)
+BID_NUMBER_MATCHER = re.compile(r"\d+(?!nd)")
 LOG.info("Project working directory: %s", config.PROJECT_DIR)
 
 
@@ -280,6 +281,20 @@ def get_items_from_text(text: str) -> list:
         match_ranges.append((item[1], len(item[0]) + item[1]))
     item_names = compose_ranges(match_ranges, text)
     return item_names
+
+
+def strip_items_from_text(text: str, items: list) -> str:
+    for item in items:
+        text = text.replace(item, " ")
+    return text
+
+
+def get_bid_from_text(text: str, items: list):
+    """Return the bid amount in text, ignoring digits inside item names."""
+    bid_match = BID_NUMBER_MATCHER.search(strip_items_from_text(text, items))
+    if not bid_match:
+        return None
+    return int(bid_match.group(0))
 
 
 def get_pending_item_names() -> list:

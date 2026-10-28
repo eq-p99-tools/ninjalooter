@@ -73,6 +73,9 @@ def parse_logfile(logfile: str, run: threading.Event):
                             )
                         if matcher == config.MATCH_RAND1:
                             last_rand_player = result
+                        # A rejected bid may be a drop whose item name contains a number
+                        if match_func is message_handlers.handle_bid and not result:
+                            continue
                         break
                 if result:
                     LOG.debug("Handled line: %s", current_line)

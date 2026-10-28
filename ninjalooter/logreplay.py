@@ -398,6 +398,9 @@ def replay_full(lines, start_time, end_time, progress_callback=None):
                     break
                 if matcher == config.MATCH_RAND1:
                     last_rand_player = result
+                # A rejected bid may be a drop whose item name contains a number
+                if match_func is message_handlers.handle_bid and not result:
+                    continue
                 break
 
     LOG.info("Finished full replay!")
