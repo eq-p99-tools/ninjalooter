@@ -20,7 +20,12 @@ a = Analysis(['ninjalooter\\cmd\\run.py'],
              pathex=[],
              binaries=[],
              datas=datas,
-             hiddenimports=['PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets'],
+             hiddenimports=[
+                 'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets',
+                 'playsound3', 'playsound3.backends',
+                 # playsound3 loads these lazily for its Windows Media Player backend
+                 'pythoncom', 'pywintypes', 'win32api', 'win32com', 'win32com.client',
+             ],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

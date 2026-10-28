@@ -26,6 +26,7 @@ dependencies = [
     "XlsxWriter",
     "pydicti",
     "playsound==1.2.2",
+    "playsound3",
     "requests",
     "semver",
     "markdown2",
