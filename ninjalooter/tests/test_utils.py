@@ -459,33 +459,31 @@ class TestPurgeExpiredKillTimers(base.NLTestBase):
         self.assertEqual(0, len(config.KILL_TIMERS))
 
 
-class TestWindowsSound(base.NLTestBase):
-    def setUp(self):
-        super().setUp()
-        self.commands = []
-        self.fail_on = None
+class TestAlertSound(base.NLTestBase):
+    def test_disabled_alerts_do_not_play(self):
+        config.AUDIO_ALERTS = False
+        utils.alert_sound(config.NEW_DROP_SOUND)
+        self.mock_playsound.assert_not_called()
 
-        def send(command, *_):
-            self.commands.append(command.split()[0])
-            return 263 if command.startswith(str(self.fail_on)) else 0
+    def test_enabled_alerts_request_playback(self):
+        config.AUDIO_ALERTS = True
+        utils.alert_sound(config.NEW_DROP_SOUND)
+        self.mock_playsound.assert_called_once_with(config.NEW_DROP_SOUND)
 
-        windll = mock.Mock()
-        windll.winmm.mciSendStringW.side_effect = send
-        patcher = mock.patch('ctypes.windll', windll, create=True)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+    def test_player_ignores_missing_file_and_starts_a_real_one(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
 
-    def test_device_closed_after_play(self):
-        for _ in range(3):
-            utils._play_sound_windows_sync('new_drop.mp3')
-        self.assertListEqual(['open', 'play', 'close'] * 3, self.commands)
+        from ninjalooter.ui.alert_sound import AlertSoundPlayer
 
-    def test_device_closed_when_play_fails(self):
-        self.fail_on = 'play'
-        utils._play_sound_windows_sync('new_drop.mp3')
-        self.assertListEqual(['open', 'play', 'close'], self.commands)
+        app = QApplication.instance() or QApplication([])
+        player = AlertSoundPlayer()
+        player.play(os.path.join(config.PROJECT_DIR, "data", "sounds", "missing.mp3"))
+        self.assertEqual([], player._players)
 
-    def test_failed_open_does_not_raise(self):
-        self.fail_on = 'open'
-        utils._play_sound_windows_sync('new_drop.mp3')
-        self.assertListEqual(['open'], self.commands)
+        player.play(config.NEW_DROP_SOUND)
+        self.assertEqual(1, len(player._players))
+        self.assertTrue(player._players[0].source().toLocalFile().endswith("new_drop.mp3"))
+        player._discard(player._players[0])
+        app.processEvents()
+        self.assertEqual([], player._players)

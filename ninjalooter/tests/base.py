@@ -207,13 +207,9 @@ class NLTestBase(unittest.TestCase):
         self.addCleanup(thread_patcher1.stop)
 
         self.mock_playsound = mock.Mock()
-        sound_patcher = mock.patch('playsound.playsound', self.mock_playsound)
+        sound_patcher = mock.patch('ninjalooter.utils._request_sound', self.mock_playsound)
         sound_patcher.start()
         self.addCleanup(sound_patcher.stop)
-        win_sound_patcher = mock.patch(
-            'ninjalooter.utils._play_sound_windows', self.mock_playsound)
-        win_sound_patcher.start()
-        self.addCleanup(win_sound_patcher.stop)
 
     def tearDown(self) -> None:
         config.SAVE_STATE_FILE = self._orig_save_state_file

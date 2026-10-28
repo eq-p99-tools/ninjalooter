@@ -25,6 +25,7 @@ from ninjalooter.ui import (
     raid_overview_frame,
     raidgroups_frame,
 )
+from ninjalooter.ui.alert_sound import AlertSoundPlayer
 from ninjalooter.ui.theme import apply_windows_window_frame
 
 LOG = logger.getLogger(__name__)
@@ -118,6 +119,8 @@ class MainWindow(QMainWindow):
         # Signals
         signals.title_changed.connect(self.setWindowTitle)
         signals.alert.connect(self._show_tray_notification)
+        self._sound_player = AlertSoundPlayer(self)
+        signals.play_sound.connect(self._sound_player.play)
         signals.show_raid_overview.connect(self._switch_to_raid_overview)
         signals.calc_raid_groups.connect(self._switch_to_raid_groups)
 
