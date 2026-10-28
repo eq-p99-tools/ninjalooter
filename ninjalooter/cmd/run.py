@@ -5,12 +5,11 @@ import sys
 import tempfile
 import traceback
 
-from PySide6.QtWidgets import QApplication
-
 # Size probe only: import playsound3 and the backend module so PyInstaller
 # bundles them. Not wired into alerts.
 import playsound3  # noqa: F401
 import playsound3.backends  # noqa: F401
+from PySide6.QtWidgets import QApplication
 
 from ninjalooter import autoupdate, config, extra_data, logger, utils
 from ninjalooter.ui.theme import apply_app_theme
