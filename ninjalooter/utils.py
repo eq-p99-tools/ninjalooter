@@ -8,6 +8,9 @@ import inspect
 import json
 import os
 import re
+import sys
+import threading
+import uuid
 import webbrowser
 
 import dateutil.parser
@@ -226,10 +229,44 @@ def alert_message(title, message, msec=2000):
             LOG.exception("Couldn't emit alert signal.")
 
 
+def _mci_send(command: str) -> None:
+    import ctypes  # noqa: PLC0415
+
+    error_code = ctypes.windll.winmm.mciSendStringW(command, None, 0, None)
+    if error_code:
+        error_buffer = ctypes.create_unicode_buffer(256)
+        ctypes.windll.winmm.mciGetErrorStringW(error_code, error_buffer, 255)
+        raise OSError("MCI error %d for `%s`: %s" % (error_code, command, error_buffer.value))
+
+
+def _play_sound_windows_sync(soundfile: str) -> None:
+    # playsound 1.2.2 never closes the MCI devices it opens; once enough of
+    # them leak, every later open fails and alerts go silent until restart.
+    alias = "ninjalooter_%s" % uuid.uuid4().hex
+    try:
+        _mci_send('open "%s" alias %s' % (soundfile, alias))
+        try:
+            _mci_send("play %s wait" % alias)
+        finally:
+            _mci_send("close %s" % alias)
+    except:  # noqa
+        LOG.exception("Couldn't play soundfile.")
+
+
+def _play_sound_windows(soundfile: str, block: bool) -> None:
+    if block:
+        _play_sound_windows_sync(soundfile)
+    else:
+        threading.Thread(target=_play_sound_windows_sync, args=(soundfile,), daemon=True).start()
+
+
 def alert_sound(soundfile, block=False):
     if config.AUDIO_ALERTS:
         try:
-            playsound.playsound(soundfile, block)
+            if sys.platform == "win32":
+                _play_sound_windows(soundfile, block)
+            else:
+                playsound.playsound(soundfile, block)
         except:  # noqa
             LOG.exception("Couldn't play soundfile.")
 

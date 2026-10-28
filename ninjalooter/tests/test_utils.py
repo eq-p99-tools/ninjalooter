@@ -457,3 +457,35 @@ class TestPurgeExpiredKillTimers(base.NLTestBase):
         config.KILL_TIMER_TTL_DAYS = 7
         utils.purge_expired_kill_timers()
         self.assertEqual(0, len(config.KILL_TIMERS))
+
+
+class TestWindowsSound(base.NLTestBase):
+    def setUp(self):
+        super().setUp()
+        self.commands = []
+        self.fail_on = None
+
+        def send(command, *_):
+            self.commands.append(command.split()[0])
+            return 263 if command.startswith(str(self.fail_on)) else 0
+
+        windll = mock.Mock()
+        windll.winmm.mciSendStringW.side_effect = send
+        patcher = mock.patch('ctypes.windll', windll, create=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_device_closed_after_play(self):
+        for _ in range(3):
+            utils._play_sound_windows_sync('new_drop.mp3')
+        self.assertListEqual(['open', 'play', 'close'] * 3, self.commands)
+
+    def test_device_closed_when_play_fails(self):
+        self.fail_on = 'play'
+        utils._play_sound_windows_sync('new_drop.mp3')
+        self.assertListEqual(['open', 'play', 'close'], self.commands)
+
+    def test_failed_open_does_not_raise(self):
+        self.fail_on = 'open'
+        utils._play_sound_windows_sync('new_drop.mp3')
+        self.assertListEqual(['open'], self.commands)
