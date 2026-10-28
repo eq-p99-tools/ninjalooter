@@ -27,8 +27,6 @@ class TestPopulationFrame(base.NLTestBase):
     def tearDown(self):
         frame = self.frame
         for sig, slot in (
-            (signals.who, frame._on_who),
-            (signals.clear_who, frame._on_clear_who),
             (signals.who_end, frame._on_who_end),
             (signals.who_history, frame._on_who_history),
             (signals.app_clear, frame._on_app_clear),
@@ -55,13 +53,19 @@ class TestPopulationFrame(base.NLTestBase):
         config.ATTENDANCE_LOGS.append(tick)
         return tick
 
-    def test_who_lines_still_fill_the_latest_table(self):
-        signals.clear_who.emit()
-        signals.who.emit("Jim", "Cleric", 60, "Castle")
+    def test_who_lines_leave_the_snapshot_and_refresh_once(self):
+        remembered = models.Player("Jim", "Cleric", 60, "Castle")
+        config.LAST_WHO_SNAPSHOT["Jim"] = remembered
+
+        signals.who.emit("Jim", "", 0, "")
+
+        self.assertIs(config.LAST_WHO_SNAPSHOT["Jim"], remembered)
+        self.assertEqual([], _names(self.frame._player_table))
+
         signals.who_end.emit()
 
+        self.assertIs(config.LAST_WHO_SNAPSHOT["Jim"], remembered)
         self.assertEqual(["Jim"], _names(self.frame._player_table))
-        self.assertEqual("Castle", config.LAST_WHO_SNAPSHOT["Jim"].guild)
         self.assertEqual(["VCR"], [row.alliance for row in self.frame._preview_table.object_model.get_objects()])
         self.assertEqual("Latest /who", self.frame._source_combo.currentText())
         self.assertTrue(self.frame._newer_label.isHidden())
@@ -102,8 +106,8 @@ class TestPopulationFrame(base.NLTestBase):
         )
         config.ATTENDANCE_LOGS.append(newer)
         config.LAST_WHO_SNAPSHOT.clear()
-        signals.clear_who.emit()
-        signals.who.emit("Ned", "Rogue", 60, "Black Lotus")
+        config.LAST_WHO_SNAPSHOT["Ned"] = models.Player("Ned", "Rogue", 60, "Black Lotus")
+        signals.who.emit("Ned", "", 0, "")
         signals.who_end.emit()
 
         self.assertEqual(["Amy"], _names(self.frame._player_table))

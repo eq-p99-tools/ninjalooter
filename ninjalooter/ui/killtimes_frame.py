@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from PySide6.QtCore import QModelIndex
+from PySide6.QtCore import QModelIndex, QTimer
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
@@ -23,6 +23,7 @@ from ninjalooter.ui.theme import semantic
 _POSKY = "Plane of Sky"
 _UNKNOWN = "Unknown"
 _FILTER_MAX_WIDTH = 400
+_KILL_REFRESH_MS = 400
 
 
 def _zone_sort_key(zone_name: str) -> tuple:
@@ -81,6 +82,11 @@ class KillTimesFrame(QWidget):
         self._tree.expanded.connect(self._on_section_expanded)
         self._tree.collapsed.connect(self._on_section_collapsed)
 
+        self._kill_refresh = QTimer(self)
+        self._kill_refresh.setSingleShot(True)
+        self._kill_refresh.setInterval(_KILL_REFRESH_MS)
+        self._kill_refresh.timeout.connect(self._refresh)
+
         signals.kill.connect(self._on_kill)
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
@@ -100,8 +106,9 @@ class KillTimesFrame(QWidget):
         )
         if reply != QMessageBox.StandardButton.Ok:
             return
+        self._kill_refresh.stop()
         config.KILL_TIMERS.clear()
-        signals.kill.emit()
+        self._refresh()
         utils.store_state()
 
     # ── helpers ────────────────────────────────────────────────────────────
@@ -227,11 +234,43 @@ class KillTimesFrame(QWidget):
 
         self._apply_expansion_state()
 
-    def _on_kill(self):
+    def _find_group(self, parent, label: str):
+        count = self._tree_model.rowCount() if parent is None else parent.rowCount()
+        for row in range(count):
+            item = self._tree_model.item(row, 0) if parent is None else parent.child(row, 0)
+            if item is not None and item.text() == label and item.font().bold():
+                return item
+        return None
+
+    def _append_kill(self, kt) -> bool:
+        """Add one mob under an existing zone. Return False when the tree must be rebuilt."""
+        zone_name = kt.effective_zone()
+        zone_item = self._find_group(None, zone_name)
+        if zone_item is None:
+            return False
+        parent = zone_item
+        if zone_name == _POSKY:
+            parent = self._find_group(zone_item, f"Island {kt.island()}")
+            if parent is None:
+                return False
+        bg = semantic.alt_row if parent.rowCount() % 2 == 1 else semantic.base_row
+        parent.appendRow(self._make_mob_row(kt, bg))
+        return True
+
+    def _on_kill(self, kt=None):
+        if self._filter_edit.text().strip():
+            if not self._kill_refresh.isActive():
+                self._kill_refresh.start()
+            return
+        if kt is not None and self._append_kill(kt):
+            return
+        self._kill_refresh.stop()
         self._refresh()
 
     def _on_app_clear(self):
+        self._kill_refresh.stop()
         self._tree_model.removeRows(0, self._tree_model.rowCount())
 
     def _on_app_reload(self):
+        self._kill_refresh.stop()
         self._refresh()

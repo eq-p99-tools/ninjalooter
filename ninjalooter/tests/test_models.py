@@ -647,6 +647,15 @@ class TestModels(base.NLTestBase):
         self.assertIn("VCR: 6", pop_text)
         self.assertIn("//", pop_text)
 
+    def test_WhoLog_populations_stay_cached_until_invalidated(self):
+        sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
+        wholog = models.WhoLog(sometime, dict(base.SAMPLE_LAST_WHO_SNAPSHOT))
+        original = wholog.populations()
+        wholog.log.clear()
+        self.assertEqual(original, wholog.populations())
+        wholog.invalidate_populations()
+        self.assertNotIn("BL: 4", wholog.populations())
+
     def test_WhoLog_raidtick_display(self):
         sometime = dateutil.parser.parse("Mon Aug 17 07:15:39 2020")
         tick_log = models.WhoLog(sometime, {}, raidtick=True)

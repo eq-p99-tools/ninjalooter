@@ -337,6 +337,48 @@ class TestUtils(base.NLTestBase):
         pops = utils.get_pop_numbers(extras={'Other': 3})
         self.assertEqual(3, pops['Other'])
 
+    def test_request_store_state_coalesces(self):
+        utils.cancel_pending_state_save()
+        with mock.patch('ninjalooter.utils.threading.Timer') as timer_cls:
+            utils.request_store_state()
+            utils.request_store_state()
+            self.assertEqual(1, timer_cls.call_count)
+            timer_cls.return_value.start.assert_called_once()
+        utils.cancel_pending_state_save()
+
+    def test_flush_store_state_writes_immediately(self):
+        utils.cancel_pending_state_save()
+        with mock.patch('ninjalooter.utils.threading.Timer') as timer_cls:
+            utils.request_store_state()
+            with mock.patch('ninjalooter.utils.store_state') as store:
+                utils.flush_store_state()
+            timer_cls.return_value.cancel.assert_called_once()
+            store.assert_called_once_with()
+        utils.cancel_pending_state_save()
+
+    @mock.patch('os.walk')
+    def test_consider_logfile_switch_ignores_current_file(self, mock_walk):
+        current = os.path.abspath('eqlog_Bob_P1999Green.txt')
+        self.assertIsNone(utils.consider_logfile_switch(current, current))
+        mock_walk.assert_not_called()
+
+    @mock.patch('os.walk')
+    def test_consider_logfile_switch_picks_newer_log(self, mock_walk):
+        with tempfile.TemporaryDirectory() as directory:
+            current = os.path.join(directory, 'eqlog_Old_P1999Green.txt')
+            newer = os.path.join(directory, 'eqlog_New_P1999Green.txt')
+            with open(current, 'w') as handle:
+                handle.write('old')
+            with open(newer, 'w') as handle:
+                handle.write('new')
+            os.utime(current, (1, 1))
+            os.utime(newer, (2, 2))
+            found = utils.consider_logfile_switch(newer, current)
+            self.assertEqual((os.path.abspath(newer), 'New'), found)
+            self.assertIsNone(utils.consider_logfile_switch(current, newer))
+            self.assertIsNone(utils.consider_logfile_switch(os.path.join(directory, 'dbg.txt'), current))
+        mock_walk.assert_not_called()
+
     def test_store_state(self):
         config.PENDING_AUCTIONS = []
         config.ACTIVE_AUCTIONS = {}

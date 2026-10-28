@@ -798,6 +798,8 @@ class WhoLog(DictEquals):
         self.raidtick = raidtick
         self.tick_name = tick_name
         self.zone = zone
+        self._population_text = None
+        self._population_text = self.populations()
 
     def eqtime(self, allow_eastern=False) -> str:
         # import at runtime rather than on load to avoid circular error
@@ -808,28 +810,26 @@ class WhoLog(DictEquals):
     def raidtick_display(self):
         return "✔️" if self.raidtick else ""  # or "❌"?
 
-    def alliance_count(self):
+    def _population_counts(self):
         pops = {alliance: 0 for alliance in config.ALLIANCES}
         for player in self.log.values():
-            alliance = config.ALLIANCE_MAP.get(player.guild)
+            alliance = config.ALLIANCE_MAP.get(getattr(player, "guild", None))
             if alliance:
                 pops[alliance] += 1
-        return pops[config.DEFAULT_ALLIANCE]
+        return pops
+
+    def alliance_count(self):
+        return self._population_counts()[config.DEFAULT_ALLIANCE]
+
+    def invalidate_populations(self):
+        """Forget the stored summary after players are added or removed."""
+        self._population_text = None
 
     def populations(self):
-        pops = {alliance: 0 for alliance in config.ALLIANCES}
-        for player in self.log.values():
-            alliance = config.ALLIANCE_MAP.get(player.guild)
-            if alliance:
-                pops[alliance] += 1
-        pop_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
-        for alliance, pop in pops.items():
-            alliance_text = "{}: {}".format(alliance, pop)
-            if not pop_text:
-                pop_text = alliance_text
-            else:
-                pop_text = " // ".join((pop_text, alliance_text))
-        return pop_text
+        if self._population_text is None:
+            parts = ["{}: {}".format(alliance, pop) for alliance, pop in self._population_counts().items()]
+            self._population_text = " // ".join(parts)
+        return self._population_text
 
     @classmethod
     def from_json(cls, **kwargs) -> DictEquals:

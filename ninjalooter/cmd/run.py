@@ -3,11 +3,13 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
 import traceback
 
 from PySide6.QtWidgets import QApplication
 
 from ninjalooter import autoupdate, config, extra_data, logger, utils
+from ninjalooter.app_signals import signals
 from ninjalooter.ui.theme import apply_app_theme
 from ninjalooter.ui.window import MainWindow
 
@@ -40,16 +42,23 @@ def run():
         except:  # noqa
             LOG.exception("Failed to automatically update. Continuing with old version.")
 
-    try:
-        extra_data.apply_sheet_overrides()
-    except Exception as e:
-        LOG.exception(f"Failed to fetch google sheet for overrides: {e}")
     extra_data.apply_custom_overrides()
     utils.load_state()
 
     window = MainWindow()
     window.show()
+    threading.Thread(target=_load_sheet_overrides, name="min-dkp-sheet", daemon=True).start()
     sys.exit(app.exec())
+
+
+def _load_sheet_overrides():
+    """Fetch min-DKP overrides after the window is up so startup is not blocked."""
+    try:
+        extra_data.apply_sheet_overrides()
+    except Exception:
+        LOG.exception("Failed to fetch google sheet for overrides.")
+        return
+    signals.min_dkp_sheet_loaded.emit()
 
 
 def main():

@@ -338,13 +338,13 @@ class AttendanceFrame(QWidget):
     # ── Signal handlers ──
 
     def _on_who_history(self):
-        self._refresh_attendance()
+        self.attendance_list.append_new_objects(config.ATTENDANCE_LOGS)
 
     def _on_creditt(self):
-        self.creditt_list.set_objects(config.CREDITT_LOG)
+        self.creditt_list.append_new_objects(config.CREDITT_LOG)
 
     def _on_gratss(self):
-        self.gratss_list.set_objects(config.GRATSS_LOG)
+        self.gratss_list.append_new_objects(config.GRATSS_LOG)
 
     def _on_clear_app(self):
         config.ATTENDANCE_LOGS.clear()
@@ -487,6 +487,7 @@ class AttendanceDetailWindow(QWidget):
             return
         player_name = name_item.text()
         self._item.log.pop(player_name, None)
+        self._item.invalidate_populations()
         self._rebuild_tree()
         utils.store_state()
 
@@ -506,6 +507,7 @@ class AttendanceDetailWindow(QWidget):
 
         if player_name not in self._item.log:
             self._item.log[player_name] = player_record
+            self._item.invalidate_populations()
             self._rebuild_tree()
             utils.store_state()
 
@@ -676,6 +678,7 @@ class ApplyCredittDialog(QDialog):
                 player_record = models.Player(player_name, None, None, player_guild)
             tick.log[player_name] = player_record
 
+        tick.invalidate_populations()
         self._creditt.applied = True
         utils.store_state()
         self.accept()
