@@ -207,7 +207,7 @@ class NLTestBase(unittest.TestCase):
         self.addCleanup(thread_patcher1.stop)
 
         self.mock_playsound = mock.Mock()
-        sound_patcher = mock.patch('playsound.playsound', self.mock_playsound)
+        sound_patcher = mock.patch('ninjalooter.utils._request_sound', self.mock_playsound)
         sound_patcher.start()
         self.addCleanup(sound_patcher.stop)
 

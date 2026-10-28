@@ -694,6 +694,50 @@ class TestMessageHandlers(base.NLTestBase):
 
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('ninjalooter.message_handlers.signals')
+    def test_numbered_item_names(self, mock_signals, mock_store_state):
+        config.PENDING_AUCTIONS = list()
+        config.ACTIVE_AUCTIONS = {}
+        grimoire = "Nilitim's Grimoire Pg. 400"
+
+        # A drop of a numbered item alongside another item is not a bid
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says out of character, "
+                "'Nilitim's Grimoire Pg. 400, Vermiculated Bracelet'")
+        self.assertFalse(message_handlers.handle_bid(
+            config.MATCH_BID_OOC.match(line)))
+        items = message_handlers.handle_drop(config.MATCH_DROP_OOC.match(line))
+        self.assertListEqual([grimoire, 'Vermiculated Bracelet'], items)
+        self.assertListEqual(
+            [grimoire, 'Vermiculated Bracelet'],
+            [p.name for p in config.PENDING_AUCTIONS])
+
+        # A numbered item on its own is a drop
+        config.PENDING_AUCTIONS.clear()
+        line = ("[Sun Aug 16 22:47:31 2020] Jim says, "
+                "'Nilitim's Grimoire Pg. 400'")
+        self.assertFalse(message_handlers.handle_bid(
+            config.MATCH_BID_SAY.match(line)))
+        items = message_handlers.handle_drop(config.MATCH_DROP_SAY.match(line))
+        self.assertListEqual([grimoire], items)
+
+        # A bid on a numbered item uses the number outside the item name
+        itemdrop = config.PENDING_AUCTIONS[0]
+        auction = utils.start_auction_dkp(itemdrop, 'VCR')
+        line = ("[Sun Aug 16 22:47:31 2020] Jim auctions, "
+                "'Nilitim's Grimoire Pg. 400 15'")
+        self.assertTrue(message_handlers.handle_bid(
+            config.MATCH_BID_AUC.match(line)))
+        self.assertListEqual([('Jim', 15)], auction.highest())
+
+        # ...and that bid is not mistaken for a drop
+        config.PENDING_AUCTIONS.clear()
+        self.assertListEqual([], message_handlers.handle_drop(
+            config.MATCH_DROP_SAY.match(line.replace('auctions', 'says'))))
+        self.assertListEqual([], config.PENDING_AUCTIONS)
+
+        config.ACTIVE_AUCTIONS.clear()
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_gratss(self, mock_signals, mock_store_state):
         config.PENDING_AUCTIONS.clear()
         config.ACTIVE_AUCTIONS.clear()

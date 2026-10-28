@@ -42,6 +42,44 @@ class TestLogparse(base.NLTestBase):
         for drop_matcher in config.MATCH_DROP:
             self.assertIn(drop_matcher, logparse.LOG_MATCHERS)
 
+    def _parse_lines(self, log_lines):
+        run = threading.Event()
+        run.set()
+        iteration = 0
+
+        def fake_readlines():
+            nonlocal iteration
+            iteration += 1
+            if iteration == 1:
+                return log_lines
+            run.clear()
+            return []
+
+        mock_file = mock.MagicMock()
+        mock_file.readlines = fake_readlines
+        mock_file.tell.return_value = 0
+
+        mock_open = mock.MagicMock()
+        mock_open.__enter__ = mock.Mock(return_value=mock_file)
+        mock_open.__exit__ = mock.Mock(return_value=False)
+
+        with mock.patch('builtins.open', return_value=mock_open):
+            logparse.parse_logfile('somefile.log', run)
+
+    @mock.patch('ninjalooter.utils.store_state')
+    @mock.patch('time.sleep')
+    @mock.patch('ninjalooter.message_handlers.signals')
+    def test_parse_logfile_numbered_item_drop(
+            self, mock_signals, mock_sleep, mock_store_state):
+        config.PENDING_AUCTIONS = []
+        self._parse_lines([
+            "[Tue Oct 27 23:04:19 2026] Jim says, "
+            "'Nilitim's Grimoire Pg. 400, Vermiculated Bracelet'\n",
+        ])
+        self.assertListEqual(
+            ["Nilitim's Grimoire Pg. 400", "Vermiculated Bracelet"],
+            [p.name for p in config.PENDING_AUCTIONS])
+
     @mock.patch('ninjalooter.utils.store_state')
     @mock.patch('time.sleep')
     @mock.patch('ninjalooter.message_handlers.signals')

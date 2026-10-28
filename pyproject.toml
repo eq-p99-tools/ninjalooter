@@ -25,7 +25,6 @@ dependencies = [
     "python-dateutil",
     "XlsxWriter",
     "pydicti",
-    "playsound==1.2.2",
     "requests",
     "semver",
     "markdown2",

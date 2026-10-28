@@ -6,8 +6,11 @@ from PySide6.QtCore import QModelIndex
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
+    QHBoxLayout,
     QHeaderView,
     QLineEdit,
+    QMessageBox,
+    QPushButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -19,6 +22,7 @@ from ninjalooter.ui.theme import semantic
 
 _POSKY = "Plane of Sky"
 _UNKNOWN = "Unknown"
+_FILTER_MAX_WIDTH = 400
 
 
 def _zone_sort_key(zone_name: str) -> tuple:
@@ -37,11 +41,21 @@ class KillTimesFrame(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
 
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(12)
+
         self._filter_edit = QLineEdit(self)
         self._filter_edit.setPlaceholderText("Filter by mob name\u2026")
         self._filter_edit.setClearButtonEnabled(True)
+        self._filter_edit.setMaximumWidth(_FILTER_MAX_WIDTH)
         self._filter_edit.textChanged.connect(self._refresh)
-        layout.addWidget(self._filter_edit)
+        toolbar.addWidget(self._filter_edit)
+        toolbar.addStretch()
+
+        self._clear_btn = QPushButton("Clear Kill Timers", self)
+        self._clear_btn.clicked.connect(self._on_clear_kill_timers)
+        toolbar.addWidget(self._clear_btn)
+        layout.addLayout(toolbar)
 
         self._tree = QTreeView(self)
         self._tree.setAlternatingRowColors(False)
@@ -76,6 +90,19 @@ class KillTimesFrame(QWidget):
             app.paletteChanged.connect(self._refresh)
 
         self._refresh()
+
+    def _on_clear_kill_timers(self):
+        reply = QMessageBox.question(
+            self,
+            "Confirm Clear",
+            "Are you sure you want to clear all kill timer data?",
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+        )
+        if reply != QMessageBox.StandardButton.Ok:
+            return
+        config.KILL_TIMERS.clear()
+        signals.kill.emit()
+        utils.store_state()
 
     # ── helpers ────────────────────────────────────────────────────────────
 

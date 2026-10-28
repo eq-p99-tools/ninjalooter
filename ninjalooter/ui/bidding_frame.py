@@ -28,6 +28,20 @@ from ninjalooter.app_signals import signals
 from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
 from ninjalooter.ui.theme import apply_windows_window_frame, semantic
 
+# Repainting the countdown must not announce a sort-key change. The proxy
+# re-sorts whenever the sort role changes, and auctions sitting at 0s are tied.
+_COUNTDOWN_ROLES = [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.BackgroundRole]
+
+
+def _active_time_sort_key(auction):
+    """Time-left order that does not change as the clock ticks.
+
+    Remaining time is the auction start plus a fixed duration, so start time
+    is the same order. The item id keeps auctions that started together from
+    trading places.
+    """
+    return (auction.start_time, auction.item.uuid)
+
 
 class BiddingFrame(QWidget):
     def __init__(self, parent=None):
@@ -118,7 +132,7 @@ class BiddingFrame(QWidget):
                 ColumnDefn("Leading", lambda x: x.highest_players(), width=90),
                 ColumnDefn(
                     "Time Left",
-                    lambda x: x.time_remaining_seconds(),
+                    _active_time_sort_key,
                     width=100,
                     string_converter=lambda x: x.time_remaining_ui(),
                 ),
@@ -220,6 +234,7 @@ class BiddingFrame(QWidget):
         )
         self.history_list.setColumnHidden(self._history_completed_col, True)
         self.history_list.sortByColumn(self._history_completed_col, Qt.SortOrder.AscendingOrder)
+        self.history_list.set_sort_cycle_default(self._history_completed_col, Qt.SortOrder.AscendingOrder)
         self.history_list.setToolTip("Double click an auction to view bid history")
         self.history_list.doubleClicked.connect(self._show_history_detail)
         history_row.addWidget(self.history_list, 1)
@@ -298,9 +313,19 @@ class BiddingFrame(QWidget):
         return semantic.timer_safe
 
     def _refresh_active_list(self):
-        row = self._visual_row(self.active_list)
-        self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
-        self._reselect_row(self.active_list, row)
+        model = self.active_list.object_model
+        shown = [id(obj) for obj in model.get_objects()]
+        current = list(config.ACTIVE_AUCTIONS.values())
+        if shown != [id(obj) for obj in current]:
+            selected = self.active_list.get_selected_object()
+            bar = self.active_list.verticalScrollBar()
+            scroll = bar.value()
+            self.active_list.set_objects(current)
+            if selected is not None:
+                self.active_list.select_object(selected)
+            bar.setValue(scroll)
+        else:
+            model.refresh_all(_COUNTDOWN_ROLES)
         self._update_active_label()
 
     # ── Splitter persistence ──
@@ -429,6 +454,11 @@ class BiddingFrame(QWidget):
             if selected.time_remaining().total_seconds() <= 0:
                 selected.start_time = datetime.datetime.now() - datetime.timedelta(seconds=config.MIN_BID_TIME)
             selected.start_time += delta
+        bar = self.active_list.verticalScrollBar()
+        scroll = bar.value()
+        self.active_list.object_model.refresh_object(selected)
+        self.active_list.select_object(selected)
+        bar.setValue(scroll)
 
     def _copy_bid_text(self):
         selected = self.active_list.get_selected_object()
@@ -551,7 +581,7 @@ class BiddingFrame(QWidget):
         self._refresh_pending()
 
     def _on_bid(self, item):
-        self.active_list.object_model.refresh_object(item)
+        self.active_list.object_model.refresh_object(item, _COUNTDOWN_ROLES)
         self._update_active_label()
 
     def _on_auction_started(self):

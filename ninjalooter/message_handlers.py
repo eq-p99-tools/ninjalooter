@@ -212,15 +212,15 @@ def handle_drop(match: re.Match, skip_store=False) -> list:
     if AWARD_MESSAGE_MATCHER.match(text):
         LOG.info("Ignoring drop message that matches Gratss")
         return list()
-    if NUMBER_MATCHER.match(text):
-        LOG.info("Ignoring drop message with a number, probably a bid")
-        return list()
     if config.RESTRICT_BIDS and guild and guild not in config.ALLIANCE_MAP:
         LOG.info("Ignoring ooc from guild %s", guild)
         return list()
 
     # Handle text to return a list of items linked
     found_items = utils.get_items_from_text(text)
+    if NUMBER_MATCHER.match(utils.strip_items_from_text(text, found_items)):
+        LOG.info("Ignoring drop message with a number, probably a bid")
+        return list()
     used_found_items = []
     now = datetime.datetime.now()
     skip = False
@@ -268,7 +268,6 @@ def handle_bid(match: re.Match, skip_store=False) -> bool:
     guild = config.PLAYER_DB.get(name, models.Player(name)).guild
     alliance = config.ALLIANCE_MAP.get(guild)
     text = match.group("text")
-    bid = int(match.group("bid"))
 
     if text.startswith("~"):
         return False
@@ -277,13 +276,17 @@ def handle_bid(match: re.Match, skip_store=False) -> bool:
     if not found_items:
         LOG.info("%s might have attempted to bid but no item name found: %s", name, text)
         return False
+    bid = utils.get_bid_from_text(text, found_items)
+    if bid is None:
+        LOG.debug("Not a bid, the only numbers are part of item names: %s", text)
+        return False
     if len(found_items) > 1:
         LOG.info("%s attempted to bid for two items at once: %s", name, found_items)
         return False
     item = found_items[0]
 
     # Proxy bid: check if text contains a known character name from PLAYER_DB
-    remaining = text.lower().replace(item.lower(), "").replace(str(bid), "", 1)
+    remaining = utils.strip_items_from_text(text, found_items).lower().replace(str(bid), "", 1)
     for word in remaining.split():
         candidate = word.capitalize()
         if candidate in config.PLAYER_DB and candidate != name:
