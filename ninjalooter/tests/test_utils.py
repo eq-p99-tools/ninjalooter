@@ -362,8 +362,7 @@ class TestUtils(base.NLTestBase):
         self.assertIsNone(utils.consider_logfile_switch(current, current))
         mock_walk.assert_not_called()
 
-    @mock.patch('os.walk')
-    def test_consider_logfile_switch_picks_newer_log(self, mock_walk):
+    def test_consider_logfile_switch_picks_newer_log(self):
         with tempfile.TemporaryDirectory() as directory:
             current = os.path.join(directory, 'eqlog_Old_P1999Green.txt')
             newer = os.path.join(directory, 'eqlog_New_P1999Green.txt')
@@ -373,11 +372,16 @@ class TestUtils(base.NLTestBase):
                 handle.write('new')
             os.utime(current, (1, 1))
             os.utime(newer, (2, 2))
-            found = utils.consider_logfile_switch(newer, current)
-            self.assertEqual((os.path.abspath(newer), 'New'), found)
-            self.assertIsNone(utils.consider_logfile_switch(current, newer))
-            self.assertIsNone(utils.consider_logfile_switch(os.path.join(directory, 'dbg.txt'), current))
-        mock_walk.assert_not_called()
+            # Windows deletes this directory with os.walk, so the patch
+            # cannot still be active when the temporary directory closes.
+            with mock.patch('os.walk') as mock_walk:
+                found = utils.consider_logfile_switch(newer, current)
+                self.assertEqual((os.path.abspath(newer), 'New'), found)
+                self.assertIsNone(utils.consider_logfile_switch(current, newer))
+                self.assertIsNone(
+                    utils.consider_logfile_switch(os.path.join(directory, 'dbg.txt'), current)
+                )
+                mock_walk.assert_not_called()
 
     def test_store_state(self):
         config.PENDING_AUCTIONS = []
