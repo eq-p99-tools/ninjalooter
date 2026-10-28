@@ -234,6 +234,7 @@ class BiddingFrame(QWidget):
         )
         self.history_list.setColumnHidden(self._history_completed_col, True)
         self.history_list.sortByColumn(self._history_completed_col, Qt.SortOrder.AscendingOrder)
+        self.history_list.set_sort_cycle_default(self._history_completed_col, Qt.SortOrder.AscendingOrder)
         self.history_list.setToolTip("Double click an auction to view bid history")
         self.history_list.doubleClicked.connect(self._show_history_detail)
         history_row.addWidget(self.history_list, 1)

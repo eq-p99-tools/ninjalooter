@@ -287,6 +287,35 @@ class ObjectTableView(QTableView):
         if self._proxy:
             self._proxy.set_filter_func(func)
 
+    def set_sort_cycle_default(self, column: int, order=Qt.SortOrder.AscendingOrder):
+        """Third click on a header returns to this sort and clears the arrow.
+
+        Qt only toggles ascending and descending. The click handler runs after
+        that toggle, so the third click is the one that lands back on ascending.
+        """
+        self._sort_cycle_default = (column, order)
+        self._sort_cycle_column = None
+        self._sort_cycle_phase = 0
+        self.horizontalHeader().sectionClicked.connect(self._on_sort_cycle_clicked)
+
+    def _on_sort_cycle_clicked(self, index: int):
+        header = self.horizontalHeader()
+        if self._sort_cycle_column != index or self._sort_cycle_phase == 0:
+            self._sort_cycle_column = index
+            self._sort_cycle_phase = 1
+            return
+        if header.sortIndicatorOrder() == Qt.SortOrder.DescendingOrder:
+            self._sort_cycle_phase = 2
+            return
+        self._sort_cycle_column = None
+        self._sort_cycle_phase = 0
+        column, order = self._sort_cycle_default
+        header.blockSignals(True)
+        header.setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
+        header.blockSignals(False)
+        if self._proxy:
+            self._proxy.sort(column, order)
+
     def copy_selected_to_clipboard(self, formatter: Callable | None = None):
         obj = self.get_selected_object()
         if obj is None:
