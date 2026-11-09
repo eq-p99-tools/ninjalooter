@@ -123,6 +123,7 @@ class MainWindow(QMainWindow):
         signals.play_sound.connect(self._sound_player.play)
         signals.show_raid_overview.connect(self._switch_to_raid_overview)
         signals.calc_raid_groups.connect(self._switch_to_raid_groups)
+        signals.use_for_pop_roll.connect(self._switch_to_population)
 
         # Start parse thread
         config.PARSER_THREAD = logparse.ParseThread()
@@ -213,6 +214,11 @@ class MainWindow(QMainWindow):
 
     def _switch_to_raid_groups(self):
         idx = self._notebook.indexOf(self.raidgroups_frame)
+        if idx >= 0:
+            self._notebook.setCurrentIndex(idx)
+
+    def _switch_to_population(self, _wholog=None):
+        idx = self._notebook.indexOf(self.population_frame)
         if idx >= 0:
             self._notebook.setCurrentIndex(idx)
 

@@ -22,6 +22,7 @@ class AppSignals(QObject):
     # UI-driven events
     calc_raid_groups = Signal()
     show_raid_overview = Signal(object)  # WhoLog
+    use_for_pop_roll = Signal(object)  # WhoLog
     app_clear = Signal()
     app_reload = Signal()
     ignore = Signal()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -22,6 +23,7 @@ class PopulationFrame(QWidget):
 
         self._alliance_spinners: dict[str, QSpinBox] = {}
         self._pop_overrides: dict[str, int] = {}
+        self._roll_source = None
 
         root = QHBoxLayout(self)
         root.setContentsMargins(6, 6, 6, 6)
@@ -34,6 +36,17 @@ class PopulationFrame(QWidget):
         pop_font.setBold(True)
         pop_label.setFont(pop_font)
         left.addWidget(pop_label)
+
+        source_row = QHBoxLayout()
+        self._source_label = QLabel("Source: latest /who")
+        self._source_label.setWordWrap(True)
+        self._latest_button = QPushButton("Latest")
+        self._latest_button.setToolTip("Count the most recent /who.")
+        self._latest_button.setEnabled(False)
+        self._latest_button.clicked.connect(self._use_latest)
+        source_row.addWidget(self._source_label, stretch=1)
+        source_row.addWidget(self._latest_button)
+        left.addLayout(source_row)
 
         self._player_table = ObjectTableView(
             columns=[
@@ -117,9 +130,11 @@ class PopulationFrame(QWidget):
         signals.who_end.connect(self._on_who_end)
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
+        signals.use_for_pop_roll.connect(self._on_use_for_pop_roll)
 
         self._refresh_player_table()
         self._update_preview()
+        self._sync_source_label()
 
     # ---- helpers ----
 
@@ -132,22 +147,67 @@ class PopulationFrame(QWidget):
         self._pop_overrides.pop(alliance, None)
         self._update_preview()
 
+    def _is_recorded(self, wholog) -> bool:
+        return any(entry is wholog for entry in config.ATTENDANCE_LOGS)
+
+    def _showing_recorded_tick(self) -> bool:
+        return self._roll_source is not None and self._is_recorded(self._roll_source)
+
+    def _player_source(self) -> dict:
+        if self._showing_recorded_tick():
+            return self._roll_source.log or {}
+        return config.LAST_WHO_SNAPSHOT
+
+    def _source_caption(self) -> str:
+        if not self._showing_recorded_tick():
+            return "Source: latest /who"
+        wholog = self._roll_source
+        parts = [wholog.eqtime()]
+        if wholog.raidtick:
+            parts.append("RaidTick")
+        name = wholog.tick_name or wholog.zone
+        if name:
+            parts.append(name)
+        return "Source: " + " · ".join(parts)
+
+    def _sync_source_label(self):
+        pinned = self._showing_recorded_tick()
+        self._source_label.setText(self._source_caption())
+        self._latest_button.setEnabled(pinned)
+
+    def _ensure_source(self) -> bool:
+        """Drop a pinned tick that is no longer in the attendance list."""
+        if self._roll_source is not None and not self._is_recorded(self._roll_source):
+            self._roll_source = None
+            return True
+        return False
+
+    def _reload_from_source(self, reset_adjustments: bool):
+        dropped = self._ensure_source()
+        self._sync_source_label()
+        self._refresh_player_table()
+        if reset_adjustments or dropped:
+            self._pop_overrides.clear()
+            self._reset_extras()
+        else:
+            self._update_preview()
+
     def _refresh_player_table(self):
         players = sorted(
-            config.LAST_WHO_SNAPSHOT.values(),
+            self._player_source().values(),
             key=lambda p: (p.guild or "", p.name),
         )
         self._player_table.set_objects(players)
 
     def _update_preview(self):
-        pops = utils.get_pop_numbers(extras=self._extras())
+        pops = utils.get_pop_numbers(source=self._player_source(), extras=self._extras())
         pops.update(self._pop_overrides)
         previews = [PopulationPreview(a, p) for a, p in pops.items() if p > 0 or a in self._pop_overrides]
         self._preview_table.set_objects(previews)
 
     def _effective_pops(self) -> dict[str, int]:
         """Final population numbers with overrides applied."""
-        pops = utils.get_pop_numbers(extras=self._extras())
+        pops = utils.get_pop_numbers(source=self._player_source(), extras=self._extras())
         pops.update(self._pop_overrides)
         return pops
 
@@ -190,7 +250,7 @@ class PopulationFrame(QWidget):
         pops = self._effective_pops()
         if set(pops.values()) == {0}:
             return
-        roll_text, rand_text = utils.generate_pop_roll(extras=self._extras())
+        roll_text, rand_text = utils.generate_pop_roll(source=self._player_source(), extras=self._extras())
         if roll_text:
             utils.to_clipboard(f"{roll_text}\n{rand_text}")
 
@@ -199,22 +259,39 @@ class PopulationFrame(QWidget):
     def _on_who(self, name: str, pclass: str, level: int, guild: str):
         player = Player(name, pclass, level, guild)
         config.LAST_WHO_SNAPSHOT[name] = player
+        if self._showing_recorded_tick():
+            return
         self._player_table.object_model.add_object(player)
 
     def _on_clear_who(self):
+        if self._showing_recorded_tick():
+            return
         self._player_table.set_objects([])
 
     def _on_who_end(self):
-        self._refresh_player_table()
-        self._pop_overrides.clear()
-        self._reset_extras()
+        if self._showing_recorded_tick():
+            return
+        self._roll_source = None
+        self._reload_from_source(reset_adjustments=True)
 
     def _on_app_clear(self):
+        self._roll_source = None
         config.LAST_WHO_SNAPSHOT.clear()
-        self._player_table.set_objects([])
-        self._pop_overrides.clear()
-        self._reset_extras()
+        self._reload_from_source(reset_adjustments=True)
 
     def _on_app_reload(self):
-        self._refresh_player_table()
-        self._update_preview()
+        self._reload_from_source(reset_adjustments=False)
+
+    def _on_use_for_pop_roll(self, wholog):
+        if wholog is None:
+            return
+        self._roll_source = wholog
+        self._reload_from_source(reset_adjustments=True)
+
+    def _use_latest(self):
+        self._roll_source = None
+        self._reload_from_source(reset_adjustments=True)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._reload_from_source(reset_adjustments=False)
