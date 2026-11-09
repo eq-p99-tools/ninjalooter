@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -38,15 +39,20 @@ class PopulationFrame(QWidget):
         left.addWidget(pop_label)
 
         source_row = QHBoxLayout()
-        self._source_label = QLabel("Source: latest /who")
-        self._source_label.setWordWrap(True)
-        self._latest_button = QPushButton("Latest")
-        self._latest_button.setToolTip("Count the most recent /who.")
-        self._latest_button.setEnabled(False)
-        self._latest_button.clicked.connect(self._use_latest)
-        source_row.addWidget(self._source_label, stretch=1)
-        source_row.addWidget(self._latest_button)
+        source_caption = QLabel("Source")
+        source_caption.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._source_combo = QComboBox()
+        self._source_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self._source_combo.setMinimumContentsLength(18)
+        self._source_combo.setToolTip("Choose which /who the population roll counts.")
+        self._source_combo.currentIndexChanged.connect(self._on_source_changed)
+        source_row.addWidget(source_caption)
+        source_row.addWidget(self._source_combo, stretch=1)
         left.addLayout(source_row)
+
+        self._newer_label = QLabel("Newer /who available")
+        self._newer_label.setVisible(False)
+        left.addWidget(self._newer_label)
 
         self._player_table = ObjectTableView(
             columns=[
@@ -128,13 +134,14 @@ class PopulationFrame(QWidget):
         signals.who.connect(self._on_who)
         signals.clear_who.connect(self._on_clear_who)
         signals.who_end.connect(self._on_who_end)
+        signals.who_history.connect(self._on_who_history)
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
         signals.use_for_pop_roll.connect(self._on_use_for_pop_roll)
 
         self._refresh_player_table()
         self._update_preview()
-        self._sync_source_label()
+        self._rebuild_source_combo()
 
     # ---- helpers ----
 
@@ -158,22 +165,49 @@ class PopulationFrame(QWidget):
             return self._roll_source.log or {}
         return config.LAST_WHO_SNAPSHOT
 
-    def _source_caption(self) -> str:
-        if not self._showing_recorded_tick():
-            return "Source: latest /who"
-        wholog = self._roll_source
+    def _tick_label(self, wholog) -> str:
         parts = [wholog.eqtime()]
         if wholog.raidtick:
             parts.append("RaidTick")
-        name = wholog.tick_name or wholog.zone
-        if name:
-            parts.append(name)
-        return "Source: " + " · ".join(parts)
+        if wholog.tick_name:
+            parts.append(wholog.tick_name)
+        if wholog.zone:
+            parts.append(wholog.zone)
+        return " · ".join(parts)
 
-    def _sync_source_label(self):
-        pinned = self._showing_recorded_tick()
-        self._source_label.setText(self._source_caption())
-        self._latest_button.setEnabled(pinned)
+    def _wholog_for_combo_index(self, index: int):
+        if index <= 0:
+            return None
+        logs = config.ATTENDANCE_LOGS
+        source_index = len(logs) - index
+        if source_index < 0 or source_index >= len(logs):
+            return None
+        return logs[source_index]
+
+    def _combo_index_for_source(self) -> int:
+        wholog = self._roll_source
+        if wholog is None:
+            return 0
+        for offset, entry in enumerate(reversed(config.ATTENDANCE_LOGS)):
+            if entry is wholog:
+                return offset + 1
+        return 0
+
+    def _has_newer_who(self) -> bool:
+        if not self._showing_recorded_tick() or not config.ATTENDANCE_LOGS:
+            return False
+        return config.ATTENDANCE_LOGS[-1] is not self._roll_source
+
+    def _rebuild_source_combo(self):
+        self._source_combo.blockSignals(True)
+        self._source_combo.clear()
+        self._source_combo.addItem("Latest /who")
+        for wholog in reversed(config.ATTENDANCE_LOGS):
+            self._source_combo.addItem(self._tick_label(wholog))
+        self._source_combo.setCurrentIndex(self._combo_index_for_source())
+        self._source_combo.setToolTip(self._source_combo.currentText())
+        self._source_combo.blockSignals(False)
+        self._newer_label.setVisible(self._has_newer_who())
 
     def _ensure_source(self) -> bool:
         """Drop a pinned tick that is no longer in the attendance list."""
@@ -184,13 +218,13 @@ class PopulationFrame(QWidget):
 
     def _reload_from_source(self, reset_adjustments: bool):
         dropped = self._ensure_source()
-        self._sync_source_label()
         self._refresh_player_table()
         if reset_adjustments or dropped:
             self._pop_overrides.clear()
             self._reset_extras()
         else:
             self._update_preview()
+        self._rebuild_source_combo()
 
     def _refresh_player_table(self):
         players = sorted(
@@ -270,8 +304,21 @@ class PopulationFrame(QWidget):
 
     def _on_who_end(self):
         if self._showing_recorded_tick():
+            self._rebuild_source_combo()
             return
         self._roll_source = None
+        self._reload_from_source(reset_adjustments=True)
+
+    def _on_who_history(self):
+        self._rebuild_source_combo()
+
+    def _on_source_changed(self, index: int):
+        if index < 0:
+            return
+        wholog = self._wholog_for_combo_index(index)
+        if wholog is self._roll_source:
+            return
+        self._roll_source = wholog
         self._reload_from_source(reset_adjustments=True)
 
     def _on_app_clear(self):
@@ -286,10 +333,6 @@ class PopulationFrame(QWidget):
         if wholog is None:
             return
         self._roll_source = wholog
-        self._reload_from_source(reset_adjustments=True)
-
-    def _use_latest(self):
-        self._roll_source = None
         self._reload_from_source(reset_adjustments=True)
 
     def showEvent(self, event: QShowEvent) -> None:
