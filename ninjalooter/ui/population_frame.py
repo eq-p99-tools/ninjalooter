@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 
 from ninjalooter import config, utils
 from ninjalooter.app_signals import signals
-from ninjalooter.models import Player, PopulationPreview
+from ninjalooter.models import PopulationPreview
 from ninjalooter.ui.table_model import ColumnDefn, ObjectTableView
 
 
@@ -120,8 +120,6 @@ class PopulationFrame(QWidget):
         right.addStretch()
 
         # --- Signals ---
-        signals.who.connect(self._on_who)
-        signals.clear_who.connect(self._on_clear_who)
         signals.who_end.connect(self._on_who_end)
         signals.who_history.connect(self._on_who_history)
         signals.app_clear.connect(self._on_app_clear)
@@ -318,18 +316,6 @@ class PopulationFrame(QWidget):
             utils.to_clipboard(f"{roll_text}\n{rand_text}")
 
     # ---- signal slots ----
-
-    def _on_who(self, name: str, pclass: str, level: int, guild: str):
-        player = Player(name, pclass, level, guild)
-        config.LAST_WHO_SNAPSHOT[name] = player
-        if self._showing_recorded_tick():
-            return
-        self._player_table.object_model.add_object(player)
-
-    def _on_clear_who(self):
-        if self._showing_recorded_tick():
-            return
-        self._player_table.set_objects([])
 
     def _on_who_end(self):
         if self._showing_recorded_tick():

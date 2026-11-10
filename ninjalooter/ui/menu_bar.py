@@ -347,6 +347,7 @@ class MenuBar(QMenuBar):
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
         if reply == QMessageBox.StandardButton.Ok:
+            utils.cancel_pending_state_save()
             utils.store_state(backup=True)
             signals.app_clear.emit()
             utils.clear_alerts()

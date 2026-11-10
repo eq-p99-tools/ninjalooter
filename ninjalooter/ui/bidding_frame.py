@@ -295,6 +295,7 @@ class BiddingFrame(QWidget):
         signals.app_clear.connect(self._on_clear_app)
         signals.app_reload.connect(self._on_reload_app)
         signals.ignore.connect(self._refresh_pending)
+        signals.min_dkp_sheet_loaded.connect(self._on_min_dkp_sheet_loaded)
 
     # ── Timer / row color ──
 
@@ -595,7 +596,13 @@ class BiddingFrame(QWidget):
         row = self._visual_row(self.active_list)
         self.active_list.set_objects(list(config.ACTIVE_AUCTIONS.values()))
         self._reselect_row(self.active_list, row)
-        self._refresh_history()
+        self.history_list.append_new_objects(list(config.HISTORICAL_AUCTIONS.values()))
+        self._update_history_label()
+
+    def _on_min_dkp_sheet_loaded(self):
+        self.pending_list.object_model.refresh_all()
+        self.active_list.object_model.refresh_all()
+        self.history_list.object_model.refresh_all()
 
     def _on_clear_app(self):
         config.PENDING_AUCTIONS.clear()

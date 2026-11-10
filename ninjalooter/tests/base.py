@@ -4,6 +4,7 @@ from unittest import mock
 
 from ninjalooter import config
 from ninjalooter import models
+from ninjalooter import utils
 
 SAMPLE_ALLIANCES = {
     'BL': ('Black Lotus',),
@@ -205,6 +206,9 @@ class NLTestBase(unittest.TestCase):
         thread_patcher1 = mock.patch('threading.Timer')
         thread_patcher1.start()
         self.addCleanup(thread_patcher1.stop)
+
+        utils.cancel_pending_state_save()
+        self.addCleanup(utils.cancel_pending_state_save)
 
         self.mock_playsound = mock.Mock()
         sound_patcher = mock.patch('ninjalooter.utils._request_sound', self.mock_playsound)

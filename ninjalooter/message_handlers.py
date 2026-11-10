@@ -141,7 +141,7 @@ def handle_end_who(match: re.Match, skip_store=False) -> bool:
     signals.who_history.emit()
     signals.who_end.emit()
     if not skip_store:
-        utils.store_state()
+        utils.request_store_state()
     return True
 
 
@@ -257,7 +257,7 @@ def handle_drop(match: re.Match, skip_store=False) -> list:
         utils.alert_message("New Drops Detected", "\n".join(["\u00a0\u2022 %s" % drop for drop in used_found_items]))
         utils.alert_sound(config.NEW_DROP_SOUND)
     if not skip_store:
-        utils.store_state()
+        utils.request_store_state()
     return found_items
 
 
@@ -331,7 +331,7 @@ def handle_bid(match: re.Match, skip_store=False) -> bool:
                 )
                 auc_item._alt_cap_alerted = True
             if not skip_store:
-                utils.store_state()
+                utils.request_store_state()
             return result
     LOG.info("%s attempted to bid for %s but it isn't active", name, item)
     return False
@@ -441,7 +441,7 @@ def handle_rand2(match: re.Match, skip_store=False) -> bool:
             item_obj.add(rand_result, name)
             signals.bid.emit(item_obj)
             if not skip_store:
-                utils.store_state()
+                utils.request_store_state()
             return True
     LOG.info("%s rolled %d-%d but that doesn't apply to an active auction.", name, rand_from, rand_to)
     return False
@@ -466,7 +466,7 @@ def handle_kill(match: re.Match, skip_store=False) -> bool:
         return False
     kt_obj = models.KillTimer(time, victim, zone=config.CURRENT_ZONE)
     config.KILL_TIMERS.append(kt_obj)
-    signals.kill.emit()
+    signals.kill.emit(kt_obj)
     if not skip_store:
-        utils.store_state()
+        utils.request_store_state()
     return True

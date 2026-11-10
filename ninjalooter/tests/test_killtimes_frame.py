@@ -73,3 +73,36 @@ class TestKillTimesFrame(base.NLTestBase):
         frame._tree.collapse(wc_index)
         self.assertFalse(config.KILL_TIMER_SECTIONS_EXPANDED_CACHE["West Commonlands"])
         mock_store_state.assert_called()
+
+    def _zone_item(self, frame, name):
+        for row in range(frame._tree_model.rowCount()):
+            item = frame._tree_model.item(row, 0)
+            if item.text() == name:
+                return item
+        return None
+
+    def test_kill_in_known_zone_appends_one_row(self):
+        frame = killtimes_frame.KillTimesFrame()
+        self.addCleanup(frame.deleteLater)
+        zone = self._zone_item(frame, "West Commonlands")
+        self.assertEqual(1, zone.rowCount())
+        kt = models.KillTimer("Mon Aug 17 07:17:39 2020", "a gnoll pup", zone="West Commonlands")
+        config.KILL_TIMERS.append(kt)
+        zones_before = frame._tree_model.rowCount()
+        frame._on_kill(kt)
+        zone = self._zone_item(frame, "West Commonlands")
+        self.assertEqual(2, zone.rowCount())
+        self.assertEqual("a gnoll pup", zone.child(1, 1).text())
+        self.assertEqual(zones_before, frame._tree_model.rowCount())
+
+    def test_filtered_kills_wait_for_one_refresh(self):
+        frame = killtimes_frame.KillTimesFrame()
+        self.addCleanup(frame.deleteLater)
+        frame._filter_edit.setText("gnoll")
+        zone = self._zone_item(frame, "West Commonlands")
+        before = zone.rowCount()
+        kt = models.KillTimer("Mon Aug 17 07:17:39 2020", "a gnoll pup", zone="West Commonlands")
+        config.KILL_TIMERS.append(kt)
+        frame._on_kill(kt)
+        self.assertEqual(before, zone.rowCount())
+        self.assertTrue(frame._kill_refresh.isActive())
