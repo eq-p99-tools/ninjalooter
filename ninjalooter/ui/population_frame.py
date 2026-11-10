@@ -303,9 +303,7 @@ class PopulationFrame(QWidget):
         self._update_preview()
 
     def _copy_populations(self):
-        pops = self._effective_pops()
-        lines = [f"{alliance}: {pop}" for alliance, pop in pops.items() if pop > 0]
-        utils.to_clipboard("\n".join(lines))
+        utils.to_clipboard(utils.format_population_list(self._effective_pops()))
 
     def _copy_roll_text(self):
         pops = self._effective_pops()
