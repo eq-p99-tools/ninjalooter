@@ -1,3 +1,4 @@
+import collections
 import datetime
 import json
 import os
@@ -86,6 +87,34 @@ class TestUtils(base.NLTestBase):
         expected = '/shout 1-4 BL // 5-9 Kingdom // 10-15 VCR'
         self.assertEqual('/random 1 15', pop_rand_text)
         self.assertEqual(expected, pop_roll_text)
+
+    def test_generate_pop_roll_puts_the_smallest_alliance_first(self):
+        config.ALLIANCES = collections.OrderedDict(
+            [
+                ("Castle", ["Castle"]),
+                ("Lineage", ["Lineage"]),
+                ("Safe Space", ["Safe Space"]),
+            ]
+        )
+        config.ALLIANCE_MAP = {
+            "Castle": "Castle",
+            "Lineage": "Lineage",
+            "Safe Space": "Safe Space",
+        }
+        source = {}
+        for index in range(25):
+            source[f"Castle{index}"] = models.Player(f"Castle{index}", None, None, "Castle")
+        for index in range(2):
+            source[f"Lineage{index}"] = models.Player(f"Lineage{index}", None, None, "Lineage")
+        for index in range(3):
+            source[f"Safe{index}"] = models.Player(f"Safe{index}", None, None, "Safe Space")
+
+        roll_text, rand_text = utils.generate_pop_roll(source)
+        copied = utils.format_population_list(utils.get_pop_numbers(source))
+
+        self.assertEqual("/shout 1-2 Lineage // 3-5 Safe Space // 6-30 Castle", roll_text)
+        self.assertEqual("/random 1 30", rand_text)
+        self.assertEqual("Lineage: 2, Safe Space: 3, Castle: 25", copied)
 
     def test_get_character_name_from_logfile(self):
         result = utils.get_character_name_from_logfile(

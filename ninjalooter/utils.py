@@ -86,17 +86,25 @@ def get_pop_numbers(source=None, extras=None) -> dict:
     return pops
 
 
+def pops_ascending(pops) -> list:
+    """Alliances that have people, smallest first. Ties keep the alliance list order."""
+    return sorted(((name, count) for name, count in pops.items() if count > 0), key=lambda item: item[1])
+
+
+def format_population_list(pops) -> str:
+    """One line for pasting in game, smallest alliance first."""
+    return ", ".join(f"{alliance}: {pop}" for alliance, pop in pops_ascending(pops))
+
+
 def generate_pop_roll(source=None, extras=None) -> tuple:
     pops = get_pop_numbers(source, extras)
     if set(pops.values()) == {0}:
         LOG.info("No population data exists, can't generate text.")
         return "", ""
-    roll_text = None  # '1-24 BL // 25-48 Kingdom //49-61 VCR'
+    roll_text = None  # '1-2 Lineage // 3-5 Safe Space // 6-30 Castle'
     start = 1
     end = 1
-    for alliance, pop in pops.items():
-        if pop < 1:
-            continue
+    for alliance, pop in pops_ascending(pops):
         end = start + pop - 1
         alliance_text = "{}-{} {}".format(start, end, alliance)
         if not roll_text:

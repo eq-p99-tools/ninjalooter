@@ -94,6 +94,18 @@ class TestPopulationFrame(base.NLTestBase):
             self.frame._copy_roll_text()
         self.assertEqual("/shout 1-1 Kingdom\n/random 1 1", clip.call_args[0][0])
 
+    def test_copy_populations_lists_the_smallest_alliance_first(self):
+        config.LAST_WHO_SNAPSHOT = {
+            "Amy": models.Player("Amy", "Wizard", 60, "Kingdom"),
+            "Bob": models.Player("Bob", "Warrior", 60, "Kingdom"),
+            "Ned": models.Player("Ned", "Rogue", 60, "Castle"),
+        }
+
+        with mock.patch("ninjalooter.ui.population_frame.utils.to_clipboard") as clip:
+            self.frame._copy_populations()
+
+        self.assertEqual("VCR: 1, Kingdom: 2", clip.call_args[0][0])
+
     def test_new_who_leaves_a_pinned_tick_in_place(self):
         tick = self._tick()
         signals.use_for_pop_roll.emit(tick)
