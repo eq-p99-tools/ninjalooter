@@ -161,6 +161,26 @@ class TestAutoUpdate(base.NLTestBase):
 
         self.assertEqual([], releases)
 
+    def test_compile_changelog_keeps_section_headings_outside_the_list(self):
+        releases = [
+            {
+                "version": "1.18.4-rc2",
+                "body": (
+                    "## Features\n\n"
+                    "* **Pop roll** — one line.\n\n"
+                    "## Bugfixes / Minor Changes\n\n"
+                    "* Long raids were rewritten.\n"
+                ),
+            }
+        ]
+
+        html = autoupdate.compile_changelog(releases)
+
+        self.assertIn("<h1>v1.18.4-rc2</h1>", html)
+        features_at = html.index("<h2>Features</h2>")
+        bugfixes_at = html.index("<h2>Bugfixes / Minor Changes</h2>")
+        self.assertLess(html.index("</ul>", features_at), bugfixes_at)
+
     def test_is_upgrade_available_stable_over_rc_console_build(self):
         local = semver.VersionInfo.parse("1.18.0-rc11+console")
         remote = semver.VersionInfo.parse("1.18.0")
