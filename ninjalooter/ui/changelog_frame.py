@@ -9,7 +9,9 @@ from ninjalooter.ui.theme import semantic
 LOG = logger.getLogger(__name__)
 
 CHANGELOG_MAX_RELEASES = 15
-_CHANGELOG_HEAD = "<style>h2 { font-size: 1.25em; }</style>"
+_CHANGELOG_HEAD = (
+    "<style>h1 { font-size: 1.75em; font-weight: bold; }h2 { font-size: 1.2em; font-weight: bold; }</style>"
+)
 
 
 def _changelog_body_style() -> str:

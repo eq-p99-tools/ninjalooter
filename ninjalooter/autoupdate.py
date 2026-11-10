@@ -140,14 +140,19 @@ def compile_changelog(releases):
     changelog = get_changelog_prefix() + "\n\n"
     for release in releases:
         version_str = f"v{release['version']}"
-        changelog += f"## {version_str}\n"
+        changelog += f"# {version_str}\n\n"
         body = strip_changelog_prefix(release["body"])
         if body:
             for raw_line in body.split("\n"):
                 stripped = raw_line.strip()
                 if not stripped:
                     continue
-                if stripped.startswith(("#", "-", "*")):
+                if stripped.startswith("#"):
+                    # A heading glued to the previous bullet is rendered inside that bullet.
+                    if not changelog.endswith("\n\n"):
+                        changelog += "\n"
+                    changelog += f"{stripped}\n\n"
+                elif stripped.startswith(("-", "*")):
                     changelog += f"{stripped}\n"
                 else:
                     changelog += f"- {stripped}\n"
