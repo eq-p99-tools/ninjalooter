@@ -80,22 +80,11 @@ class PopulationFrame(QWidget):
         adj_label.setFont(font)
         right.addWidget(adj_label)
 
-        for alliance in config.ALLIANCES:
-            row = QHBoxLayout()
-            lbl = QLabel(alliance)
-            lbl.setMinimumWidth(80)
-            lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            lbl_font = lbl.font()
-            lbl_font.setBold(True)
-            lbl.setFont(lbl_font)
-            spinner = QSpinBox()
-            spinner.setRange(-999, 999)
-            spinner.setValue(0)
-            spinner.valueChanged.connect(lambda _val, a=alliance: self._on_spinner_changed(a))
-            self._alliance_spinners[alliance] = spinner
-            row.addWidget(lbl)
-            row.addWidget(spinner)
-            right.addLayout(row)
+        self._spinner_host = QWidget()
+        self._spinner_layout = QVBoxLayout(self._spinner_host)
+        self._spinner_layout.setContentsMargins(0, 0, 0, 0)
+        self._spinner_layout.setSpacing(2)
+        right.addWidget(self._spinner_host)
 
         self._preview_table = ObjectTableView(
             columns=[
@@ -138,12 +127,52 @@ class PopulationFrame(QWidget):
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
         signals.use_for_pop_roll.connect(self._on_use_for_pop_roll)
+        signals.alliances_changed.connect(self._rebuild_spinners)
 
+        self._rebuild_spinners()
         self._refresh_player_table()
         self._update_preview()
         self._rebuild_source_combo()
 
     # ---- helpers ----
+
+    def _rebuild_spinners(self):
+        previous = {name: spinner.value() for name, spinner in self._alliance_spinners.items()}
+        while self._spinner_layout.count():
+            item = self._spinner_layout.takeAt(0)
+            layout = item.layout()
+            if layout is None:
+                continue
+            while layout.count():
+                child = layout.takeAt(0)
+                widget = child.widget()
+                if widget is not None:
+                    widget.deleteLater()
+            layout.deleteLater()
+        self._alliance_spinners = {}
+        for name in list(self._pop_overrides):
+            if name not in config.ALLIANCES:
+                del self._pop_overrides[name]
+        for alliance in config.ALLIANCES:
+            row = QHBoxLayout()
+            label = QLabel(alliance)
+            label.setMinimumWidth(80)
+            label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            label_font = label.font()
+            label_font.setBold(True)
+            label.setFont(label_font)
+            spinner = QSpinBox()
+            spinner.setRange(-999, 999)
+            spinner.blockSignals(True)
+            spinner.setValue(previous.get(alliance, 0))
+            spinner.blockSignals(False)
+            spinner.valueChanged.connect(lambda _val, a=alliance: self._on_spinner_changed(a))
+            self._alliance_spinners[alliance] = spinner
+            row.addWidget(label)
+            row.addWidget(spinner)
+            self._spinner_layout.addLayout(row)
+        if hasattr(self, "_preview_table"):
+            self._update_preview()
 
     def _extras(self) -> dict[str, int]:
         return {

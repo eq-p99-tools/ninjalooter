@@ -36,6 +36,7 @@ class AppSignals(QObject):
     alert = Signal(str, str, int)  # title, message, msec
     play_sound = Signal(str)  # sound file path, played on the UI thread
     alliance_changed = Signal(str)  # alliance name
+    alliances_changed = Signal()  # the alliance list itself was edited
 
 
 signals = AppSignals()

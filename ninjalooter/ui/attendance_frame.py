@@ -215,6 +215,7 @@ class AttendanceFrame(QWidget):
         signals.gratss.connect(self._on_gratss)
         signals.app_clear.connect(self._on_clear_app)
         signals.app_reload.connect(self._on_reload_app)
+        signals.alliances_changed.connect(self._refresh_attendance)
 
     # ── Splitter persistence ──
 

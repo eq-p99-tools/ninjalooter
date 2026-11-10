@@ -34,6 +34,7 @@ class TestPopulationFrame(base.NLTestBase):
             (signals.app_clear, frame._on_app_clear),
             (signals.app_reload, frame._on_app_reload),
             (signals.use_for_pop_roll, frame._on_use_for_pop_roll),
+            (signals.alliances_changed, frame._rebuild_spinners),
         ):
             try:
                 sig.disconnect(slot)
@@ -134,6 +135,7 @@ class TestPopulationFrame(base.NLTestBase):
 
     def test_clear_drops_the_pinned_tick(self):
         signals.use_for_pop_roll.emit(self._tick())
+        config.ATTENDANCE_LOGS.clear()
         signals.app_clear.emit()
 
         self.assertEqual([], _names(self.frame._player_table))
