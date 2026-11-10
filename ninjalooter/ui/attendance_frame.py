@@ -96,6 +96,11 @@ class AttendanceFrame(QWidget):
         btn_copy_tick.clicked.connect(self._on_export_tick)
         attendance_btn_col.addWidget(btn_copy_tick)
 
+        btn_pop_roll = QPushButton("Use for Pop Roll")
+        btn_pop_roll.setToolTip("Open this tick on the Population Rolls tab and count its players.")
+        btn_pop_roll.clicked.connect(self._on_use_for_pop_roll)
+        attendance_btn_col.addWidget(btn_pop_roll)
+
         btn_calc_groups = QPushButton("Calculate Raid Groups")
         btn_calc_groups.clicked.connect(self._on_calc_raid_groups)
         attendance_btn_col.addWidget(btn_calc_groups)
@@ -210,6 +215,7 @@ class AttendanceFrame(QWidget):
         signals.gratss.connect(self._on_gratss)
         signals.app_clear.connect(self._on_clear_app)
         signals.app_reload.connect(self._on_reload_app)
+        signals.alliances_changed.connect(self._refresh_attendance)
 
     # ── Splitter persistence ──
 
@@ -272,6 +278,12 @@ class AttendanceFrame(QWidget):
         selected = self.attendance_list.get_selected_object()
         if selected:
             signals.show_raid_overview.emit(selected)
+
+    def _on_use_for_pop_roll(self):
+        selected = self.attendance_list.get_selected_object()
+        if selected is None:
+            return
+        signals.use_for_pop_roll.emit(selected)
 
     def _on_delete_tick(self):
         selected = self.attendance_list.get_selected_object()

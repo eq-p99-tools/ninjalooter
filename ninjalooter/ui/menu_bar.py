@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 
 from ninjalooter import config, logger, logparse, utils
 from ninjalooter.app_signals import signals
+from ninjalooter.ui.alliances_dialog import AlliancesDialog
 from ninjalooter.ui.attendance_replay_dialog import AttendanceReplayDialog
 from ninjalooter.ui.bidding_frame import IgnoredItemsWindow
 from ninjalooter.ui.theme import ThemedQFileDialog, apply_app_theme, apply_windows_window_frame
@@ -28,6 +29,7 @@ class MenuBar(QMenuBar):
         self._build_alerts_menu()
 
         signals.alliance_changed.connect(self._on_alliance_changed_signal)
+        signals.alliances_changed.connect(self._rebuild_alliance_actions)
 
     # ------------------------------------------------------------------
     # File Menu
@@ -140,18 +142,15 @@ class MenuBar(QMenuBar):
         menu.addSeparator()
 
         # Alliance submenu
-        alliance_menu = menu.addMenu("&Alliance")
+        self._alliance_menu = menu.addMenu("&Alliance")
         self._alliance_group = QActionGroup(self)
         self._alliance_group.setExclusive(True)
-        self._alliance_actions: dict[str, QAction] = {}
-        for alliance in config.ALLIANCES:
-            action = QAction(alliance, self, checkable=True)
-            if alliance == config.DEFAULT_ALLIANCE:
-                action.setChecked(True)
-            self._alliance_group.addAction(action)
-            alliance_menu.addAction(action)
-            self._alliance_actions[alliance] = action
         self._alliance_group.triggered.connect(self._on_set_alliance)
+        self._alliance_actions: dict[str, QAction] = {}
+        self._rebuild_alliance_actions()
+        self._alliance_menu.addSeparator()
+        edit_alliances = self._alliance_menu.addAction("Edit Alliances...")
+        edit_alliances.triggered.connect(self._on_edit_alliances)
 
         # Drop channels submenu
         drop_menu = menu.addMenu("&Drop Channels")
@@ -355,6 +354,27 @@ class MenuBar(QMenuBar):
     # ------------------------------------------------------------------
     # Bidding handlers
     # ------------------------------------------------------------------
+
+    def _rebuild_alliance_actions(self):
+        menu = self._alliance_menu
+        for action in list(self._alliance_actions.values()):
+            self._alliance_group.removeAction(action)
+            menu.removeAction(action)
+            action.deleteLater()
+        self._alliance_actions = {}
+        before = next((action for action in menu.actions() if action.isSeparator()), None)
+        for alliance in config.ALLIANCES:
+            action = QAction(alliance, self, checkable=True)
+            action.setChecked(alliance == config.DEFAULT_ALLIANCE)
+            self._alliance_group.addAction(action)
+            if before is None:
+                menu.addAction(action)
+            else:
+                menu.insertAction(before, action)
+            self._alliance_actions[alliance] = action
+
+    def _on_edit_alliances(self):
+        AlliancesDialog(self._window).exec()
 
     def _on_set_alliance(self, action: QAction):
         config.DEFAULT_ALLIANCE = action.text()

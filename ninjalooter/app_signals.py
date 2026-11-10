@@ -22,6 +22,7 @@ class AppSignals(QObject):
     # UI-driven events
     calc_raid_groups = Signal()
     show_raid_overview = Signal(object)  # WhoLog
+    use_for_pop_roll = Signal(object)  # WhoLog
     app_clear = Signal()
     app_reload = Signal()
     ignore = Signal()
@@ -35,6 +36,7 @@ class AppSignals(QObject):
     alert = Signal(str, str, int)  # title, message, msec
     play_sound = Signal(str)  # sound file path, played on the UI thread
     alliance_changed = Signal(str)  # alliance name
+    alliances_changed = Signal()  # the alliance list itself was edited
 
 
 signals = AppSignals()

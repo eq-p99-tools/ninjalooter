@@ -13,8 +13,8 @@ from ninjalooter import constants
 SEMVER = semver.VersionInfo(
     major=1,
     minor=18,
-    patch=3,
-    prerelease="rc4",
+    patch=4,
+    prerelease="rc1",
     build="console",
 )
 VERSION = str(SEMVER)
@@ -135,37 +135,148 @@ NEW_RAIDTICK_SOUND = CONF.get(
     fallback=os.path.join(PROJECT_DIR, "data", "sounds", "new_raidtick.mp3"),
 )
 
-CONF_ALLIANCES = CONF.get(
-    "default",
-    "alliances",
-    fallback="Good Guys:Good Guys;"
+DEFAULT_ALLIANCES_TEXT = (
+    "Good Guys:Good Guys;"
     "Lineage:Lineage,Venerate,Syndicate,Smoking Lounge;"
     "Castle:Castle,Ancient Blood,Gathered Might,Freya's Chariot,"
     "Black Lotus,Akatsuki,Dungeon Crawlers of Norrath,Senpai;"
-    "Kingdom:Kingdom,Karens of Karana;",
+    "Kingdom:Kingdom,Karens of Karana;"
 )
-CONF_EXTRA_ALLIANCES = CONF.get("default", "extra_alliances", fallback="")
-ALLIANCES = collections.OrderedDict()
-for alliance_entry in CONF_ALLIANCES.split(";"):
-    if ":" not in alliance_entry:
-        continue
-    alliance_name, members = alliance_entry.split(":")
-    members = list(map(lambda x: x.strip(), members.split(",")))
-    ALLIANCES[alliance_name] = members
-for alliance_entry in CONF_EXTRA_ALLIANCES.split(";"):
-    if ":" not in alliance_entry:
-        continue
-    alliance_name, members = alliance_entry.split(":")
-    members = list(map(lambda x: x.strip(), members.split(",")))
-    if alliance_name in ALLIANCES:
-        for member in members:
-            if member not in ALLIANCES[alliance_name]:
-                ALLIANCES[alliance_name].append(member)
+
+
+def parse_alliances(text: str) -> collections.OrderedDict:
+    """Parse ``Name:Guild,Guild;`` into an ordered alliance map."""
+    alliances = collections.OrderedDict()
+    for alliance_entry in text.split(";"):
+        if ":" not in alliance_entry:
+            continue
+        alliance_name, members = alliance_entry.split(":", 1)
+        alliance_name = alliance_name.strip()
+        if not alliance_name:
+            continue
+        guilds = []
+        for member in members.split(","):
+            guild = member.strip()
+            if guild and guild not in guilds:
+                guilds.append(guild)
+        alliances[alliance_name] = guilds
+    return alliances
+
+
+def merge_extra_alliances(alliances: collections.OrderedDict, extra_text: str) -> collections.OrderedDict:
+    """Append ``extra_alliances`` the way the ini has always done."""
+    merged = collections.OrderedDict((name, list(guilds)) for name, guilds in alliances.items())
+    for alliance_name, members in parse_alliances(extra_text).items():
+        if alliance_name in merged:
+            for member in members:
+                if member not in merged[alliance_name]:
+                    merged[alliance_name].append(member)
+        else:
+            merged[alliance_name] = list(members)
+    return merged
+
+
+def effective_alliances(alliances) -> collections.OrderedDict:
+    """Keep each guild tag in one alliance. The later alliance wins."""
+    winner = {}
+    for alliance_name, guilds in alliances.items():
+        for guild in guilds:
+            if guild:
+                winner[guild] = alliance_name
+    cleaned = collections.OrderedDict()
+    for alliance_name, guilds in alliances.items():
+        kept = []
+        for guild in guilds:
+            if guild and winner.get(guild) == alliance_name and guild not in kept:
+                kept.append(guild)
+        cleaned[alliance_name] = kept
+    return cleaned
+
+
+def format_alliances(alliances) -> str:
+    parts = [f"{name}:{','.join(guilds)}" for name, guilds in alliances.items()]
+    if not parts:
+        return ""
+    return ";".join(parts) + ";"
+
+
+def alliances_match(left, right) -> bool:
+    left_items = [(name, list(guilds)) for name, guilds in left.items()]
+    right_items = [(name, list(guilds)) for name, guilds in right.items()]
+    return left_items == right_items
+
+
+def shipped_alliances() -> collections.OrderedDict:
+    return effective_alliances(parse_alliances(DEFAULT_ALLIANCES_TEXT))
+
+
+def apply_alliance_config() -> None:
+    """Load alliances from the ini, falling back to the list shipped with this version."""
+    global ALLIANCES, ALLIANCE_MAP, DEFAULT_ALLIANCE, CONF_ALLIANCES, CONF_EXTRA_ALLIANCES
+    CONF_ALLIANCES = CONF.get("default", "alliances", fallback=DEFAULT_ALLIANCES_TEXT)
+    CONF_EXTRA_ALLIANCES = CONF.get("default", "extra_alliances", fallback="")
+    merged = merge_extra_alliances(parse_alliances(CONF_ALLIANCES), CONF_EXTRA_ALLIANCES)
+    ALLIANCES = effective_alliances(merged)
+    if not ALLIANCES:
+        ALLIANCES = shipped_alliances()
+    ALLIANCE_MAP = {}
+    for alliance_name, guilds in ALLIANCES.items():
+        for guild in guilds:
+            ALLIANCE_MAP[guild] = alliance_name
+    saved_default = CONF.get("default", "default_alliance", fallback="")
+    if saved_default in ALLIANCES:
+        DEFAULT_ALLIANCE = saved_default
     else:
-        ALLIANCES[alliance_name] = members
-DEFAULT_ALLIANCE = CONF.get("default", "default_alliance", fallback=tuple(ALLIANCES.keys())[0])
-if DEFAULT_ALLIANCE not in ALLIANCES.keys():
-    DEFAULT_ALLIANCE = tuple(ALLIANCES.keys())[0]
+        DEFAULT_ALLIANCE = next(iter(ALLIANCES))
+
+
+def using_shipped_alliances() -> bool:
+    return alliances_match(ALLIANCES, shipped_alliances())
+
+
+def _drop_invalid_default_alliance(alliances) -> None:
+    if not CONF.has_option("default", "default_alliance"):
+        return
+    if CONF.get("default", "default_alliance") not in alliances:
+        CONF.set("default", "default_alliance", next(iter(alliances)))
+
+
+def save_alliances(alliances, *, persist: bool = True) -> None:
+    """Store the edited list. Matching the shipped list clears the custom settings."""
+    cleaned = effective_alliances(alliances)
+    if not cleaned:
+        cleaned = shipped_alliances()
+    if alliances_match(cleaned, shipped_alliances()):
+        for key in ("alliances", "extra_alliances"):
+            if CONF.has_option("default", key):
+                CONF.remove_option("default", key)
+    else:
+        CONF.set("default", "alliances", format_alliances(cleaned))
+        if CONF.has_option("default", "extra_alliances"):
+            CONF.remove_option("default", "extra_alliances")
+    _drop_invalid_default_alliance(cleaned)
+    apply_alliance_config()
+    if persist:
+        write()
+
+
+def reset_alliances(*, persist: bool = True) -> None:
+    """Drop custom alliance settings so this version's list is used."""
+    for key in ("alliances", "extra_alliances"):
+        if CONF.has_option("default", key):
+            CONF.remove_option("default", key)
+    _drop_invalid_default_alliance(shipped_alliances())
+    apply_alliance_config()
+    if persist:
+        write()
+
+
+CONF_ALLIANCES = ""
+CONF_EXTRA_ALLIANCES = ""
+ALLIANCES = collections.OrderedDict()
+ALLIANCE_MAP = {}
+DEFAULT_ALLIANCE = ""
+apply_alliance_config()
 
 # Data store variables
 PENDING_AUCTIONS = list()
@@ -192,10 +303,6 @@ KILL_TIMER_SECTIONS_EXPANDED_CACHE = dict()
 TAB_SELECTION = 0
 
 # Calculated variables
-ALLIANCE_MAP = dict()
-for alliance, guilds in ALLIANCES.items():
-    for guild in guilds:
-        ALLIANCE_MAP[guild] = alliance
 TRIE = None
 ITEMS = dict()
 SPELLS = dict()

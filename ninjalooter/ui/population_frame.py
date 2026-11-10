@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -22,6 +24,7 @@ class PopulationFrame(QWidget):
 
         self._alliance_spinners: dict[str, QSpinBox] = {}
         self._pop_overrides: dict[str, int] = {}
+        self._roll_source = None
 
         root = QHBoxLayout(self)
         root.setContentsMargins(6, 6, 6, 6)
@@ -34,6 +37,22 @@ class PopulationFrame(QWidget):
         pop_font.setBold(True)
         pop_label.setFont(pop_font)
         left.addWidget(pop_label)
+
+        source_row = QHBoxLayout()
+        source_caption = QLabel("Source")
+        source_caption.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._source_combo = QComboBox()
+        self._source_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self._source_combo.setMinimumContentsLength(18)
+        self._source_combo.setToolTip("Choose which /who the population roll counts.")
+        self._source_combo.currentIndexChanged.connect(self._on_source_changed)
+        source_row.addWidget(source_caption)
+        source_row.addWidget(self._source_combo, stretch=1)
+        left.addLayout(source_row)
+
+        self._newer_label = QLabel("Newer /who available")
+        self._newer_label.setVisible(False)
+        left.addWidget(self._newer_label)
 
         self._player_table = ObjectTableView(
             columns=[
@@ -61,22 +80,11 @@ class PopulationFrame(QWidget):
         adj_label.setFont(font)
         right.addWidget(adj_label)
 
-        for alliance in config.ALLIANCES:
-            row = QHBoxLayout()
-            lbl = QLabel(alliance)
-            lbl.setMinimumWidth(80)
-            lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            lbl_font = lbl.font()
-            lbl_font.setBold(True)
-            lbl.setFont(lbl_font)
-            spinner = QSpinBox()
-            spinner.setRange(-999, 999)
-            spinner.setValue(0)
-            spinner.valueChanged.connect(lambda _val, a=alliance: self._on_spinner_changed(a))
-            self._alliance_spinners[alliance] = spinner
-            row.addWidget(lbl)
-            row.addWidget(spinner)
-            right.addLayout(row)
+        self._spinner_host = QWidget()
+        self._spinner_layout = QVBoxLayout(self._spinner_host)
+        self._spinner_layout.setContentsMargins(0, 0, 0, 0)
+        self._spinner_layout.setSpacing(2)
+        right.addWidget(self._spinner_host)
 
         self._preview_table = ObjectTableView(
             columns=[
@@ -115,13 +123,56 @@ class PopulationFrame(QWidget):
         signals.who.connect(self._on_who)
         signals.clear_who.connect(self._on_clear_who)
         signals.who_end.connect(self._on_who_end)
+        signals.who_history.connect(self._on_who_history)
         signals.app_clear.connect(self._on_app_clear)
         signals.app_reload.connect(self._on_app_reload)
+        signals.use_for_pop_roll.connect(self._on_use_for_pop_roll)
+        signals.alliances_changed.connect(self._rebuild_spinners)
 
+        self._rebuild_spinners()
         self._refresh_player_table()
         self._update_preview()
+        self._rebuild_source_combo()
 
     # ---- helpers ----
+
+    def _rebuild_spinners(self):
+        previous = {name: spinner.value() for name, spinner in self._alliance_spinners.items()}
+        while self._spinner_layout.count():
+            item = self._spinner_layout.takeAt(0)
+            layout = item.layout()
+            if layout is None:
+                continue
+            while layout.count():
+                child = layout.takeAt(0)
+                widget = child.widget()
+                if widget is not None:
+                    widget.deleteLater()
+            layout.deleteLater()
+        self._alliance_spinners = {}
+        for name in list(self._pop_overrides):
+            if name not in config.ALLIANCES:
+                del self._pop_overrides[name]
+        for alliance in config.ALLIANCES:
+            row = QHBoxLayout()
+            label = QLabel(alliance)
+            label.setMinimumWidth(80)
+            label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            label_font = label.font()
+            label_font.setBold(True)
+            label.setFont(label_font)
+            spinner = QSpinBox()
+            spinner.setRange(-999, 999)
+            spinner.blockSignals(True)
+            spinner.setValue(previous.get(alliance, 0))
+            spinner.blockSignals(False)
+            spinner.valueChanged.connect(lambda _val, a=alliance: self._on_spinner_changed(a))
+            self._alliance_spinners[alliance] = spinner
+            row.addWidget(label)
+            row.addWidget(spinner)
+            self._spinner_layout.addLayout(row)
+        if hasattr(self, "_preview_table"):
+            self._update_preview()
 
     def _extras(self) -> dict[str, int]:
         return {
@@ -132,22 +183,94 @@ class PopulationFrame(QWidget):
         self._pop_overrides.pop(alliance, None)
         self._update_preview()
 
+    def _is_recorded(self, wholog) -> bool:
+        return any(entry is wholog for entry in config.ATTENDANCE_LOGS)
+
+    def _showing_recorded_tick(self) -> bool:
+        return self._roll_source is not None and self._is_recorded(self._roll_source)
+
+    def _player_source(self) -> dict:
+        if self._showing_recorded_tick():
+            return self._roll_source.log or {}
+        return config.LAST_WHO_SNAPSHOT
+
+    def _tick_label(self, wholog) -> str:
+        parts = [wholog.eqtime()]
+        if wholog.raidtick:
+            parts.append("RaidTick")
+        if wholog.tick_name:
+            parts.append(wholog.tick_name)
+        if wholog.zone:
+            parts.append(wholog.zone)
+        return " · ".join(parts)
+
+    def _wholog_for_combo_index(self, index: int):
+        if index <= 0:
+            return None
+        logs = config.ATTENDANCE_LOGS
+        source_index = len(logs) - index
+        if source_index < 0 or source_index >= len(logs):
+            return None
+        return logs[source_index]
+
+    def _combo_index_for_source(self) -> int:
+        wholog = self._roll_source
+        if wholog is None:
+            return 0
+        for offset, entry in enumerate(reversed(config.ATTENDANCE_LOGS)):
+            if entry is wholog:
+                return offset + 1
+        return 0
+
+    def _has_newer_who(self) -> bool:
+        if not self._showing_recorded_tick() or not config.ATTENDANCE_LOGS:
+            return False
+        return config.ATTENDANCE_LOGS[-1] is not self._roll_source
+
+    def _rebuild_source_combo(self):
+        self._source_combo.blockSignals(True)
+        self._source_combo.clear()
+        self._source_combo.addItem("Latest /who")
+        for wholog in reversed(config.ATTENDANCE_LOGS):
+            self._source_combo.addItem(self._tick_label(wholog))
+        self._source_combo.setCurrentIndex(self._combo_index_for_source())
+        self._source_combo.setToolTip(self._source_combo.currentText())
+        self._source_combo.blockSignals(False)
+        self._newer_label.setVisible(self._has_newer_who())
+
+    def _ensure_source(self) -> bool:
+        """Drop a pinned tick that is no longer in the attendance list."""
+        if self._roll_source is not None and not self._is_recorded(self._roll_source):
+            self._roll_source = None
+            return True
+        return False
+
+    def _reload_from_source(self, reset_adjustments: bool):
+        dropped = self._ensure_source()
+        self._refresh_player_table()
+        if reset_adjustments or dropped:
+            self._pop_overrides.clear()
+            self._reset_extras()
+        else:
+            self._update_preview()
+        self._rebuild_source_combo()
+
     def _refresh_player_table(self):
         players = sorted(
-            config.LAST_WHO_SNAPSHOT.values(),
+            self._player_source().values(),
             key=lambda p: (p.guild or "", p.name),
         )
         self._player_table.set_objects(players)
 
     def _update_preview(self):
-        pops = utils.get_pop_numbers(extras=self._extras())
+        pops = utils.get_pop_numbers(source=self._player_source(), extras=self._extras())
         pops.update(self._pop_overrides)
         previews = [PopulationPreview(a, p) for a, p in pops.items() if p > 0 or a in self._pop_overrides]
         self._preview_table.set_objects(previews)
 
     def _effective_pops(self) -> dict[str, int]:
         """Final population numbers with overrides applied."""
-        pops = utils.get_pop_numbers(extras=self._extras())
+        pops = utils.get_pop_numbers(source=self._player_source(), extras=self._extras())
         pops.update(self._pop_overrides)
         return pops
 
@@ -190,7 +313,7 @@ class PopulationFrame(QWidget):
         pops = self._effective_pops()
         if set(pops.values()) == {0}:
             return
-        roll_text, rand_text = utils.generate_pop_roll(extras=self._extras())
+        roll_text, rand_text = utils.generate_pop_roll(source=self._player_source(), extras=self._extras())
         if roll_text:
             utils.to_clipboard(f"{roll_text}\n{rand_text}")
 
@@ -199,22 +322,48 @@ class PopulationFrame(QWidget):
     def _on_who(self, name: str, pclass: str, level: int, guild: str):
         player = Player(name, pclass, level, guild)
         config.LAST_WHO_SNAPSHOT[name] = player
+        if self._showing_recorded_tick():
+            return
         self._player_table.object_model.add_object(player)
 
     def _on_clear_who(self):
+        if self._showing_recorded_tick():
+            return
         self._player_table.set_objects([])
 
     def _on_who_end(self):
-        self._refresh_player_table()
-        self._pop_overrides.clear()
-        self._reset_extras()
+        if self._showing_recorded_tick():
+            self._rebuild_source_combo()
+            return
+        self._roll_source = None
+        self._reload_from_source(reset_adjustments=True)
+
+    def _on_who_history(self):
+        self._rebuild_source_combo()
+
+    def _on_source_changed(self, index: int):
+        if index < 0:
+            return
+        wholog = self._wholog_for_combo_index(index)
+        if wholog is self._roll_source:
+            return
+        self._roll_source = wholog
+        self._reload_from_source(reset_adjustments=True)
 
     def _on_app_clear(self):
+        self._roll_source = None
         config.LAST_WHO_SNAPSHOT.clear()
-        self._player_table.set_objects([])
-        self._pop_overrides.clear()
-        self._reset_extras()
+        self._reload_from_source(reset_adjustments=True)
 
     def _on_app_reload(self):
-        self._refresh_player_table()
-        self._update_preview()
+        self._reload_from_source(reset_adjustments=False)
+
+    def _on_use_for_pop_roll(self, wholog):
+        if wholog is None:
+            return
+        self._roll_source = wholog
+        self._reload_from_source(reset_adjustments=True)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._reload_from_source(reset_adjustments=False)
