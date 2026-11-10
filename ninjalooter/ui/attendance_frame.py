@@ -215,7 +215,7 @@ class AttendanceFrame(QWidget):
         signals.gratss.connect(self._on_gratss)
         signals.app_clear.connect(self._on_clear_app)
         signals.app_reload.connect(self._on_reload_app)
-        signals.alliances_changed.connect(self._refresh_attendance)
+        signals.alliances_changed.connect(self._on_alliances_changed)
 
     # ── Splitter persistence ──
 
@@ -236,6 +236,11 @@ class AttendanceFrame(QWidget):
     def _refresh_attendance(self):
         self.attendance_list.set_objects(config.ATTENDANCE_LOGS)
         self._apply_raidtick_filter()
+
+    def _on_alliances_changed(self):
+        for tick in config.ATTENDANCE_LOGS:
+            tick.invalidate_populations()
+        self._refresh_attendance()
 
     def _on_raidtick_only(self):
         config.SHOW_RAIDTICK_ONLY = self.raidtick_only_cb.isChecked()
