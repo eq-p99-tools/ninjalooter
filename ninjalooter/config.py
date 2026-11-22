@@ -360,8 +360,14 @@ MATCH_RAND2 = re.compile(
 # Other Matchers
 MATCH_START_WHO = re.compile(TIMESTAMP + r"Players [oi]n EverQuest:")
 MATCH_WHO = re.compile(
-    TIMESTAMP + r"(?:AFK +)?(?:<LINKDEAD>)?\[(?P<level>\d+ )?(?P<class>[A-z ]+)\] +"
-    r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w \']+)>)?"
+    TIMESTAMP
+    # AFK, <LINKDEAD>, and "* GM *" may appear, in any order, before the class.
+    + r"(?:(?:AFK\s+|<LINKDEAD>\s*|\*\s*GM\s*\*\s*))*"
+    # "[60 Arch Mage]" or "[60 Arch Mage (Magician)]". The parenthetical is the
+    # real class when a server prints a title plus the class name.
+    + r"\[(?P<level>\d+ )?(?P<class>[A-Za-z][A-Za-z ]*?)"
+    + r"(?: \((?P<base_class>[A-Za-z][A-Za-z ]*)\))?\] +"
+    + r"(?P<name>\w+)(?: *\((?P<race>[\w ]+)\))?(?: *<(?P<guild>[\w \']+)>)?"
 )
 MATCH_END_WHO = re.compile(TIMESTAMP + r"There (are|is) (?P<count>\d+) players? in (?P<zone>[\w' ]+)\.")
 MATCH_KILL = re.compile(TIMESTAMP + r"(?P<victim>[\w ]+) has been slain by (?P<killer>[\w ]+)!")

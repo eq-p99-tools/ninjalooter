@@ -148,7 +148,8 @@ def handle_end_who(match: re.Match, skip_store=False) -> bool:
 def handle_who(match: re.Match, skip_store=False) -> bool:
     name = match.group("name")
     guild = match.group("guild")
-    pclass = match.group("class") or ""
+    # Prefer the class named in parentheses, e.g. "Arch Mage (Magician)".
+    pclass = (match.group("base_class") or match.group("class") or "").strip()
     if pclass in extra_data.CLASS_TITLES:
         pclass = extra_data.CLASS_TITLES[pclass]
     level = (match.group("level") or "0").strip()
