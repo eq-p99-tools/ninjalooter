@@ -107,6 +107,55 @@ class TestMessageHandlers(base.NLTestBase):
         mock_signals.who.emit.reset_mock()
 
     @mock.patch('ninjalooter.message_handlers.signals')
+    def test_handle_who_accepts_class_in_brackets_and_gm_prefix(self, mock_signals):
+        config.LAST_WHO_SNAPSHOT = {}
+        config.PLAYER_DB = {}
+        titled = (
+            "[Sun Aug 16 22:46:32 2020] "
+            "[60 Arch Mage (Magician)] Wicksar (Iksar) <Castle>"
+        )
+        gm_line = (
+            "[Sun Aug 16 22:46:32 2020] "
+            "* GM * [60 Grandmaster] Wicksar (Iksar) <Castle>"
+        )
+
+        titled_match = config.MATCH_WHO.match(titled)
+        self.assertIsNotNone(titled_match)
+        self.assertEqual("Arch Mage", titled_match.group("class"))
+        self.assertEqual("Magician", titled_match.group("base_class"))
+        message_handlers.handle_who(titled_match)
+        self.assertEqual("Magician", config.LAST_WHO_SNAPSHOT["Wicksar"].pclass)
+        self.assertEqual(60, config.LAST_WHO_SNAPSHOT["Wicksar"].level)
+        self.assertEqual("Castle", config.LAST_WHO_SNAPSHOT["Wicksar"].guild)
+
+        gm_match = config.MATCH_WHO.match(gm_line)
+        self.assertIsNotNone(gm_match)
+        self.assertEqual("Wicksar", gm_match.group("name"))
+        self.assertEqual("Iksar", gm_match.group("race"))
+        self.assertEqual("Castle", gm_match.group("guild"))
+        message_handlers.handle_who(gm_match)
+        # Grandmaster is a monk title, and the GM line replaces the same player.
+        self.assertEqual("Monk", config.LAST_WHO_SNAPSHOT["Wicksar"].pclass)
+        self.assertEqual("Castle", config.LAST_WHO_SNAPSHOT["Wicksar"].guild)
+
+        # A title with no parenthetical still maps through the title table.
+        title_only = "[Sun Aug 16 22:46:32 2020]  AFK <LINKDEAD>[60 Arch Mage] Ogey (Gnome) <Venerate>"
+        title_match = config.MATCH_WHO.match(title_only)
+        self.assertIsNotNone(title_match)
+        message_handlers.handle_who(title_match)
+        self.assertEqual("Magician", config.LAST_WHO_SNAPSHOT["Ogey"].pclass)
+
+        both = (
+            "[Sun Aug 16 22:46:32 2020] "
+            "* GM * [60 Arch Mage (Magician)] Both (Iksar) <Castle> LFG"
+        )
+        both_match = config.MATCH_WHO.match(both)
+        self.assertIsNotNone(both_match)
+        message_handlers.handle_who(both_match)
+        self.assertEqual("Magician", config.LAST_WHO_SNAPSHOT["Both"].pclass)
+        self.assertEqual("Castle", config.LAST_WHO_SNAPSHOT["Both"].guild)
+
+    @mock.patch('ninjalooter.message_handlers.signals')
     def test_handle_end_who(self, mock_signals):
         config.LAST_WHO_SNAPSHOT = {
             'Jim': models.Player('Jim', None, None, None)}
